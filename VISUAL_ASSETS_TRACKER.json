@@ -1,0 +1,275 @@
+{
+  "project": "M&M Auto Performance",
+  "assetType": "Visual Assets",
+  "generatedDate": "2026-04-03",
+  "status": "READY FOR GENERATION",
+  "colorPalette": {
+    "gunmetalGrey": "#2C2F33",
+    "electricTurquoise": "#00CED1",
+    "babyBlue": "#89CFF0"
+  },
+  "heroImages": [
+    {
+      "id": "hero-main",
+      "name": "Hero Main Image",
+      "vehicle": "Lamborghini Revuelto",
+      "resolution": "1920x1080",
+      "format": "jpg",
+      "targetSize": "300-500KB",
+      "scene": "Chiltern Hills, golden hour",
+      "status": "⏳ PENDING GENERATION",
+      "priority": "CRITICAL",
+      "filePath": "/public/images/hero/hero-main.jpg",
+      "specs": {
+        "aspectRatio": "16:9",
+        "dpi": 72,
+        "colorSpace": "RGB",
+        "compression": "optimized for web"
+      }
+    },
+    {
+      "id": "hero-carousel-porsche",
+      "name": "Hero Carousel - Porsche 911 Turbo S",
+      "vehicle": "Porsche 911 Turbo S",
+      "resolution": "1920x1080",
+      "format": "jpg",
+      "targetSize": "300-500KB",
+      "scene": "London night, rain-slicked tarmac",
+      "status": "⏳ PENDING GENERATION",
+      "priority": "CRITICAL",
+      "filePath": "/public/images/hero/hero-carousel-porsche.jpg",
+      "specs": {
+        "aspectRatio": "16:9",
+        "dpi": 72,
+        "colorSpace": "RGB",
+        "compression": "optimized for web"
+      }
+    },
+    {
+      "id": "hero-carousel-rolls",
+      "name": "Hero Carousel - Rolls-Royce Ghost",
+      "vehicle": "Rolls-Royce Ghost",
+      "resolution": "1920x1080",
+      "format": "jpg",
+      "targetSize": "300-500KB",
+      "scene": "Hertfordshire estate, golden hour",
+      "status": "⏳ PENDING GENERATION",
+      "priority": "CRITICAL",
+      "filePath": "/public/images/hero/hero-carousel-rolls.jpg",
+      "specs": {
+        "aspectRatio": "16:9",
+        "dpi": 72,
+        "colorSpace": "RGB",
+        "compression": "optimized for web"
+      }
+    },
+    {
+      "id": "hero-carousel-ferrari",
+      "name": "Hero Carousel - Ferrari 296 GTB",
+      "vehicle": "Ferrari 296 GTB",
+      "resolution": "1920x1080",
+      "format": "jpg",
+      "targetSize": "300-500KB",
+      "scene": "Chilterns road, blue hour",
+      "status": "⏳ PENDING GENERATION",
+      "priority": "CRITICAL",
+      "filePath": "/public/images/hero/hero-carousel-ferrari.jpg",
+      "specs": {
+        "aspectRatio": "16:9",
+        "dpi": 72,
+        "colorSpace": "RGB",
+        "compression": "optimized for web"
+      }
+    }
+  ],
+  "fleetCardImages": [
+    {
+      "id": "fleet-mercedes-s-class",
+      "name": "Mercedes-Benz S-Class",
+      "category": "Luxury Sedan",
+      "resolution": "800x600",
+      "format": "jpg",
+      "targetSize": "150-250KB",
+      "background": "Clean white (90% brightness)",
+      "status": "⏳ PENDING GENERATION",
+      "priority": "HIGH",
+      "filePath": "/public/images/fleet/fleet-mercedes-s-class.jpg",
+      "specs": {
+        "aspectRatio": "4:3",
+        "dpi": 72,
+        "colorSpace": "RGB",
+        "compression": "optimized for web"
+      }
+    },
+    {
+      "id": "fleet-porsche-911",
+      "name": "Porsche 911 Carrera S",
+      "category": "Sports Car",
+      "resolution": "800x600",
+      "format": "jpg",
+      "targetSize": "150-250KB",
+      "background": "Clean white (90% brightness)",
+      "status": "⏳ PENDING GENERATION",
+      "priority": "HIGH",
+      "filePath": "/public/images/fleet/fleet-porsche-911.jpg",
+      "specs": {
+        "aspectRatio": "4:3",
+        "dpi": 72,
+        "colorSpace": "RGB",
+        "compression": "optimized for web"
+      }
+    },
+    {
+      "id": "fleet-lamborghini-hurcan",
+      "name": "Lamborghini Huracán",
+      "category": "Supercar",
+      "resolution": "800x600",
+      "format": "jpg",
+      "targetSize": "150-250KB",
+      "background": "Clean white (90% brightness)",
+      "status": "⏳ PENDING GENERATION",
+      "priority": "HIGH",
+      "filePath": "/public/images/fleet/fleet-lamborghini-hurcan.jpg",
+      "specs": {
+        "aspectRatio": "4:3",
+        "dpi": 72,
+        "colorSpace": "RGB",
+        "compression": "optimized for web"
+      }
+    },
+    {
+      "id": "fleet-ferrari-488",
+      "name": "Ferrari 488 Pista",
+      "category": "Exotic",
+      "resolution": "800x600",
+      "format": "jpg",
+      "targetSize": "150-250KB",
+      "background": "Clean white (90% brightness)",
+      "status": "⏳ PENDING GENERATION",
+      "priority": "HIGH",
+      "filePath": "/public/images/fleet/fleet-ferrari-488.jpg",
+      "specs": {
+        "aspectRatio": "4:3",
+        "dpi": 72,
+        "colorSpace": "RGB",
+        "compression": "optimized for web"
+      }
+    },
+    {
+      "id": "fleet-range-rover-sport",
+      "name": "Range Rover Sport",
+      "category": "Premium SUV",
+      "resolution": "800x600",
+      "format": "jpg",
+      "targetSize": "150-250KB",
+      "background": "Clean white (90% brightness)",
+      "status": "⏳ PENDING GENERATION",
+      "priority": "HIGH",
+      "filePath": "/public/images/fleet/fleet-range-rover-sport.jpg",
+      "specs": {
+        "aspectRatio": "4:3",
+        "dpi": 72,
+        "colorSpace": "RGB",
+        "compression": "optimized for web"
+      }
+    },
+    {
+      "id": "fleet-bmw-m440i",
+      "name": "BMW M440i xDrive Convertible",
+      "category": "Convertible",
+      "resolution": "800x600",
+      "format": "jpg",
+      "targetSize": "150-250KB",
+      "background": "Clean white (90% brightness)",
+      "status": "⏳ PENDING GENERATION",
+      "priority": "HIGH",
+      "filePath": "/public/images/fleet/fleet-bmw-m440i.jpg",
+      "specs": {
+        "aspectRatio": "4:3",
+        "dpi": 72,
+        "colorSpace": "RGB",
+        "compression": "optimized for web"
+      }
+    }
+  ],
+  "brandAssets": [
+    {
+      "id": "logo-horizontal",
+      "name": "M&M Logo Horizontal",
+      "format": "svg",
+      "status": "⏳ PENDING CREATION",
+      "priority": "CRITICAL",
+      "filePath": "/public/images/brand/logo-horizontal.svg",
+      "specs": {
+        "format": "SVG (scalable vector)",
+        "minWidth": "200px",
+        "minHeight": "100px"
+      }
+    },
+    {
+      "id": "logo-vertical",
+      "name": "M&M Logo Vertical",
+      "format": "svg",
+      "status": "⏳ PENDING CREATION",
+      "priority": "CRITICAL",
+      "filePath": "/public/images/brand/logo-vertical.svg",
+      "specs": {
+        "format": "SVG (scalable vector)",
+        "minWidth": "100px",
+        "minHeight": "200px"
+      }
+    },
+    {
+      "id": "favicon",
+      "name": "Favicon",
+      "resolution": "192x192",
+      "format": "png",
+      "status": "⏳ PENDING CREATION",
+      "priority": "CRITICAL",
+      "filePath": "/public/images/brand/favicon-192.png",
+      "specs": {
+        "format": "PNG (transparent background)",
+        "sizes": [
+          "32x32",
+          "64x64",
+          "192x192"
+        ]
+      }
+    }
+  ],
+  "generationOptions": {
+    "option1": {
+      "name": "AI Image Generation Service",
+      "tools": ["DALL-E 3", "Midjourney", "Stable Diffusion XL"],
+      "estimatedCost": "£50-150 for all images",
+      "estimatedTime": "2-4 hours",
+      "quality": "Professional commercial quality",
+      "workflow": "Copy prompts from VISUAL_ASSET_GENERATION_GUIDE.md → Generate → Download → Optimize → Place in /public/images/"
+    },
+    "option2": {
+      "name": "Professional Photographer/Designer",
+      "tools": ["Real vehicle photography", "Photoshop post-processing"],
+      "estimatedCost": "£500-1500 for all assets",
+      "estimatedTime": "3-7 days",
+      "quality": "Premium professional, real vehicles",
+      "workflow": "Brief designer with VISUAL_ASSET_GENERATION_GUIDE.md → Shoot photos → Post-process → Deliver files"
+    },
+    "option3": {
+      "name": "Stock Photo Service",
+      "tools": ["Shutterstock", "Getty Images", "iStock"],
+      "estimatedCost": "£100-300 license fees",
+      "estimatedTime": "4-8 hours (search + download + post-processing)",
+      "quality": "Varies by source, may require post-processing to match brand",
+      "workflow": "Search for professional automotive photos → Add turquoise accents in post → Place in /public/images/"
+    }
+  },
+  "summary": {
+    "totalHeroImages": 4,
+    "totalFleetCardImages": 6,
+    "totalBrandAssets": 3,
+    "totalAssetsNeeded": 13,
+    "completionPercentage": 0,
+    "nextStep": "Choose generation method (AI service, photographer, or stock photos), generate images using VISUAL_ASSET_GENERATION_GUIDE.md prompts, optimize for web, place in /public/images/ folder structure",
+    "blockerStatus": "⏸️ AWAITING IMAGE GENERATION - All code ready, components built, awaiting visual assets before Week 1 full launch"
+  }
+}
