@@ -14,6 +14,9 @@ const config: Config = {
         "baby-blue": "#89CFF0",
         "dark-gunmetal": "#1A1C1E",
         "light-gunmetal": "#3D4147",
+        "performance-grey": "#2C2F33",
+        "performance-turquoise": "#00CED1",
+        "performance-babyblue": "#89CFF0",
       },
       backgroundImage: {
         "glass-gradient":
