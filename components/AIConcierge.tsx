@@ -1,5 +1,8 @@
+'use client';
+
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, X, MessageSquare, Loader } from 'lucide-react';
+import { Send, X, MessageSquare, Loader, AlertCircle } from 'lucide-react';
+import { useBookingStore, useChatStore } from '@/lib/store';
 
 interface Message {
   id: string;
@@ -25,13 +28,17 @@ export const AIConcierge: React.FC<AIConciergeProps> = ({
       id: '1',
       role: 'assistant',
       content:
-        'Welcome to M&M Auto Performance! 🏎️ I\'m your AI Sky Concierge. How can I help you today? I can assist with bookings, fleet information, or answer any questions about our services.',
+        'Welcome to M&M Auto Performance! 🏎️ I\'m MIA, your Motor Intelligence Assistant. How can I help you today? I can assist with bookings, fleet information, or answer any questions about our services.',
       timestamp: new Date(),
     },
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Get Zustand store state
+  const { conversationId, setConversationId } = useBookingStore();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -44,48 +51,108 @@ export const AIConcierge: React.FC<AIConciergeProps> = ({
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
 
+    const userInputValue = inputValue;
+
     // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: inputValue,
+      content: userInputValue,
       timestamp: new Date(),
     };
 
     setMessages((prev) => [...prev, userMessage]);
     setInputValue('');
     setIsLoading(true);
+    setError(null);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const responses: { [key: string]: string } = {
-        book: 'I can help you book a vehicle! What dates are you looking for, and what type of car interests you?',
-        fleet:
-          'We have an exclusive fleet of 500+ premium vehicles including Lamborghinis, Ferraris, Porsches, and more. Which category interests you?',
-        price:
-          'Pricing varies by vehicle type. Luxury sedans start at £150/day, sports cars from £250/day, and exotic supercars from £500+. Would you like to explore options?',
-        documents:
-          'Our AI verification system processes documents instantly. You\'ll need a valid driving license, insurance, and ID verification.',
-        location:
-          'We operate across London and Hertfordshire with pickup points in Mayfair, St Albans, Watford, and Radlett. Where would you like to pick up?',
-        default:
-          'Great question! To provide the best assistance, could you tell me more about what you\'re looking for? Are you interested in booking a vehicle, learning about our fleet, or something else?',
-      };
+    try {
+      // Create conversation if not exists
+      let currentConversationId = conversationId;
+      if (!currentConversationId) {
+        currentConversationId = `conv-${Date.now()}`;
+        setConversationId(currentConversationId);
+      }
 
-      const key = Object.keys(responses).find((k) =>
-        inputValue.toLowerCase().includes(k)
-      );
+      // Call the real API endpoint for chat
+      const response = await fetch('/api/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': userId || 'test-user-001',
+        },
+        body: JSON.stringify({
+          message: userInputValue,
+          conversation_id: currentConversationId,
+        }),
+      });
 
+      if (!response.ok) {
+        throw new Error('Failed to get AI response');
+      }
+
+      // Handle streaming response
+      let fullResponse = '';
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      if (reader) {
+        let isReading = true;
+        while (isReading) {
+          const { done, value } = await reader.read();
+          if (done) {
+            isReading = false;
+            break;
+          }
+
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n');
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.slice(6));
+                if (data.type === 'chunk') {
+                  fullResponse += data.content;
+                } else if (data.type === 'complete') {
+                  fullResponse = data.fullResponse;
+                  break;
+                } else if (data.type === 'error') {
+                  throw new Error(data.error);
+                }
+              } catch (e) {
+                // Ignore parsing errors for streaming data
+              }
+            }
+          }
+        }
+      }
+
+      // Add AI response
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: responses[key || 'default'],
+        content: fullResponse || 'I apologize, but I couldn\'t generate a response. Please try again.',
         timestamp: new Date(),
       };
 
       setMessages((prev) => [...prev, aiResponse]);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to get response from AI';
+      setError(errorMessage);
+
+      // Add error message to chat
+      const errorResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: `I encountered an error: ${errorMessage}. Please try again.`,
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, errorResponse]);
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   if (!isOpen) {
@@ -108,8 +175,8 @@ export const AIConcierge: React.FC<AIConciergeProps> = ({
         <div className="flex items-center gap-3">
           <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse" />
           <div>
-            <h3 className="font-bold text-white">Sky Concierge</h3>
-            <p className="text-xs text-gray-400">Always available</p>
+            <h3 className="font-bold text-white">MIA Concierge</h3>
+            <p className="text-xs text-gray-400">Motor Intelligence Assistant</p>
           </div>
         </div>
         <button
@@ -119,6 +186,14 @@ export const AIConcierge: React.FC<AIConciergeProps> = ({
           <X size={20} className="text-gray-400" />
         </button>
       </div>
+
+      {/* Error Banner */}
+      {error && (
+        <div className="bg-red-900/30 border-b border-red-500/30 px-4 py-2 flex items-center gap-2">
+          <AlertCircle size={16} className="text-red-400 flex-shrink-0" />
+          <p className="text-sm text-red-200">{error}</p>
+        </div>
+      )}
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-performance-grey/50">
