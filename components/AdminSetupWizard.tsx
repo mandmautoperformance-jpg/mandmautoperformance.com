@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 
 interface ApiKeys {
@@ -72,7 +73,6 @@ const AdminSetupWizard: React.FC = () => {
   ];
 
   useEffect(() => {
-    // Load from localStorage on mount
     const savedKeys = localStorage.getItem('mia_api_keys');
     const savedActivation = localStorage.getItem('mia_activated');
     if (savedKeys) {
@@ -157,7 +157,7 @@ const AdminSetupWizard: React.FC = () => {
     try {
       // Save to localStorage (in production, this would be encrypted and stored server-side)
       localStorage.setItem('mia_api_keys', JSON.stringify(keys));
-      localStorage.setItem('mia_activated', 'true');
+      if (typeof window !== "undefined") { localStorage.setItem('mia_activated', 'true'); }
 
       // Create .env.local content (user will need to copy this to their local file)
       const envContent = `
@@ -260,12 +260,12 @@ NEXT_PUBLIC_DOMAIN=mandmautoperformance.com
             >
               Reset Configuration
             </button>
-            <a
+            <Link
               href="/admin"
               className="flex-1 px-4 py-2 bg-electric-turquoise text-gunmetal font-semibold rounded-lg hover:bg-electric-turquoise/90 transition text-center"
             >
               Go to Admin Dashboard
-            </a>
+            </Link>
           </div>
         </div>
       </motion.div>

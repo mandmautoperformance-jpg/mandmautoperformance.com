@@ -766,7 +766,7 @@ const TransactionRow: React.FC<{
       <p className="font-semibold text-white text-sm">{description}</p>
       <p className="text-xs text-slate-400">{type}</p>
     </div>
-    <p className={`font-bold text-${color}-400`}>{amount}</p>
+    <p className={`font-bold ${color === 'green' ? 'text-green-400' : 'text-red-400'}`}>{amount}</p>
   </div>
 );
 

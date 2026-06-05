@@ -39,7 +39,7 @@ export interface BookingContextState {
 
 export const useBookingStore = create<BookingContextState>((set) => ({
   conversationId: null,
-  userId: 'test-user-001',
+  userId: '',
   currentBooking: {},
   preferences: {},
   verificationStatus: {

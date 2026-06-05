@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY || '');
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export const MODEL_NAME = 'gemini-1.5-flash';
 
@@ -50,7 +50,7 @@ export async function streamChatCompletion(
   const history = messages
     .slice(0, -1)
     .map((msg) => ({
-      role: msg.role === 'user' ? 'user' : 'model',
+      role: (msg.role === 'user' ? 'user' : 'model') as 'user' | 'model',
       parts: [{ text: msg.content }],
     }));
 

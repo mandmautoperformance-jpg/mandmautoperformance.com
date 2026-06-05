@@ -246,7 +246,6 @@ const AdminAPIConfiguration: React.FC = () => {
   const [filterCategory, setFilterCategory] = useState<string>('all');
 
   useEffect(() => {
-    // Load from localStorage
     const savedApis = localStorage.getItem('mia_api_config');
     if (savedApis) {
       setApis(JSON.parse(savedApis));
@@ -265,9 +264,9 @@ const AdminAPIConfiguration: React.FC = () => {
       a.id === updatedApi.id
         ? {
             ...updatedApi,
-            status: Object.values(updatedApi.keys).every((k) => k)
+            status: (Object.values(updatedApi.keys).every((k) => k)
               ? 'active'
-              : 'inactive',
+              : 'inactive') as 'active' | 'inactive',
           }
         : a
     );

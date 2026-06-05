@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { Calendar, Clock, MapPin, Users, FileCheck } from 'lucide-react';
 
 interface BookingWidgetProps {
@@ -261,9 +262,9 @@ export const BookingWidget: React.FC<BookingWidgetProps> = ({
             <p className="text-gray-300 mb-6">
               Your vehicle is reserved. Check your email for booking details.
             </p>
-            <button className="px-8 py-3 bg-performance-turquoise text-performance-grey font-bold rounded-lg hover:bg-performance-turquoise/90 transition-all">
+            <Link href="/dashboard" className="inline-block px-8 py-3 bg-performance-turquoise text-performance-grey font-bold rounded-lg hover:bg-performance-turquoise/90 transition-all">
               View Booking Details
-            </button>
+            </Link>
           </div>
         )}
       </div>

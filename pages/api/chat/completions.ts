@@ -1,6 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getSupabaseServer } from '@/lib/supabase-server';
 import { streamChatCompletion } from '@/lib/gemini-client';
+import { rateLimit } from '@/lib/rate-limit';
+
+const chatRateLimit = rateLimit('chat', 30, 60_000); // 30 req/min per IP
 
 interface ChatRequest {
   message: string;
@@ -86,7 +89,7 @@ export default async function handler(
   res: NextApiResponse,
 ) {
   // Enable CORS and streaming
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin', process.env.NEXT_PUBLIC_SITE_URL || 'https://mandmautoperformance.com');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('Content-Type', 'text/event-stream');
@@ -101,7 +104,12 @@ export default async function handler(
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const userId = req.headers['x-user-id'] as string || 'test-user-001';
+  if (!chatRateLimit(req, res)) return;
+
+  const userId = req.headers['x-user-id'] as string;
+  if (!userId) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
   const { message, conversation_id: conversationId, booking_context } = req.body as ChatRequest;
 
   if (!message) {
@@ -109,12 +117,12 @@ export default async function handler(
   }
 
   try {
-    let currentConversationId = conversationId;
+    let currentConversationId: string = conversationId ?? '';
 
     // Create conversation if doesn't exist
     if (!currentConversationId) {
       const conversation = await createConversation(userId);
-      currentConversationId = conversation.id;
+      currentConversationId = conversation.id as string;
     }
 
     // Get conversation history
@@ -146,7 +154,7 @@ export default async function handler(
       });
 
       // Save assistant message
-      await saveMessage(currentConversationId, 'assistant', fullResponse);
+      await saveMessage(currentConversationId as string, 'assistant', fullResponse);
 
       // Send completion event
       res.write(
