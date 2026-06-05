@@ -55,3 +55,4 @@ yarn-error.log*
 .env.local
 .env.*.local
 tsconfig.tsbuildinfo
+.gstack/
