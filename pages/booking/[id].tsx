@@ -185,7 +185,7 @@ export default function VehicleBookingPage() {
                 </div>
 
                 {/* Booking Widget */}
-                <BookingWidget mode="compact" />
+                <BookingWidget mode="detailed" />
 
                 {/* Guarantees */}
                 <div className="bg-performance-grey border border-performance-turquoise/20 rounded-xl p-5 space-y-3">

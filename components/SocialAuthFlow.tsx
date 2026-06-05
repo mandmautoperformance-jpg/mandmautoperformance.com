@@ -14,6 +14,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Loader } from 'lucide-react';
 
@@ -231,9 +232,9 @@ const SocialAuthFlow: React.FC = () => {
           </div>
           <p>
             We never store your passwords. OAuth is encrypted and secure.{' '}
-            <a href="/privacy" className="text-turquoise hover:underline">
+            <Link href="/privacy" className="text-turquoise hover:underline">
               Privacy Policy
-            </a>
+            </Link>
           </p>
         </motion.div>
 
@@ -246,19 +247,19 @@ const SocialAuthFlow: React.FC = () => {
         >
           <p className="text-slate-400 text-sm mb-4">
             Already have an account?{' '}
-            <a href="/login" className="text-turquoise font-semibold hover:underline">
+            <Link href="/login" className="text-turquoise font-semibold hover:underline">
               Sign in here
-            </a>
+            </Link>
           </p>
           <p className="text-xs text-slate-500">
             By signing in, you agree to our{' '}
-            <a href="/terms" className="text-slate-400 hover:text-slate-300">
+            <Link href="/terms" className="text-slate-400 hover:text-slate-300">
               Terms of Service
-            </a>{' '}
+            </Link>{' '}
             and{' '}
-            <a href="/privacy" className="text-slate-400 hover:text-slate-300">
+            <Link href="/privacy" className="text-slate-400 hover:text-slate-300">
               Privacy Policy
-            </a>
+            </Link>
           </p>
         </motion.div>
       </motion.div>

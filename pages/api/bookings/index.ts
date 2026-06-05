@@ -141,7 +141,7 @@ export default async function handler(
         success: true,
         booking: {
           ...booking,
-          total_cost_gbp: (booking.total_cost_pence / 100).toFixed(2),
+          total_cost_gbp: ((booking.total_cost_pence ?? 0) / 100).toFixed(2),
         },
       });
     } catch (error) {

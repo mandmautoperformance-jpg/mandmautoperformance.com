@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import BookingWidget from '@/components/BookingWidget';
@@ -163,12 +164,12 @@ export default function HomePage() {
           </div>
 
           <div className="text-center mt-12">
-            <a
+            <Link
               href="/fleet"
               className="inline-block px-8 py-4 bg-performance-turquoise hover:bg-performance-turquoise/90 text-performance-grey font-bold rounded-lg transition-all transform hover:scale-105"
             >
               View Complete Fleet
-            </a>
+            </Link>
           </div>
         </div>
       </section>
@@ -247,12 +248,12 @@ export default function HomePage() {
             Join thousands of discerning drivers who trust M&M Auto Performance
             for their high-performance automotive needs.
           </p>
-          <a
+          <Link
             href="/booking"
             className="inline-block px-8 py-4 bg-performance-turquoise hover:bg-performance-turquoise/90 text-performance-grey font-bold rounded-lg transition-all transform hover:scale-105"
           >
             Book Your Experience Now
-          </a>
+          </Link>
         </div>
       </section>
 

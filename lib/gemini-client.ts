@@ -50,7 +50,7 @@ export async function streamChatCompletion(
   const history = messages
     .slice(0, -1)
     .map((msg) => ({
-      role: msg.role === 'user' ? 'user' : 'model',
+      role: (msg.role === 'user' ? 'user' : 'model') as 'user' | 'model',
       parts: [{ text: msg.content }],
     }));
 

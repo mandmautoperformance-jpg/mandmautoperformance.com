@@ -109,12 +109,12 @@ export default async function handler(
   }
 
   try {
-    let currentConversationId = conversationId;
+    let currentConversationId: string = conversationId ?? '';
 
     // Create conversation if doesn't exist
     if (!currentConversationId) {
       const conversation = await createConversation(userId);
-      currentConversationId = conversation.id;
+      currentConversationId = conversation.id as string;
     }
 
     // Get conversation history
@@ -146,7 +146,7 @@ export default async function handler(
       });
 
       // Save assistant message
-      await saveMessage(currentConversationId, 'assistant', fullResponse);
+      await saveMessage(currentConversationId as string, 'assistant', fullResponse);
 
       // Send completion event
       res.write(

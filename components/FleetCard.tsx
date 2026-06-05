@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { Heart, MapPin, Zap, Gauge } from 'lucide-react';
 import Link from 'next/link';
 
@@ -48,10 +49,12 @@ export const FleetCard: React.FC<FleetCardProps> = ({
     <div className="group relative h-full bg-performance-grey border border-performance-turquoise/20 rounded-xl overflow-hidden hover:border-performance-turquoise/50 transition-all duration-300 hover:shadow-2xl hover:shadow-performance-turquoise/20">
       {/* Image Container */}
       <div className="relative h-64 sm:h-72 overflow-hidden bg-gradient-to-br from-performance-grey to-performance-turquoise/10">
-        <img
+        <Image
           src={image}
           alt={model}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+          fill
+          className="object-cover group-hover:scale-110 transition-transform duration-500"
+          sizes="(max-width: 768px) 100vw, 50vw"
         />
 
         {/* Overlay */}

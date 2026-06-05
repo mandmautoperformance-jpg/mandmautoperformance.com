@@ -3,9 +3,7 @@ import Stripe from 'stripe';
 import { verifyAuth, AuthenticatedRequest } from '@/lib/auth-middleware';
 import { createClient } from '@supabase/supabase-js';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2024-11-20' as any,
-});
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 interface PaymentRequest extends AuthenticatedRequest {
   body: {
@@ -20,7 +18,6 @@ export default async function handler(req: PaymentRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Verify JWT auth
   const userId = await verifyAuth(req, res, true);
   if (!userId) return;
 
@@ -31,7 +28,6 @@ export default async function handler(req: PaymentRequest, res: NextApiResponse)
   }
 
   try {
-    // Verify booking exists and belongs to user
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -48,30 +44,28 @@ export default async function handler(req: PaymentRequest, res: NextApiResponse)
       return res.status(404).json({ error: 'Booking not found' });
     }
 
-    // Create Stripe payment intent
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: amount, // amount in pence
+      amount,
       currency: 'gbp',
-      metadata: {
-        bookingId,
-        userId,
-      },
+      metadata: { bookingId, userId },
     });
 
-    // Store payment intent ID in database
-    await supabase
+    const { error: updateError } = await supabase
       .from('bookings')
       .update({ stripe_payment_intent_id: paymentIntent.id })
       .eq('id', bookingId);
+
+    if (updateError) {
+      console.error('Failed to store payment intent id:', updateError.message);
+    }
 
     return res.status(200).json({
       clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id,
     });
-  } catch (error: any) {
-    console.error('Payment intent error:', error);
-    return res.status(500).json({
-      error: error.message || 'Failed to create payment intent',
-    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to create payment intent';
+    console.error('Payment intent error:', message);
+    return res.status(500).json({ error: message });
   }
 }

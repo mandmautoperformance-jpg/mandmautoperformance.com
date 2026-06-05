@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Navbar from '@/components/Navbar';
-import { TrendingUp, Users, Eye, Click, Calendar, Zap } from 'lucide-react';
+import { TrendingUp, Users, Eye, MousePointerClick, Calendar, Zap } from 'lucide-react';
 
 export default function AnalyticsPage() {
   const [stats, setStats] = useState<any>(null);
@@ -78,7 +78,7 @@ export default function AnalyticsPage() {
               {[
                 { icon: <Eye size={22} className="text-performance-turquoise" />, label: 'Page Views', value: stats.pageViews.toLocaleString() },
                 { icon: <Users size={22} className="text-performance-babyblue" />, label: 'Unique Visitors', value: stats.uniqueVisitors.toLocaleString() },
-                { icon: <Click size={22} className="text-green-400" />, label: 'Bookings', value: stats.bookings },
+                { icon: <MousePointerClick size={22} className="text-green-400" />, label: 'Bookings', value: stats.bookings },
                 { icon: <TrendingUp size={22} className="text-yellow-400" />, label: 'Conversion Rate', value: stats.conversionRate + '%' },
                 { icon: <Calendar size={22} className="text-purple-400" />, label: 'Avg Session', value: stats.avgSessionDuration },
                 { icon: <Zap size={22} className="text-red-400" />, label: 'Bounce Rate', value: stats.bounceRate + '%' },
