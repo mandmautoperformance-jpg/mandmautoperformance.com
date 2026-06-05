@@ -23,12 +23,6 @@ function generateSiteMap() {
         <priority>0.9</priority>
       </url>
       <url>
-        <loc>https://mandmautoperformance.com/admin</loc>
-        <lastmod>${new Date().toISOString()}</lastmod>
-        <changefreq>daily</changefreq>
-        <priority>0.5</priority>
-      </url>
-      <url>
         <loc>https://mandmautoperformance.com/privacy</loc>
         <lastmod>${new Date().toISOString()}</lastmod>
         <changefreq>monthly</changefreq>
@@ -39,6 +33,18 @@ function generateSiteMap() {
         <lastmod>${new Date().toISOString()}</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.5</priority>
+      </url>
+      <url>
+        <loc>https://mandmautoperformance.com/about</loc>
+        <lastmod>${new Date().toISOString()}</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.7</priority>
+      </url>
+      <url>
+        <loc>https://mandmautoperformance.com/contact</loc>
+        <lastmod>${new Date().toISOString()}</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.7</priority>
       </url>
     </urlset>`;
 }

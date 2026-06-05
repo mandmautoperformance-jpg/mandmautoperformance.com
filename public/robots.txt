@@ -1,5 +1,5 @@
 User-agent: *
 Allow: /
-Disallow: /admin
+Disallow: /admin-dashboard
 Disallow: /api
 Sitemap: https://mandmautoperformance.com/sitemap.xml

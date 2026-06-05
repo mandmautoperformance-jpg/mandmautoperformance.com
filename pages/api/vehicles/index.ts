@@ -64,7 +64,7 @@ export default async function handler(
   res: NextApiResponse,
 ) {
   // Enable CORS for chat requests
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin', process.env.NEXT_PUBLIC_SITE_URL || 'https://mandmautoperformance.com');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
 
   if (req.method === 'OPTIONS') {

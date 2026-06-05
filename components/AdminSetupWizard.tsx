@@ -72,9 +72,10 @@ const AdminSetupWizard: React.FC = () => {
   ];
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
     // Load from localStorage on mount
-    const savedKeys = localStorage.getItem('mia_api_keys');
-    const savedActivation = localStorage.getItem('mia_activated');
+    if (typeof window !== "undefined") { const savedKeys = localStorage.getItem('mia_api_keys');
+    if (typeof window !== "undefined") { const savedActivation = localStorage.getItem('mia_activated');
     if (savedKeys) {
       setKeys(JSON.parse(savedKeys));
     }
@@ -157,7 +158,7 @@ const AdminSetupWizard: React.FC = () => {
     try {
       // Save to localStorage (in production, this would be encrypted and stored server-side)
       localStorage.setItem('mia_api_keys', JSON.stringify(keys));
-      localStorage.setItem('mia_activated', 'true');
+      if (typeof window !== "undefined") { localStorage.setItem('mia_activated', 'true'); }
 
       // Create .env.local content (user will need to copy this to their local file)
       const envContent = `

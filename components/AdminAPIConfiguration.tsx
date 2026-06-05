@@ -246,8 +246,9 @@ const AdminAPIConfiguration: React.FC = () => {
   const [filterCategory, setFilterCategory] = useState<string>('all');
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
     // Load from localStorage
-    const savedApis = localStorage.getItem('mia_api_config');
+    if (typeof window !== "undefined") { const savedApis = localStorage.getItem('mia_api_config');
     if (savedApis) {
       setApis(JSON.parse(savedApis));
     }

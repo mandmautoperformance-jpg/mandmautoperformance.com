@@ -10,7 +10,7 @@ const SetupPage: React.FC = () => {
   useEffect(() => {
     // Check if already activated
     if (typeof window !== 'undefined') {
-      const activated = localStorage.getItem('mia_activated') === 'true';
+      if (typeof window !== "undefined") { const activated = localStorage.getItem('mia_activated') === 'true';
       setIsActivated(activated);
       setIsLoading(false);
 
