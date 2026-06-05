@@ -182,6 +182,22 @@ const MIAControlPanel: React.FC<{
   config: MIAConfig;
   setConfig: (config: MIAConfig) => void;
 }> = ({ config, setConfig }) => {
+  const [saved, setSaved] = React.useState(false);
+
+  const handleSave = async () => {
+    try {
+      await fetch('/api/admin/mia-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config),
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch {
+      // Config save is non-fatal in this context
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -305,8 +321,11 @@ const MIAControlPanel: React.FC<{
             </label>
           </div>
 
-          <button className="w-full mt-6 px-6 py-3 bg-gradient-to-r from-turquoise to-cyan text-slate-900 font-semibold rounded-lg hover:shadow-lg hover:shadow-turquoise/30 transition-all duration-300">
-            Save MIA Config
+          <button
+            onClick={handleSave}
+            className="w-full mt-6 px-6 py-3 bg-gradient-to-r from-turquoise to-cyan text-slate-900 font-semibold rounded-lg hover:shadow-lg hover:shadow-turquoise/30 transition-all duration-300"
+          >
+            {saved ? '✓ Saved' : 'Save MIA Config'}
           </button>
         </div>
       </div>

@@ -8,7 +8,6 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 interface PaymentRequest extends AuthenticatedRequest {
   body: {
     bookingId: string;
-    amount: number;
     currency?: string;
   };
 }
@@ -21,10 +20,10 @@ export default async function handler(req: PaymentRequest, res: NextApiResponse)
   const userId = await verifyAuth(req, res, true);
   if (!userId) return;
 
-  const { bookingId, amount } = req.body;
+  const { bookingId } = req.body;
 
-  if (!bookingId || !amount || amount < 100) {
-    return res.status(400).json({ error: 'Invalid booking or amount' });
+  if (!bookingId) {
+    return res.status(400).json({ error: 'bookingId is required' });
   }
 
   try {
@@ -35,13 +34,22 @@ export default async function handler(req: PaymentRequest, res: NextApiResponse)
 
     const { data: booking, error: bookingError } = await supabase
       .from('bookings')
-      .select('*')
+      .select('id, user_id, total_cost_pence, status')
       .eq('id', bookingId)
       .eq('user_id', userId)
       .single();
 
     if (bookingError || !booking) {
       return res.status(404).json({ error: 'Booking not found' });
+    }
+
+    if (booking.status === 'completed' || booking.status === 'cancelled') {
+      return res.status(400).json({ error: 'Booking is not payable' });
+    }
+
+    const amount: number = booking.total_cost_pence;
+    if (!amount || amount < 100) {
+      return res.status(400).json({ error: 'Invalid booking amount' });
     }
 
     const paymentIntent = await stripe.paymentIntents.create({

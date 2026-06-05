@@ -62,6 +62,7 @@ export default function DashboardPage() {
   return (
     <>
       <Head>
+        <meta name="robots" content="noindex, nofollow" />
         <title>Dashboard | M&M Auto Performance</title>
       </Head>
       <main className="min-h-screen bg-performance-grey text-white">

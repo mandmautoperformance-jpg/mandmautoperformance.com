@@ -13,9 +13,20 @@ export default function ContactPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus('loading');
-    // Simulate submission — wire to your email API (SendGrid etc) later
-    await new Promise((r) => setTimeout(r, 1200));
-    setStatus('success');
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, subject, message }),
+      });
+      if (res.ok) {
+        setStatus('success');
+      } else {
+        setStatus('error');
+      }
+    } catch {
+      setStatus('error');
+    }
   };
 
   return (
@@ -82,6 +93,12 @@ export default function ContactPage() {
                 <div className="bg-performance-grey border border-performance-turquoise/20 rounded-2xl p-8">
                   <h2 className="text-2xl font-bold text-white mb-6">Send us a message</h2>
 
+                  {status === 'error' && (
+                    <div className="mb-4 flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400">
+                      <AlertCircle size={18} />
+                      <span className="text-sm">Something went wrong. Please try again or email us directly.</span>
+                    </div>
+                  )}
                   {status === 'success' ? (
                     <div className="text-center py-12">
                       <CheckCircle size={48} className="text-green-400 mx-auto mb-4" />

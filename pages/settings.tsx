@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import Head from 'next/head';
 import Navbar from '@/components/Navbar';
-import { Bell, Lock, User, Eye, EyeOff } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
+import { Bell, Lock, User } from 'lucide-react';
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('account');
@@ -12,11 +13,49 @@ export default function SettingsPage() {
     newsletter: true,
   });
   const [changes, setChanges] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordStatus, setPasswordStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [passwordError, setPasswordError] = useState('');
+
+  const handlePasswordUpdate = async () => {
+    setPasswordError('');
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setPasswordError('All password fields are required');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError('New passwords do not match');
+      return;
+    }
+    if (newPassword.length < 8) {
+      setPasswordError('Password must be at least 8 characters');
+      return;
+    }
+    setPasswordStatus('loading');
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    );
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) {
+      setPasswordError(error.message);
+      setPasswordStatus('error');
+    } else {
+      setPasswordStatus('success');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setTimeout(() => setPasswordStatus('idle'), 3000);
+    }
+  };
 
   return (
     <>
       <Head>
         <title>Settings | M&M Auto Performance</title>
+        <meta name="robots" content="noindex, nofollow" />
       </Head>
       <main className="min-h-screen bg-performance-grey text-white">
         <Navbar isLoggedIn={true} userRole="user" currentPage="settings" />
@@ -130,15 +169,15 @@ export default function SettingsPage() {
                       <div className="space-y-4">
                         <div>
                           <label className="block text-sm font-semibold text-gray-300 mb-2">Current Password</label>
-                          <input type="password" placeholder="••••••••" className="w-full px-4 py-3 bg-performance-turquoise/10 border border-performance-turquoise/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-performance-turquoise" />
+                          <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="••••••••" className="w-full px-4 py-3 bg-performance-turquoise/10 border border-performance-turquoise/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-performance-turquoise" />
                         </div>
                         <div>
                           <label className="block text-sm font-semibold text-gray-300 mb-2">New Password</label>
-                          <input type="password" placeholder="••••••••" className="w-full px-4 py-3 bg-performance-turquoise/10 border border-performance-turquoise/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-performance-turquoise" />
+                          <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="••••••••" className="w-full px-4 py-3 bg-performance-turquoise/10 border border-performance-turquoise/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-performance-turquoise" />
                         </div>
                         <div>
                           <label className="block text-sm font-semibold text-gray-300 mb-2">Confirm Password</label>
-                          <input type="password" placeholder="••••••••" className="w-full px-4 py-3 bg-performance-turquoise/10 border border-performance-turquoise/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-performance-turquoise" />
+                          <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" className="w-full px-4 py-3 bg-performance-turquoise/10 border border-performance-turquoise/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-performance-turquoise" />
                         </div>
                       </div>
                     </div>
@@ -151,9 +190,19 @@ export default function SettingsPage() {
                       </button>
                     </div>
 
+                    {passwordError && (
+                      <p className="text-red-400 text-sm">{passwordError}</p>
+                    )}
+                    {passwordStatus === 'success' && (
+                      <p className="text-green-400 text-sm">Password updated successfully.</p>
+                    )}
                     <div className="pt-6 border-t border-performance-turquoise/20 flex gap-3">
-                      <button className="px-6 py-3 bg-performance-turquoise text-performance-grey rounded-lg font-bold hover:bg-performance-turquoise/90 transition-all">
-                        Update Password
+                      <button
+                        onClick={handlePasswordUpdate}
+                        disabled={passwordStatus === 'loading'}
+                        className="px-6 py-3 bg-performance-turquoise text-performance-grey rounded-lg font-bold hover:bg-performance-turquoise/90 transition-all disabled:opacity-60"
+                      >
+                        {passwordStatus === 'loading' ? 'Updating…' : 'Update Password'}
                       </button>
                     </div>
                   </div>

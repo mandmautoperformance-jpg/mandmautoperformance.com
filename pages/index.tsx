@@ -267,6 +267,7 @@ export default function HomePage() {
       {!conciergeOpen && (
         <button
           onClick={() => setConciergeOpen(true)}
+          aria-label="Open MIA AI Concierge chat"
           className="fixed bottom-6 right-6 z-40 w-16 h-16 bg-gradient-to-br from-performance-babyblue to-performance-turquoise rounded-full shadow-lg hover:shadow-2xl transition-all transform hover:scale-110 flex items-center justify-center text-performance-grey font-bold text-2xl hover:bg-gradient-to-br hover:from-performance-turquoise hover:to-performance-babyblue"
         >
           💬
@@ -281,37 +282,37 @@ export default function HomePage() {
               {
                 title: 'Company',
                 links: [
-                  'About Us',
-                  'Blog',
-                  'Careers',
-                  'Contact',
+                  { label: 'About Us', href: '/about' },
+                  { label: 'Contact', href: '/contact' },
+                  { label: 'Privacy Policy', href: '/privacy' },
+                  { label: 'Terms & Conditions', href: '/terms' },
                 ],
               },
               {
                 title: 'Fleet',
                 links: [
-                  'Luxury Vehicles',
-                  'Sports Cars',
-                  'Supercars',
-                  'Exotic',
+                  { label: 'All Vehicles', href: '/fleet' },
+                  { label: 'Book Now', href: '/booking' },
+                  { label: 'Cookie Policy', href: '/cookie-policy' },
+                  { label: 'Dashboard', href: '/dashboard' },
                 ],
               },
               {
                 title: 'Support',
                 links: [
-                  'Help Center',
-                  'FAQ',
-                  'Contact Us',
-                  'Terms & Conditions',
+                  { label: 'Contact Us', href: '/contact' },
+                  { label: 'Terms & Conditions', href: '/terms' },
+                  { label: 'Privacy Policy', href: '/privacy' },
+                  { label: 'Cookie Policy', href: '/cookie-policy' },
                 ],
               },
               {
-                title: 'Follow Us',
+                title: 'Account',
                 links: [
-                  'Instagram',
-                  'Twitter',
-                  'Facebook',
-                  'LinkedIn',
+                  { label: 'Sign In', href: '/login' },
+                  { label: 'Create Account', href: '/signup' },
+                  { label: 'Dashboard', href: '/dashboard' },
+                  { label: 'Settings', href: '/settings' },
                 ],
               },
             ].map((col, idx) => (
@@ -320,12 +321,12 @@ export default function HomePage() {
                 <ul className="space-y-2">
                   {col.links.map((link, linkIdx) => (
                     <li key={linkIdx}>
-                      <a
-                        href="#"
+                      <Link
+                        href={link.href}
                         className="text-gray-400 hover:text-performance-turquoise transition-colors"
                       >
-                        {link}
-                      </a>
+                        {link.label}
+                      </Link>
                     </li>
                   ))}
                 </ul>

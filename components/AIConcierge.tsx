@@ -79,7 +79,7 @@ export const AIConcierge: React.FC<AIConciergeProps> = ({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': userId || 'test-user-001',
+          'x-user-id': userId ?? '',
         },
         body: JSON.stringify({
           message: userInputValue,

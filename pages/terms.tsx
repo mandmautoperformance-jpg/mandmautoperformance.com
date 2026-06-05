@@ -1,6 +1,16 @@
+import Head from 'next/head';
+import Navbar from '@/components/Navbar';
+
 export default function Terms() {
   return (
-    <main className="min-h-screen bg-white px-4 py-12">
+    <>
+      <Head>
+        <title>Terms & Conditions | M&M Auto Performance</title>
+        <meta name="description" content="Terms and conditions for M&M Auto Performance vehicle hire services." />
+      </Head>
+      <main className="min-h-screen bg-performance-grey text-white">
+        <Navbar />
+    <div className="px-4 sm:px-6 lg:px-8 py-12">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-4xl font-bold mb-8">Terms and Conditions</h1>
         <p className="text-gray-600 mb-6">Last updated: April 2026</p>
@@ -122,7 +132,9 @@ export default function Terms() {
             </p>
           </div>
         </section>
-      </div>
-    </main>
+          </div>
+        </div>
+      </main>
+    </>
   );
 }

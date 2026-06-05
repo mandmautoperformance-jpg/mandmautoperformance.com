@@ -1,6 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getSupabaseServer } from '@/lib/supabase-server';
 import { streamChatCompletion } from '@/lib/gemini-client';
+import { rateLimit } from '@/lib/rate-limit';
+
+const chatRateLimit = rateLimit('chat', 30, 60_000); // 30 req/min per IP
 
 interface ChatRequest {
   message: string;
@@ -101,7 +104,12 @@ export default async function handler(
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const userId = req.headers['x-user-id'] as string || 'test-user-001';
+  if (!chatRateLimit(req, res)) return;
+
+  const userId = req.headers['x-user-id'] as string;
+  if (!userId) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
   const { message, conversation_id: conversationId, booking_context } = req.body as ChatRequest;
 
   if (!message) {

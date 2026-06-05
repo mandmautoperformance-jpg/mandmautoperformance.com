@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { Menu, X, User, LogOut } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
 
 interface NavbarProps {
   isLoggedIn?: boolean;
@@ -14,6 +16,16 @@ export const Navbar: React.FC<NavbarProps> = ({
   currentPage = 'home',
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    );
+    await supabase.auth.signOut();
+    router.push('/login');
+  };
 
   const navLinks = [
     { label: 'Fleet', href: '/fleet' },
@@ -59,10 +71,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="flex items-center gap-4">
             {isLoggedIn ? (
               <div className="hidden sm:flex items-center gap-3">
-                <button className="p-2 hover:bg-performance-turquoise/10 rounded-lg transition-colors">
+                <Link href="/dashboard" className="p-2 hover:bg-performance-turquoise/10 rounded-lg transition-colors" aria-label="View profile">
                   <User size={20} className="text-performance-turquoise" />
-                </button>
-                <button className="px-4 py-2 text-sm text-gray-300 hover:text-white flex items-center gap-2">
+                </Link>
+                <button onClick={handleLogout} className="px-4 py-2 text-sm text-gray-300 hover:text-white flex items-center gap-2">
                   <LogOut size={16} />
                   Logout
                 </button>
