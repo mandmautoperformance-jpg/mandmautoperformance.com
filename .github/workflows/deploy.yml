@@ -1,8 +1,9 @@
 name: Deploy to Server
 
+# NOTE: Production now deploys via Vercel (auto-deploys on push to master).
+# This legacy VPS deploy is kept for reference only and no longer runs on push,
+# so it won't report false failures. Run it manually if you ever need the VPS.
 on:
-  push:
-    branches: [master]
   workflow_dispatch:
 
 jobs:
