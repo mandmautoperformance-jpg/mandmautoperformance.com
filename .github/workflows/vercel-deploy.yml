@@ -1,0 +1,80 @@
+name: Deploy to Vercel
+
+on:
+  workflow_dispatch:
+    inputs:
+      vercel_token:
+        description: 'Vercel Auth Token (required)'
+        required: true
+        type: string
+      gemini_api_key:
+        description: 'GEMINI_API_KEY — needed for the MIA AI concierge'
+        required: false
+        type: string
+      supabase_url:
+        description: 'NEXT_PUBLIC_SUPABASE_URL (optional)'
+        required: false
+        type: string
+      supabase_anon_key:
+        description: 'NEXT_PUBLIC_SUPABASE_ANON_KEY (optional)'
+        required: false
+        type: string
+      supabase_service_role_key:
+        description: 'SUPABASE_SERVICE_ROLE_KEY (optional)'
+        required: false
+        type: string
+      site_url:
+        description: 'NEXT_PUBLIC_SITE_URL (optional)'
+        required: false
+        type: string
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Deploy to Vercel
+        env:
+          TOKEN: ${{ inputs.vercel_token }}
+          GEMINI_API_KEY: ${{ inputs.gemini_api_key }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ inputs.supabase_url }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ inputs.supabase_anon_key }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ inputs.supabase_service_role_key }}
+          NEXT_PUBLIC_SITE_URL: ${{ inputs.site_url }}
+        run: |
+          echo "::add-mask::$TOKEN"
+          [ -n "$GEMINI_API_KEY" ] && echo "::add-mask::$GEMINI_API_KEY"
+          [ -n "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ] && echo "::add-mask::$NEXT_PUBLIC_SUPABASE_ANON_KEY"
+          [ -n "$SUPABASE_SERVICE_ROLE_KEY" ] && echo "::add-mask::$SUPABASE_SERVICE_ROLE_KEY"
+
+          npm install -g vercel@latest
+
+          # Runtime env (server-side) passed for this production deployment.
+          ENV_ARGS=()
+          add_env() {
+            local name="$1"; local val="$2"
+            if [ -n "$val" ]; then
+              ENV_ARGS+=("--env" "$name=$val" "--build-env" "$name=$val")
+            fi
+          }
+          add_env GEMINI_API_KEY "$GEMINI_API_KEY"
+          add_env NEXT_PUBLIC_SUPABASE_URL "$NEXT_PUBLIC_SUPABASE_URL"
+          add_env NEXT_PUBLIC_SUPABASE_ANON_KEY "$NEXT_PUBLIC_SUPABASE_ANON_KEY"
+          add_env SUPABASE_SERVICE_ROLE_KEY "$SUPABASE_SERVICE_ROLE_KEY"
+          add_env NEXT_PUBLIC_SITE_URL "$NEXT_PUBLIC_SITE_URL"
+
+          echo "Deploying to production..."
+          OUTPUT=$(vercel deploy --prod --yes --token="$TOKEN" "${ENV_ARGS[@]}" 2>&1)
+          echo "$OUTPUT"
+          URL=$(echo "$OUTPUT" | grep -oE "https://[a-zA-Z0-9._-]+\.vercel\.app" | tail -1)
+          echo ""
+          echo "========================================="
+          echo "LIVE URL: ${URL:-see output above}"
+          echo "Aliased:  https://mandmautoperformance.com"
+          echo "========================================="

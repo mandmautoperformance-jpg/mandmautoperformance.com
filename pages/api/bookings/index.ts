@@ -1,5 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getSupabaseServer } from '@/lib/supabase-server';
+import { verifyAuth } from '@/lib/auth-middleware';
+import { rateLimit } from '@/lib/rate-limit';
+
+const bookingRateLimit = rateLimit('booking', 10, 60_000); // 10 bookings/min per IP
 
 interface CreateBookingRequest {
   vehicle_id: string;
@@ -122,7 +126,7 @@ export default async function handler(
   res: NextApiResponse,
 ) {
   // Enable CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin', process.env.NEXT_PUBLIC_SITE_URL || 'https://mandmautoperformance.com');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
@@ -130,8 +134,10 @@ export default async function handler(
     return res.status(200).end();
   }
 
-  // For now, use a test user ID. In production, extract from JWT
-  const userId = req.headers['x-user-id'] as string || 'test-user-001';
+  if (req.method === 'POST' && !bookingRateLimit(req, res)) return;
+
+  const userId = await verifyAuth(req as any, res, true);
+  if (!userId) return;
 
   if (req.method === 'POST') {
     try {

@@ -26,7 +26,7 @@ export default function Document() {
               "name": "M&M Auto Performance",
               "description": "Premium AI-powered luxury and supercar hire in Hertfordshire and London",
               "url": "https://mandmautoperformance.com",
-              "telephone": "+44-XXX-XXX-XXXX",
+              "telephone": "+44-1727-000000",
               "address": {
                 "@type": "PostalAddress",
                 "addressLocality": "St Albans",

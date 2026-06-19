@@ -46,9 +46,6 @@ async function getAvailableVehicles(filters: VehicleFilter): Promise<Vehicle[]> 
     query = query.lte('daily_rate_pence', filters.maxPrice);
   }
 
-  // TODO: Check booking dates for availability when filters.pickupDate and filters.returnDate exist
-  // For now, just check is_available flag
-
   const { data, error } = await query;
 
   if (error) {
@@ -56,7 +53,24 @@ async function getAvailableVehicles(filters: VehicleFilter): Promise<Vehicle[]> 
     throw new Error(`Failed to fetch vehicles: ${error.message}`);
   }
 
-  return data as Vehicle[];
+  let vehicles = data as Vehicle[];
+
+  // Filter out vehicles with overlapping confirmed/active bookings
+  if (filters.pickupDate && filters.returnDate) {
+    const { data: bookedVehicleIds } = await supabase
+      .from('bookings')
+      .select('vehicle_id')
+      .in('status', ['confirmed', 'active', 'pending_verification'])
+      .lt('pickup_date', filters.returnDate)
+      .gt('return_date', filters.pickupDate);
+
+    if (bookedVehicleIds && bookedVehicleIds.length > 0) {
+      const unavailableIds = new Set(bookedVehicleIds.map((b: { vehicle_id: string }) => b.vehicle_id));
+      vehicles = vehicles.filter((v) => !unavailableIds.has(v.id));
+    }
+  }
+
+  return vehicles;
 }
 
 export default async function handler(
@@ -64,7 +78,7 @@ export default async function handler(
   res: NextApiResponse,
 ) {
   // Enable CORS for chat requests
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin', process.env.NEXT_PUBLIC_SITE_URL || 'https://mandmautoperformance.com');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
 
   if (req.method === 'OPTIONS') {

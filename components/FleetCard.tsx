@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Heart, MapPin, Zap, Gauge } from 'lucide-react';
 import Link from 'next/link';
+import VehicleImage from '@/components/VehicleImage';
 
 interface FleetCardProps {
   vehicleId: string;
@@ -27,7 +28,6 @@ export const FleetCard: React.FC<FleetCardProps> = ({
   vehicleId,
   model,
   category,
-  image,
   specs,
   pricing,
   availability,
@@ -48,11 +48,7 @@ export const FleetCard: React.FC<FleetCardProps> = ({
     <div className="group relative h-full bg-performance-grey border border-performance-turquoise/20 rounded-xl overflow-hidden hover:border-performance-turquoise/50 transition-all duration-300 hover:shadow-2xl hover:shadow-performance-turquoise/20">
       {/* Image Container */}
       <div className="relative h-64 sm:h-72 overflow-hidden bg-gradient-to-br from-performance-grey to-performance-turquoise/10">
-        <img
-          src={image}
-          alt={model}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-        />
+        <VehicleImage vehicleId={vehicleId} model={model} category={category} />
 
         {/* Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-performance-grey via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />

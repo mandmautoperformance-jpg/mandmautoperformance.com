@@ -1,43 +1,64 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// Server-side only: read the non-public key first so the secret is never bundled
-// into client JS. Falls back to the legacy NEXT_PUBLIC_ name for compatibility.
+// Prefer the server-only key; fall back to the legacy NEXT_PUBLIC_ name so
+// existing deployments keep working without an env-var rename.
 const genAI = new GoogleGenerativeAI(
   process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || '',
 );
 
-export const MODEL_NAME = 'gemini-1.5-flash';
+// Current, generally-available models. `gemini-1.5-flash` was shut down on
+// 2026-06-01 and now 404s, so we default to 2.5-flash and fall back to the
+// lite variant if the primary is ever unavailable. Override with GEMINI_MODEL.
+export const MODEL_NAME = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const FALLBACK_MODELS = [MODEL_NAME, 'gemini-2.5-flash', 'gemini-2.5-flash-lite'].filter(
+  (m, i, arr) => arr.indexOf(m) === i,
+);
 
-// System prompt for MIA Autonomous Closer
-const MIA_SYSTEM_PROMPT = `You are MIA (Motor Intelligence Assistant), an autonomous sales AI for M&M Auto Performance,
-a premium vehicle rental platform serving London and Hertfordshire with ultra-luxury cars (Porsche, Mercedes, Lamborghini, Tesla, Rolls-Royce).
+function isModelUnavailable(error: unknown): boolean {
+  const msg = (error instanceof Error ? error.message : String(error)).toLowerCase();
+  return msg.includes('not found') || msg.includes('404') || msg.includes('not supported');
+}
 
-Your role: Help customers book the perfect vehicle through natural conversation. Be friendly, professional, and persuasive.
+// System prompt for MIA Autonomous Closer. Fleet kept in sync with pages/fleet.tsx.
+const MIA_SYSTEM_PROMPT = `You are MIA (Motor Intelligence Assistant), the autonomous concierge for M&M Auto Performance,
+a premium vehicle hire company serving London and Hertfordshire with luxury, sports, supercar and exotic vehicles.
+
+Your role: help customers find and book the perfect vehicle through natural conversation. Be warm, professional, confident and genuinely helpful.
 
 Core responsibilities:
-1. Understand customer needs through questions (budget, use case, dates, preferences)
-2. Recommend the best vehicle from our fleet based on their needs
-3. Handle objections about price, insurance, or concerns
-4. Guide them toward booking confirmation
-5. Provide hyper-local intelligence (ULEZ, parking, weather)
+1. Understand the customer's needs (occasion, budget, dates, pickup area, passengers, preferences).
+2. Recommend the best vehicle from our fleet for their needs, with the price.
+3. Handle questions about price, insurance, locations and process.
+4. Guide them toward a booking.
+5. Offer helpful local knowledge (ULEZ, parking, driving routes) when relevant.
 
-Important guidelines:
-- All prices are in GBP (pounds sterling), show as £XXX/day
-- Fleet: Porsche 911 Turbo (£500/day), Mercedes-AMG GT 63S (£450/day), Aston Martin DB12 (£250/day), BMW M440i (£150/day),
-  Lamborghini Revuelto (£550/day), Range Rover Sport (£120/day), Tesla Model S Plaid (£180/day), Rolls-Royce Ghost (£350/day)
-- Always mention M&M Credits loyalty program (1% of rental cost)
-- Be enthusiastic about vehicles but honest about trade-offs
-- When user mentions dates/needs, suggest specific vehicles with prices
-- If price is a concern, offer alternatives or multi-day discounts
-- Always ask before accessing personal data; respect privacy
-- Keep responses concise (2-3 sentences max until booking confirmed, then more detail)
+Our fleet (all prices GBP):
+- Lamborghini Huracán — supercar — £1,500/day (£200/hr) — Mayfair, London
+- Ferrari F8 Tributo — supercar — £1,800/day (£250/hr) — St Albans, Herts
+- Porsche 911 Turbo S — sports — £800/day (£120/hr) — Watford, Herts
+- Bentley Continental GT — luxury — £600/day (£100/hr) — Mayfair, London
+- Rolls-Royce Ghost — luxury — £1,200/day (£180/hr) — Mayfair, London
+- Aston Martin DB12 — sports — £950/day (£140/hr) — St Albans, Herts
+- Lamborghini Revuelto — exotic — £2,200/day (£350/hr) — Mayfair, London
+- Tesla Model S Plaid — luxury — £350/day (£60/hr) — Watford, Herts
+- Range Rover Sport — luxury — £400/day (£70/hr) — Hemel Hempstead
+- Mercedes-AMG GT 63S — sports — £700/day (£110/hr) — St Albans, Herts
 
-When user is ready to book:
-- Confirm: vehicle, dates, pickup location, passengers, total price
-- State next step: document verification (license, insurance), then payment
-- Be optimistic: "You're going to love this car!"
+Guidelines:
+- Show prices as £X,XXX/day. Mention hourly hire when useful.
+- Mention the M&M Credits loyalty programme (earn 1% of the rental value back) where natural.
+- Be enthusiastic but honest about trade-offs; suggest alternatives if budget is tight.
+- When the customer gives dates/needs, recommend specific vehicles with prices.
+- Never invent vehicles, prices or policies that aren't listed above. If you don't know, say so and offer to connect them with the team via the Contact page.
+- Respect privacy; don't ask for sensitive documents in chat.
+- Keep replies concise (2–3 sentences) until the customer is ready to book, then give clear next steps.
 
-Tone: Conversational, helpful, slightly witty, confident, never pushy`;
+When the customer is ready to book:
+- Confirm vehicle, dates, pickup area, passengers and the total.
+- Explain the next step: complete the booking form, then document verification (licence & insurance) and payment.
+- Be encouraging: "You're going to love this one."
+
+Tone: conversational, helpful, a little witty, confident, never pushy.`;
 
 interface ConversationMessage {
   role: 'user' | 'assistant';
@@ -48,46 +69,52 @@ export async function streamChatCompletion(
   messages: ConversationMessage[],
   onChunk?: (chunk: string) => void,
 ): Promise<string> {
-  const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+  if (!process.env.GEMINI_API_KEY && !process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
+    throw new Error(
+      'MIA is not configured: missing GEMINI_API_KEY. Add it in the Vercel project settings.',
+    );
+  }
 
-  // Build request with system instruction and history
-  const history = messages
-    .slice(0, -1)
+  // Map the conversation into Gemini's user/model turns. Drop any leading
+  // assistant turn (e.g. the greeting) since Gemini history must start with a user turn.
+  const turns = messages
     .map((msg) => ({
-      role: msg.role === 'user' ? 'user' : 'model',
+      role: (msg.role === 'user' ? 'user' : 'model') as 'user' | 'model',
       parts: [{ text: msg.content }],
     }));
+  while (turns.length && turns[0].role === 'model') turns.shift();
 
-  const userMessage = messages[messages.length - 1];
+  let lastError: unknown;
 
-  try {
-    let fullResponse = '';
-
-    const stream = await model.generateContentStream({
-      contents: [
-        {
-          role: 'user' as const,
-          parts: [{ text: MIA_SYSTEM_PROMPT }],
-        },
-        ...history.map((h) => ({ ...h, role: h.role as 'user' | 'model' })),
-        {
-          role: 'user' as const,
-          parts: [{ text: userMessage.content }],
-        },
-      ],
+  for (const modelName of FALLBACK_MODELS) {
+    const model = genAI.getGenerativeModel({
+      model: modelName,
+      systemInstruction: MIA_SYSTEM_PROMPT,
     });
 
-    for await (const chunk of stream.stream) {
-      const text = chunk.text();
-      fullResponse += text;
-      onChunk?.(text);
-    }
+    try {
+      let fullResponse = '';
+      const stream = await model.generateContentStream({ contents: turns });
 
-    return fullResponse;
-  } catch (error) {
-    console.error('Gemini API error:', error);
-    throw new Error('Failed to get AI response');
+      for await (const chunk of stream.stream) {
+        const text = chunk.text();
+        if (text) {
+          fullResponse += text;
+          onChunk?.(text);
+        }
+      }
+
+      return fullResponse;
+    } catch (error) {
+      lastError = error;
+      console.error(`Gemini API error (model ${modelName}):`, error);
+      // Only try the next model if this one is unavailable; otherwise stop.
+      if (!isModelUnavailable(error)) break;
+    }
   }
+
+  const detail = lastError instanceof Error ? lastError.message : 'unknown error';
+  throw new Error(`Failed to get AI response: ${detail}`);
 }
 
 export async function getTokenCount(text: string): Promise<number> {

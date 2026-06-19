@@ -1,0 +1,56 @@
+name: Deploy to Server
+
+# NOTE: Production now deploys via Vercel (auto-deploys on push to master).
+# This legacy VPS deploy is kept for reference only and no longer runs on push,
+# so it won't report false failures. Run it manually if you ever need the VPS.
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to server via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 161.97.76.221
+          username: root
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          timeout: 300s
+          script: |
+            set -e
+
+            APP_DIR=/var/www/mandmautoperformance
+            REPO=https://github.com/mandmautoperformance-jpg/mandmautoperformance.com.git
+
+            echo "=== Checking app directory ==="
+            if [ ! -d "$APP_DIR/.git" ]; then
+              echo "First deploy: cloning repo..."
+              mkdir -p /var/www
+              git clone "$REPO" "$APP_DIR"
+            fi
+
+            cd "$APP_DIR"
+
+            echo "=== Pulling latest code ==="
+            git fetch origin master
+            git reset --hard origin/master
+
+            echo "=== Checking .env.local ==="
+            if [ ! -f .env.local ]; then
+              echo "WARNING: .env.local not found. Create it at $APP_DIR/.env.local before the app will work."
+              echo "See .env.example for required variables."
+            fi
+
+            echo "=== Installing dependencies ==="
+            npm ci --omit=dev
+
+            echo "=== Building ==="
+            npm run build
+
+            echo "=== Restarting PM2 ==="
+            pm2 restart mandm-performance || pm2 start npm --name "mandm-performance" -- start -- -p 3000
+            pm2 save
+
+            echo "=== Done ==="
+            pm2 status mandm-performance

@@ -8,16 +8,11 @@ const SetupPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    // Check if already activated
-    if (typeof window !== 'undefined') {
-      const activated = localStorage.getItem('mia_activated') === 'true';
-      setIsActivated(activated);
-      setIsLoading(false);
-
-      // If activated, redirect to admin dashboard
-      if (activated) {
-        router.push('/admin');
-      }
+    const activated = localStorage.getItem('mia_activated') === 'true';
+    setIsActivated(activated);
+    setIsLoading(false);
+    if (activated) {
+      router.push('/admin');
     }
   }, [router]);
 
