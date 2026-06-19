@@ -18,21 +18,38 @@ jobs:
           timeout: 300s
           script: |
             set -e
-            cd /var/www/mandmautoperformance
 
-            echo "Pulling latest code..."
+            APP_DIR=/var/www/mandmautoperformance
+            REPO=https://github.com/mandmautoperformance-jpg/mandmautoperformance.com.git
+
+            echo "=== Checking app directory ==="
+            if [ ! -d "$APP_DIR/.git" ]; then
+              echo "First deploy: cloning repo..."
+              mkdir -p /var/www
+              git clone "$REPO" "$APP_DIR"
+            fi
+
+            cd "$APP_DIR"
+
+            echo "=== Pulling latest code ==="
             git fetch origin master
             git reset --hard origin/master
 
-            echo "Installing dependencies..."
-            npm install --legacy-peer-deps
+            echo "=== Checking .env.local ==="
+            if [ ! -f .env.local ]; then
+              echo "WARNING: .env.local not found. Create it at $APP_DIR/.env.local before the app will work."
+              echo "See .env.example for required variables."
+            fi
 
-            echo "Building..."
+            echo "=== Installing dependencies ==="
+            npm ci --omit=dev
+
+            echo "=== Building ==="
             npm run build
 
-            echo "Restarting PM2..."
-            pm2 restart mandm-performance || pm2 start npm --name "mandm-performance" -- start
+            echo "=== Restarting PM2 ==="
+            pm2 restart mandm-performance || pm2 start npm --name "mandm-performance" -- start -- -p 3000
             pm2 save
 
-            echo "Done."
+            echo "=== Done ==="
             pm2 status mandm-performance
