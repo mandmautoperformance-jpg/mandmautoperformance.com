@@ -117,16 +117,18 @@ export default async function handler(
       currentConversationId = conversation.id;
     }
 
+    const safeConversationId = currentConversationId as string;
+
     // Get conversation history
-    const history = await getConversationHistory(currentConversationId);
+    const history = await getConversationHistory(safeConversationId);
 
     // Save user message
-    await saveMessage(currentConversationId, 'user', message);
+    await saveMessage(safeConversationId, 'user', message);
 
     // Build messages for Gemini
     const messages = [
       ...history.map((msg: any) => ({
-        role: msg.role,
+        role: msg.role as 'user' | 'assistant',
         content: msg.content,
       })),
       {
@@ -146,13 +148,13 @@ export default async function handler(
       });
 
       // Save assistant message
-      await saveMessage(currentConversationId, 'assistant', fullResponse);
+      await saveMessage(safeConversationId, 'assistant', fullResponse);
 
       // Send completion event
       res.write(
         `data: ${JSON.stringify({
           type: 'complete',
-          conversationId: currentConversationId,
+          conversationId: safeConversationId,
           fullResponse,
         })}\n\n`,
       );

@@ -291,7 +291,7 @@ const MIAControlPanel: React.FC<{
                 onChange={(e) => setConfig({ ...config, autoApproveDocuments: e.target.checked })}
                 className="w-4 h-4"
               />
-              <span className="text-slate-300">Auto-approve documents (OCR confidence > 95%)</span>
+              <span className="text-slate-300">Auto-approve documents (OCR confidence &gt; 95%)</span>
             </label>
 
             <label className="flex items-center gap-3 p-3 bg-slate-700/30 rounded-lg cursor-pointer hover:bg-slate-700/50 transition-all">

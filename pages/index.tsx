@@ -29,6 +29,14 @@ interface Vehicle {
   rating?: number;
 }
 
+const footerLinkHrefs: Record<string, string> = {
+  'Terms & Conditions': '/terms',
+  'Privacy': '/privacy',
+  'Cookie Policy': '/cookie-policy',
+  'Fleet': '#fleet',
+  'Book Now': '#booking',
+};
+
 export default function HomePage() {
   const [conciergeOpen, setConciergeOpen] = useState(false);
 
@@ -130,7 +138,7 @@ export default function HomePage() {
       <Hero />
 
       {/* Booking Widget Section */}
-      <section className="px-4 sm:px-6 lg:px-8 py-20 bg-performance-grey/50">
+      <section id="booking" className="px-4 sm:px-6 lg:px-8 py-20 bg-performance-grey/50">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-white mb-4">
@@ -146,7 +154,7 @@ export default function HomePage() {
       </section>
 
       {/* Featured Fleet */}
-      <section className="px-4 sm:px-6 lg:px-8 py-20">
+      <section id="fleet" className="px-4 sm:px-6 lg:px-8 py-20">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-white mb-4">
@@ -166,7 +174,7 @@ export default function HomePage() {
 
           <div className="text-center mt-12">
             <a
-              href="/fleet"
+              href="#fleet"
               className="inline-block px-8 py-4 bg-performance-turquoise hover:bg-performance-turquoise/90 text-performance-grey font-bold rounded-lg transition-all transform hover:scale-105"
             >
               View Complete Fleet
@@ -250,7 +258,7 @@ export default function HomePage() {
             for their high-performance automotive needs.
           </p>
           <a
-            href="/booking"
+            href="#booking"
             className="inline-block px-8 py-4 bg-performance-turquoise hover:bg-performance-turquoise/90 text-performance-grey font-bold rounded-lg transition-all transform hover:scale-105"
           >
             Book Your Experience Now
@@ -322,7 +330,7 @@ export default function HomePage() {
                   {col.links.map((link, linkIdx) => (
                     <li key={linkIdx}>
                       <a
-                        href="#"
+                        href={footerLinkHrefs[link] || '#'}
                         className="text-gray-400 hover:text-performance-turquoise transition-colors"
                       >
                         {link}

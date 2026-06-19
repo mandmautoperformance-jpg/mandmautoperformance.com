@@ -1,6 +1,10 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY || '');
+// Server-side only: read the non-public key first so the secret is never bundled
+// into client JS. Falls back to the legacy NEXT_PUBLIC_ name for compatibility.
+const genAI = new GoogleGenerativeAI(
+  process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || '',
+);
 
 export const MODEL_NAME = 'gemini-1.5-flash';
 
@@ -62,12 +66,12 @@ export async function streamChatCompletion(
     const stream = await model.generateContentStream({
       contents: [
         {
-          role: 'user',
+          role: 'user' as const,
           parts: [{ text: MIA_SYSTEM_PROMPT }],
         },
-        ...history,
+        ...history.map((h) => ({ ...h, role: h.role as 'user' | 'model' })),
         {
-          role: 'user',
+          role: 'user' as const,
           parts: [{ text: userMessage.content }],
         },
       ],
