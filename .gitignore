@@ -12,6 +12,7 @@ coverage/
 out/
 build/
 dist/
+tsconfig.tsbuildinfo
 
 # Production
 .env.production.local
