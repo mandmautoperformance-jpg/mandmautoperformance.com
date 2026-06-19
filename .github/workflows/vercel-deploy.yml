@@ -1,0 +1,39 @@
+name: Deploy to Vercel
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      vercel_token:
+        description: 'Vercel Auth Token'
+        required: false
+        type: string
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Deploy to Vercel
+        run: |
+          TOKEN="${{ inputs.vercel_token || secrets.VERCEL_TOKEN }}"
+          echo "::add-mask::$TOKEN"
+          echo "Deploying to Vercel..."
+          vercel deploy --yes --prod --token="$TOKEN" 2>&1 | tee deploy-output.txt
+          echo "Deployment URL:"
+          grep -E "https://.*\.vercel\.app|https://.*\.vercel\.dev|Production:" deploy-output.txt || cat deploy-output.txt
+
+      - name: Show deployment URL
+        run: |
+          echo "=== LIVE SITE URL ==="
+          grep -oE "https://[a-z0-9._-]+\.vercel\.app" deploy-output.txt | tail -1 || echo "Check above output for URL"
