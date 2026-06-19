@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, X, MessageSquare, Loader, AlertCircle } from 'lucide-react';
+import { Send, X, Loader, AlertCircle } from 'lucide-react';
 import { useBookingStore, useChatStore } from '@/lib/store';
 
 interface Message {
@@ -165,17 +165,10 @@ export const AIConcierge: React.FC<AIConciergeProps> = ({
     }
   };
 
+  // When closed, render nothing. The parent page owns the floating launcher
+  // button; rendering a second one here would overlap it and swallow clicks.
   if (!isOpen) {
-    return (
-      <button
-        onClick={() => {
-          // Toggle would be handled by parent
-        }}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-gradient-to-br from-performance-babyblue to-performance-turquoise rounded-full shadow-lg hover:shadow-2xl transition-all transform hover:scale-110 flex items-center justify-center text-performance-grey"
-      >
-        <MessageSquare size={24} />
-      </button>
-    );
+    return null;
   }
 
   return (
