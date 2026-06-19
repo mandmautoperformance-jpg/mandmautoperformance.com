@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyAuth, AuthenticatedRequest } from '@/lib/auth-middleware';
 import { createClient } from '@supabase/supabase-js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { MODEL_NAME } from '@/lib/gemini-client';
 
 const genAI = new GoogleGenerativeAI(
   process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || '',
@@ -75,7 +76,7 @@ export default async function handler(req: DocumentUploadRequest, res: NextApiRe
     // OCR via Gemini Vision (replaces Google Cloud Vision dependency)
     let fullText = '';
     try {
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = genAI.getGenerativeModel({ model: MODEL_NAME });
       const result = await model.generateContent([
         'Extract all text visible in this document image. Return only the raw text.',
         { inlineData: { data: fileBase64, mimeType } },

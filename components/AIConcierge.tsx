@@ -61,10 +61,28 @@ export const AIConcierge: React.FC<AIConciergeProps> = ({
       timestamp: new Date(),
     };
 
+    // Snapshot history (excluding the just-added user message) for AI context.
+    const historyForApi = messages
+      .filter((m) => !m.isTyping)
+      .map((m) => ({ role: m.role, content: m.content }));
+
     setMessages((prev) => [...prev, userMessage]);
     setInputValue('');
     setIsLoading(true);
     setError(null);
+
+    // Add a placeholder assistant message we stream into live.
+    const assistantId = (Date.now() + 1).toString();
+    setMessages((prev) => [
+      ...prev,
+      { id: assistantId, role: 'assistant', content: '', timestamp: new Date(), isTyping: true },
+    ]);
+
+    const updateAssistant = (content: string, isTyping: boolean) => {
+      setMessages((prev) =>
+        prev.map((m) => (m.id === assistantId ? { ...m, content, isTyping } : m)),
+      );
+    };
 
     try {
       // Create conversation if not exists
@@ -84,72 +102,64 @@ export const AIConcierge: React.FC<AIConciergeProps> = ({
         body: JSON.stringify({
           message: userInputValue,
           conversation_id: currentConversationId,
+          history: historyForApi,
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to get AI response');
+        throw new Error('MIA is unavailable right now. Please try again in a moment.');
       }
 
-      // Handle streaming response
+      // Handle streaming response with a buffer (SSE frames can split across chunks).
       let fullResponse = '';
+      let streamError: string | null = null;
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
+      let buffer = '';
 
       if (reader) {
         let isReading = true;
         while (isReading) {
           const { done, value } = await reader.read();
-          if (done) {
-            isReading = false;
-            break;
-          }
+          if (done) break;
 
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split('\n');
+          buffer += decoder.decode(value, { stream: true });
+          const frames = buffer.split('\n\n');
+          buffer = frames.pop() ?? ''; // keep the last partial frame
 
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              try {
-                const data = JSON.parse(line.slice(6));
-                if (data.type === 'chunk') {
-                  fullResponse += data.content;
-                } else if (data.type === 'complete') {
-                  fullResponse = data.fullResponse;
-                  break;
-                } else if (data.type === 'error') {
-                  throw new Error(data.error);
-                }
-              } catch (e) {
-                // Ignore parsing errors for streaming data
+          for (const frame of frames) {
+            const line = frame.split('\n').find((l) => l.startsWith('data: '));
+            if (!line) continue;
+            try {
+              const data = JSON.parse(line.slice(6));
+              if (data.type === 'chunk') {
+                fullResponse += data.content;
+                updateAssistant(fullResponse, true);
+              } else if (data.type === 'complete') {
+                if (data.fullResponse) fullResponse = data.fullResponse;
+                isReading = false;
+              } else if (data.type === 'error') {
+                streamError = data.error || 'Failed to get AI response';
+                isReading = false;
               }
+            } catch {
+              // Ignore partial/non-JSON frames
             }
           }
         }
       }
 
-      // Add AI response
-      const aiResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: fullResponse || 'I apologize, but I couldn\'t generate a response. Please try again.',
-        timestamp: new Date(),
-      };
+      if (streamError) throw new Error(streamError);
 
-      setMessages((prev) => [...prev, aiResponse]);
+      updateAssistant(
+        fullResponse || "I couldn't generate a response. Please try again.",
+        false,
+      );
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to get response from AI';
       setError(errorMessage);
-
-      // Add error message to chat
-      const errorResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: `I encountered an error: ${errorMessage}. Please try again.`,
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => [...prev, errorResponse]);
+      // Replace the streaming placeholder with the error text.
+      updateAssistant(errorMessage, false);
     } finally {
       setIsLoading(false);
     }
@@ -198,6 +208,7 @@ export const AIConcierge: React.FC<AIConciergeProps> = ({
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-performance-grey/50">
         {messages.map((message) => (
+          message.isTyping && !message.content ? null : (
           <div
             key={message.id}
             className={`flex ${
@@ -226,6 +237,7 @@ export const AIConcierge: React.FC<AIConciergeProps> = ({
               </p>
             </div>
           </div>
+          )
         ))}
         {isLoading && (
           <div className="flex justify-start">
