@@ -3,7 +3,9 @@ import { verifyAuth, AuthenticatedRequest } from '@/lib/auth-middleware';
 import { createClient } from '@supabase/supabase-js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+const genAI = new GoogleGenerativeAI(
+  process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || '',
+);
 
 const MAX_BASE64_BYTES = 10 * 1024 * 1024; // 10 MB
 

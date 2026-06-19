@@ -1,6 +1,10 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+// Prefer the server-only key; fall back to the legacy NEXT_PUBLIC_ name so
+// existing deployments keep working without an env-var rename.
+const genAI = new GoogleGenerativeAI(
+  process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || '',
+);
 
 export const MODEL_NAME = 'gemini-1.5-flash';
 
