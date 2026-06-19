@@ -3,18 +3,54 @@ import Image from 'next/image';
 import { Car } from 'lucide-react';
 
 /**
- * Real fleet photos.
+ * Real fleet photography.
  *
- * To show a real photo of one of YOUR cars:
- *   1. Drop the image file in `public/fleet/` (e.g. public/fleet/lambo-huracan.jpg)
- *   2. Add a line below mapping the vehicleId to that path.
+ * Each entry below is a freely-licensed photo of the EXACT model, served via
+ * Wikimedia Commons' `Special:FilePath` endpoint (resolves a file by name and
+ * returns a sized thumbnail via `?width=`). We match on a distinctive token in
+ * the model name so it works across every page regardless of how the vehicle
+ * id is set. If a photo ever fails to load we fall back to the branded card
+ * below — so we NEVER show a stock photo of the wrong car.
  *
- * Any vehicle not listed here renders the premium branded card below —
- * so we NEVER show a stock photo of the wrong car.
+ * To use a real photo of one of YOUR OWN cars instead, drop the file in
+ * `public/fleet/` (e.g. public/fleet/lambo-huracan.jpg) and point the matching
+ * entry at `/fleet/lambo-huracan.jpg`.
  */
-const FLEET_PHOTOS: Record<string, string> = {
-  // 'lambo-huracan': '/fleet/lambo-huracan.jpg',
-};
+const WIKIMEDIA = (file: string, width = 1200) =>
+  `https://commons.wikimedia.org/wiki/Special:FilePath/${file}?width=${width}`;
+
+interface PhotoRule {
+  /** lower-cased token that must appear in the model name */
+  match: string;
+  url: string;
+}
+
+const PHOTO_RULES: PhotoRule[] = [
+  { match: 'huracan', url: WIKIMEDIA('Orange_Lamborghini_Huracan_Performante.jpg') },
+  { match: 'revuelto', url: WIKIMEDIA('2023_Lamborghini_Revuelto.jpg') },
+  { match: 'f8', url: WIKIMEDIA('Vue_trois_quarts_avant_F8_tributo.jpg') },
+  { match: '911', url: WIKIMEDIA('Porsche_911_Turbo_S_Heckansicht.JPG') },
+  { match: 'bentley', url: WIKIMEDIA('Bentley_Continental_GT_Monaco_IMG_1208.jpg') },
+  { match: 'ghost', url: WIKIMEDIA('Rolls-Royce_Ghost_II_IAA_2021_1X7A0005.jpg') },
+  { match: 'db12', url: WIKIMEDIA('Aston_Martin_DB12_04.jpg') },
+  { match: 'plaid', url: WIKIMEDIA('2023_Tesla_Model_S_Plaid.jpg') },
+  { match: 'range rover', url: WIKIMEDIA('2023_Range_Rover_Sport_2.jpg') },
+  {
+    match: 'amg',
+    url: WIKIMEDIA(
+      'Osaka_Motor_Show_2019_%28272%29_-_Mercedes-AMG_GT_63_S_4MATIC%2B_%28X290%29.jpg',
+    ),
+  },
+];
+
+function photoFor(model: string): string | undefined {
+  // Strip diacritics (e.g. "Huracán" -> "huracan") so token matching is reliable.
+  const m = model
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+  return PHOTO_RULES.find((rule) => m.includes(rule.match))?.url;
+}
 
 const CATEGORY_GRADIENT: Record<string, string> = {
   luxury: 'from-blue-600/30 via-performance-grey to-performance-grey',
@@ -29,8 +65,8 @@ interface VehicleImageProps {
   category: 'luxury' | 'sports' | 'supercar' | 'exotic';
 }
 
-export const VehicleImage: React.FC<VehicleImageProps> = ({ vehicleId, model, category }) => {
-  const photo = FLEET_PHOTOS[vehicleId];
+export const VehicleImage: React.FC<VehicleImageProps> = ({ model, category }) => {
+  const photo = photoFor(model);
   const [failed, setFailed] = useState(false);
 
   if (photo && !failed) {
@@ -41,7 +77,7 @@ export const VehicleImage: React.FC<VehicleImageProps> = ({ vehicleId, model, ca
         fill
         onError={() => setFailed(true)}
         className="object-cover group-hover:scale-110 transition-transform duration-500"
-        sizes="(max-width: 768px) 100vw, 50vw"
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
       />
     );
   }
