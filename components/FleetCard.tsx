@@ -6,8 +6,10 @@ import VehicleImage from '@/components/VehicleImage';
 interface FleetCardProps {
   vehicleId: string;
   model: string;
-  category: 'luxury' | 'sports' | 'supercar' | 'exotic';
+  category: 'luxury' | 'sports' | 'supercar' | 'exotic' | 'executive';
   image?: string;
+  color?: string;
+  colorHex?: string;
   specs: {
     horsepower: number;
     acceleration: string; // 0-60 time
@@ -28,6 +30,8 @@ export const FleetCard: React.FC<FleetCardProps> = ({
   vehicleId,
   model,
   category,
+  color,
+  colorHex,
   specs,
   pricing,
   availability,
@@ -42,13 +46,14 @@ export const FleetCard: React.FC<FleetCardProps> = ({
     sports: 'bg-red-500/20 text-red-400 border-red-500/30',
     supercar: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
     exotic: 'bg-performance-turquoise/20 text-performance-turquoise border-performance-turquoise/30',
+    executive: 'bg-slate-500/20 text-slate-300 border-slate-500/30',
   };
 
   return (
     <div className="group relative h-full bg-performance-grey border border-performance-turquoise/20 rounded-xl overflow-hidden hover:border-performance-turquoise/50 transition-all duration-300 hover:shadow-2xl hover:shadow-performance-turquoise/20">
       {/* Image Container */}
       <div className="relative h-64 sm:h-72 overflow-hidden bg-gradient-to-br from-performance-grey to-performance-turquoise/10">
-        <VehicleImage vehicleId={vehicleId} model={model} category={category} />
+        <VehicleImage vehicleId={vehicleId} model={model} category={category} colorHex={colorHex} />
 
         {/* Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-performance-grey via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -93,6 +98,16 @@ export const FleetCard: React.FC<FleetCardProps> = ({
         {/* Title & Location */}
         <div className="mb-4">
           <h3 className="text-xl font-bold text-white mb-2">{model}</h3>
+          {color && (
+            <div className="flex items-center gap-2 text-gray-300 text-sm mb-1">
+              <span
+                className="inline-block w-3.5 h-3.5 rounded-full border border-white/30 flex-shrink-0"
+                style={{ backgroundColor: colorHex }}
+                aria-hidden
+              />
+              {color}
+            </div>
+          )}
           <div className="flex items-center gap-2 text-gray-400 text-sm">
             <MapPin size={16} className="text-performance-turquoise" />
             {location}

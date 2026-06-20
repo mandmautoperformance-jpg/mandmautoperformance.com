@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Calendar, Clock, Users, User, Mail, Phone, ShieldCheck } from 'lucide-react';
-import { VEHICLES, weekendPrice, type Vehicle } from '@/lib/vehicles';
+import { VEHICLES, MODEL_OPTIONS, weekendPrice, type Vehicle } from '@/lib/vehicles';
 
 interface BookingWidgetProps {
   mode?: 'quick' | 'detailed';
@@ -124,9 +124,9 @@ export const BookingWidget: React.FC<BookingWidgetProps> = ({ vehicle }) => {
                 <label className="block text-sm font-semibold text-gray-300 mb-2">Vehicle</label>
                 <select value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} className={inputClass}>
                   <option value="" className="bg-performance-grey">Choose a vehicle…</option>
-                  {VEHICLES.map((v) => (
+                  {MODEL_OPTIONS.map((v) => (
                     <option key={v.vehicleId} value={v.vehicleId} className="bg-performance-grey">
-                      {v.model} — £{v.pricing.daily}/day
+                      {v.model} — from £{v.daily}/day
                     </option>
                   ))}
                 </select>

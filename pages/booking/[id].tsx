@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import Navbar from '@/components/Navbar';
 import BookingWidget from '@/components/BookingWidget';
-import VehicleImage from '@/components/VehicleImage';
+import VehicleGallery from '@/components/VehicleGallery';
 import { getVehicle, weekendPrice } from '@/lib/vehicles';
 import { ChevronLeft, Star, Zap, Shield, Clock } from 'lucide-react';
 
@@ -44,13 +44,12 @@ export default function VehicleBookingPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
               {/* Images & Details */}
               <div className="lg:col-span-2 space-y-6">
-                <div className="group relative rounded-xl overflow-hidden h-96">
-                  <VehicleImage
-                    vehicleId={vehicle.vehicleId}
-                    model={vehicle.model}
-                    category={vehicle.category}
-                  />
-                </div>
+                <VehicleGallery
+                  model={vehicle.model}
+                  category={vehicle.category}
+                  color={vehicle.color}
+                  colorHex={vehicle.colorHex}
+                />
 
                 {/* Specs Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -106,8 +105,16 @@ export default function VehicleBookingPage() {
               <div className="space-y-6">
                 {/* Price Card */}
                 <div className="bg-gradient-to-br from-performance-turquoise/20 to-performance-babyblue/10 border border-performance-turquoise/30 rounded-xl p-6">
-                  <h2 className="text-2xl font-bold text-white mb-4">{vehicle.model}</h2>
-                  <p className="text-gray-400 text-sm mb-4">{vehicle.location}</p>
+                  <h2 className="text-2xl font-bold text-white mb-2">{vehicle.model}</h2>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span
+                      className="inline-block w-4 h-4 rounded-full border border-white/30"
+                      style={{ backgroundColor: vehicle.colorHex }}
+                      aria-hidden
+                    />
+                    <span className="text-gray-300 text-sm">{vehicle.color}</span>
+                  </div>
+                  <p className="text-gray-400 text-sm mb-4">{vehicle.location} · {vehicle.plate}</p>
 
                   <div className="space-y-3 mb-6 pb-6 border-b border-performance-turquoise/20">
                     <div className="flex justify-between">

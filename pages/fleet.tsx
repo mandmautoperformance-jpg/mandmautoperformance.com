@@ -1,32 +1,52 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Head from 'next/head';
 import Navbar from '@/components/Navbar';
 import FleetCard from '@/components/FleetCard';
 import { Search, SlidersHorizontal } from 'lucide-react';
-import { VEHICLES as ALL_VEHICLES } from '@/lib/vehicles';
+import { VEHICLES as ALL_VEHICLES, MAKES, CATEGORY_LABELS, type VehicleCategory } from '@/lib/vehicles';
 
-const CATEGORIES = ['all', 'luxury', 'sports', 'supercar', 'exotic'] as const;
+const CATEGORIES: (VehicleCategory | 'all')[] = ['all', 'exotic', 'supercar', 'sports', 'luxury', 'executive'];
+const PAGE_SIZE = 24;
 
 export default function FleetPage() {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<string>('all');
+  const [make, setMake] = useState<string>('all');
   const [maxPrice, setMaxPrice] = useState<number>(2500);
   const [showAvailableOnly, setShowAvailableOnly] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [visible, setVisible] = useState(PAGE_SIZE);
 
-  const filtered = ALL_VEHICLES.filter((v) => {
-    if (search && !v.model.toLowerCase().includes(search.toLowerCase())) return false;
-    if (category !== 'all' && v.category !== category) return false;
-    if (v.pricing.daily > maxPrice) return false;
-    if (showAvailableOnly && !v.availability) return false;
-    return true;
-  });
+  const filtered = useMemo(
+    () =>
+      ALL_VEHICLES.filter((v) => {
+        if (search) {
+          const q = search.toLowerCase();
+          if (!v.model.toLowerCase().includes(q) && !v.color.toLowerCase().includes(q) && !v.make.toLowerCase().includes(q)) {
+            return false;
+          }
+        }
+        if (category !== 'all' && v.category !== category) return false;
+        if (make !== 'all' && v.make !== make) return false;
+        if (v.pricing.daily > maxPrice) return false;
+        if (showAvailableOnly && !v.availability) return false;
+        return true;
+      }),
+    [search, category, make, maxPrice, showAvailableOnly],
+  );
+
+  // Reset how many cards are shown whenever the filters change.
+  useEffect(() => {
+    setVisible(PAGE_SIZE);
+  }, [search, category, make, maxPrice, showAvailableOnly]);
+
+  const shown = filtered.slice(0, visible);
 
   return (
     <>
       <Head>
         <title>Our Fleet | M&M Auto Performance</title>
-        <meta name="description" content="Browse our full fleet of luxury supercars and performance vehicles available to hire across Hertfordshire and London." />
+        <meta name="description" content="Browse our full fleet of 500+ luxury, supercar, exotic, sports and executive vehicles available to hire across Hertfordshire and London." />
       </Head>
       <main className="min-h-screen bg-performance-grey text-white">
         <Navbar isLoggedIn={false} userRole="guest" currentPage="fleet" />
@@ -47,7 +67,7 @@ export default function FleetPage() {
                 <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search vehicles..."
+                  placeholder="Search by model, make or colour…"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="w-full pl-11 pr-4 py-3 bg-performance-turquoise/10 border border-performance-turquoise/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-performance-turquoise"
@@ -64,7 +84,7 @@ export default function FleetPage() {
 
             {/* Filters Panel */}
             {showFilters && (
-              <div className="bg-performance-grey border border-performance-turquoise/20 rounded-xl p-6 mb-8 grid grid-cols-1 sm:grid-cols-3 gap-6">
+              <div className="bg-performance-grey border border-performance-turquoise/20 rounded-xl p-6 mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {/* Category */}
                 <div>
                   <p className="text-sm font-semibold text-gray-300 mb-3">Category</p>
@@ -79,10 +99,25 @@ export default function FleetPage() {
                             : 'border border-performance-turquoise/30 text-gray-400 hover:border-performance-turquoise'
                         }`}
                       >
-                        {cat}
+                        {cat === 'all' ? 'All' : CATEGORY_LABELS[cat as VehicleCategory]}
                       </button>
                     ))}
                   </div>
+                </div>
+
+                {/* Make */}
+                <div>
+                  <p className="text-sm font-semibold text-gray-300 mb-3">Make</p>
+                  <select
+                    value={make}
+                    onChange={(e) => setMake(e.target.value)}
+                    className="w-full px-3 py-2 bg-performance-turquoise/10 border border-performance-turquoise/30 rounded-lg text-white text-sm focus:outline-none focus:border-performance-turquoise"
+                  >
+                    <option value="all" className="bg-performance-grey">All makes</option>
+                    {MAKES.map((m) => (
+                      <option key={m} value={m} className="bg-performance-grey">{m}</option>
+                    ))}
+                  </select>
                 </div>
 
                 {/* Max Price */}
@@ -134,30 +169,47 @@ export default function FleetPage() {
                       : 'border border-performance-turquoise/30 text-gray-400 hover:border-performance-turquoise hover:text-white'
                   }`}
                 >
-                  {cat === 'all' ? 'All Vehicles' : cat}
+                  {cat === 'all' ? 'All Vehicles' : CATEGORY_LABELS[cat as VehicleCategory]}
                 </button>
               ))}
             </div>
 
             {/* Results Count */}
             <p className="text-gray-400 text-sm mb-6">
-              Showing <span className="text-performance-turquoise font-bold">{filtered.length}</span> vehicles
+              Showing <span className="text-performance-turquoise font-bold">{Math.min(visible, filtered.length)}</span> of{' '}
+              <span className="text-performance-turquoise font-bold">{filtered.length}</span> vehicles
             </p>
 
             {/* Grid */}
             {filtered.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {filtered.map((vehicle) => (
-                  <FleetCard key={vehicle.vehicleId} {...vehicle} />
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {shown.map((vehicle) => (
+                    <FleetCard key={vehicle.vehicleId} {...vehicle} />
+                  ))}
+                </div>
+
+                {visible < filtered.length && (
+                  <div className="text-center mt-12">
+                    <button
+                      onClick={() => setVisible((v) => v + PAGE_SIZE)}
+                      className="px-8 py-3 bg-performance-turquoise text-performance-grey font-bold rounded-lg hover:bg-performance-turquoise/90 transition-all"
+                    >
+                      Load more vehicles
+                    </button>
+                    <p className="text-gray-500 text-xs mt-3">
+                      {filtered.length - visible} more to explore
+                    </p>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="text-center py-24">
                 <p className="text-5xl mb-4">🏎️</p>
                 <p className="text-white font-bold text-xl mb-2">No vehicles match your filters</p>
                 <p className="text-gray-400">Try adjusting your search or filters</p>
                 <button
-                  onClick={() => { setSearch(''); setCategory('all'); setMaxPrice(2500); setShowAvailableOnly(false); }}
+                  onClick={() => { setSearch(''); setCategory('all'); setMake('all'); setMaxPrice(2500); setShowAvailableOnly(false); }}
                   className="mt-6 px-6 py-3 bg-performance-turquoise text-performance-grey font-bold rounded-lg"
                 >
                   Reset Filters
