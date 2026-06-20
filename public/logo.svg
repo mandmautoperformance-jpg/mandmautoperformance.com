@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <!-- Outer bevel gradient -->
+    <radialGradient id="bevelGrad" cx="40%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#666"/>
+      <stop offset="60%" stop-color="#222"/>
+      <stop offset="100%" stop-color="#080808"/>
+    </radialGradient>
+    <!-- Disc background -->
+    <radialGradient id="discGrad" cx="50%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#1c1c1c"/>
+      <stop offset="100%" stop-color="#050505"/>
+    </radialGradient>
+    <!-- Chrome metallic gradient for M&M text -->
+    <linearGradient id="chromeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#f0f0f0"/>
+      <stop offset="20%"  stop-color="#b0b0b0"/>
+      <stop offset="45%"  stop-color="#e8e8e8"/>
+      <stop offset="60%"  stop-color="#787878"/>
+      <stop offset="80%"  stop-color="#c8c8c8"/>
+      <stop offset="100%" stop-color="#a0a0a0"/>
+    </linearGradient>
+    <!-- Subtle chrome for tagline -->
+    <linearGradient id="taglineGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#d0d0d0"/>
+      <stop offset="100%" stop-color="#888"/>
+    </linearGradient>
+    <!-- Glossy highlight -->
+    <radialGradient id="glossGrad" cx="50%" cy="20%" r="55%">
+      <stop offset="0%"   stop-color="rgba(255,255,255,0.18)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+    </radialGradient>
+    <!-- Carbon dot pattern -->
+    <pattern id="carbon" x="0" y="0" width="4" height="4" patternUnits="userSpaceOnUse">
+      <rect width="4" height="4" fill="transparent"/>
+      <circle cx="1" cy="1" r="0.6" fill="rgba(255,255,255,0.04)"/>
+      <circle cx="3" cy="3" r="0.6" fill="rgba(255,255,255,0.04)"/>
+    </pattern>
+  </defs>
+
+  <!-- Outer bevel/rim -->
+  <circle cx="100" cy="100" r="98" fill="url(#bevelGrad)"/>
+  <!-- Main disc -->
+  <circle cx="100" cy="100" r="90" fill="url(#discGrad)"/>
+  <!-- Carbon texture overlay -->
+  <circle cx="100" cy="100" r="90" fill="url(#carbon)"/>
+
+  <!-- M&M text — large bold italic chrome -->
+  <text
+    x="100" y="118"
+    font-family="'Arial Black', 'Impact', 'Haettenschweiler', sans-serif"
+    font-size="72"
+    font-weight="900"
+    font-style="italic"
+    text-anchor="middle"
+    fill="url(#chromeGrad)"
+    paint-order="stroke"
+    stroke="#1a1a1a"
+    stroke-width="2"
+    stroke-linejoin="round"
+  >M&amp;M</text>
+
+  <!-- Tagline -->
+  <text
+    x="100" y="150"
+    font-family="'Arial', 'Helvetica Neue', sans-serif"
+    font-size="10"
+    font-weight="700"
+    letter-spacing="2.5"
+    text-anchor="middle"
+    fill="url(#taglineGrad)"
+  >— AUTO PERFORMANCE UK —</text>
+
+  <!-- Glossy highlight at top -->
+  <ellipse cx="100" cy="68" rx="68" ry="38" fill="url(#glossGrad)"/>
+</svg>

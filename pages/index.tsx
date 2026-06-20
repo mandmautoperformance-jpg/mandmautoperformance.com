@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import BookingWidget from '@/components/BookingWidget';
@@ -334,10 +335,9 @@ export default function HomePage() {
             ))}
           </div>
 
-          <div className="border-t border-performance-turquoise/20 pt-8 text-center text-gray-400">
-            <p>
-              © 2026 M&M Auto Performance. Part of the RichHabits Ecosystem.
-            </p>
+          <div className="border-t border-performance-turquoise/20 pt-8 flex flex-col items-center gap-3 text-gray-400 text-center">
+            <Image src="/logo.svg" alt="M&M Auto Performance UK" width={56} height={56} className="opacity-80" />
+            <p>© 2026 M&amp;M Auto Performance. Part of the RichHabits Ecosystem.</p>
           </div>
         </div>
       </footer>
