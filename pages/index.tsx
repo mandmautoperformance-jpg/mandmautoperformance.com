@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
+import CinematicHero from '@/components/CinematicHero';
 import BookingWidget from '@/components/BookingWidget';
 import FleetCard from '@/components/FleetCard';
 import AIConcierge from '@/components/AIConcierge';
@@ -25,12 +26,14 @@ export default function HomePage() {
     .filter((v): v is (typeof VEHICLES)[number] => Boolean(v));
 
   return (
-    <main className="min-h-screen bg-performance-grey text-white">
+    <main className="min-h-screen bg-performance-grey text-white relative">
       <Navbar isLoggedIn={false} userRole="guest" currentPage="home" />
 
-      {/* Hero Section */}
-      <Hero />
+      {/* Cinematic hero — full-viewport parallax background */}
+      <CinematicHero />
 
+      {/* Everything below slides over the fixed hero background */}
+      <div className="relative z-10 bg-performance-grey">
       {/* Category Showcase */}
       <CategoryShowcase />
 
@@ -162,6 +165,8 @@ export default function HomePage() {
           </Link>
         </div>
       </section>
+
+      </div>{/* end scroll-over wrapper */}
 
       {/* AI Concierge */}
       <AIConcierge
