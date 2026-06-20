@@ -54,14 +54,14 @@ export default function ContactPage() {
               <div className="space-y-5">
                 {[
                   {
-                    icon: <Phone size={22} className="text-performance-turquoise" />,
-                    title: 'Phone',
-                    lines: ['Coming soon', 'Call or WhatsApp'],
-                  },
-                  {
                     icon: <Mail size={22} className="text-performance-turquoise" />,
                     title: 'Email',
                     lines: ['hello@mandmautoperformance.com', 'Replies within 2 hours'],
+                  },
+                  {
+                    icon: <Phone size={22} className="text-performance-turquoise" />,
+                    title: 'Instant chat',
+                    lines: ['Ask MIA, our AI concierge', 'Available 24/7, bottom-right'],
                   },
                   {
                     icon: <MapPin size={22} className="text-performance-turquoise" />,

@@ -7,7 +7,7 @@ interface FleetCardProps {
   vehicleId: string;
   model: string;
   category: 'luxury' | 'sports' | 'supercar' | 'exotic';
-  image: string;
+  image?: string;
   specs: {
     horsepower: number;
     acceleration: string; // 0-60 time

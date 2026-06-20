@@ -43,6 +43,13 @@ Our fleet (all prices GBP):
 - Tesla Model S Plaid — luxury — £350/day (£60/hr) — Watford, Herts
 - Range Rover Sport — luxury — £400/day (£70/hr) — Hemel Hempstead
 - Mercedes-AMG GT 63S — sports — £700/day (£110/hr) — St Albans, Herts
+- Mercedes-AMG S63 E Performance — luxury — £900/day (£140/hr) — Mayfair, London
+- Mercedes-AMG C63 S E Performance — sports — £500/day (£80/hr) — St Albans, Herts
+- BMW M4 Competition — sports — £350/day (£58/hr) — St Albans, Herts
+- BMW M3 Competition — sports — £320/day (£55/hr) — Watford, Herts
+- Audi RS3 — sports — £300/day (£50/hr) — Watford, Herts
+- Mercedes-AMG CLA 45 S — sports — £280/day (£48/hr) — St Albans, Herts
+- Volkswagen Golf R — sports — £250/day (£45/hr) — Hemel Hempstead
 
 Guidelines:
 - Show prices as £X,XXX/day. Mention hourly hire when useful.

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Head from 'next/head';
 import Navbar from '@/components/Navbar';
 import { createClient } from '@supabase/supabase-js';
@@ -12,7 +12,52 @@ export default function SettingsPage() {
     promotions: false,
     newsletter: true,
   });
+
+  // Real account profile, loaded from the signed-in Supabase user.
+  const supabase = useMemo(() => {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    return url && key ? createClient(url, key) : null;
+  }, []);
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [changes, setChanges] = useState(false);
+  const [accountStatus, setAccountStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [accountError, setAccountError] = useState('');
+
+  useEffect(() => {
+    if (!supabase) return;
+    supabase.auth.getUser().then(({ data }) => {
+      const u = data.user;
+      if (!u) return;
+      const meta = (u.user_metadata || {}) as Record<string, string>;
+      setFirstName(meta.first_name || '');
+      setLastName(meta.last_name || '');
+      setPhone(meta.phone || '');
+      setEmail(u.email || '');
+    });
+  }, [supabase]);
+
+  const handleAccountSave = async () => {
+    if (!supabase || !changes) return;
+    setAccountStatus('loading');
+    setAccountError('');
+    const { error } = await supabase.auth.updateUser({
+      email: email || undefined,
+      data: { first_name: firstName, last_name: lastName, phone },
+    });
+    if (error) {
+      setAccountError(error.message);
+      setAccountStatus('error');
+    } else {
+      setAccountStatus('success');
+      setChanges(false);
+      setTimeout(() => setAccountStatus('idle'), 3000);
+    }
+  };
+
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -97,30 +142,34 @@ export default function SettingsPage() {
                     <div className="grid grid-cols-2 gap-6">
                       <div>
                         <label className="block text-sm font-semibold text-gray-300 mb-2">First Name</label>
-                        <input type="text" defaultValue="James" className="w-full px-4 py-3 bg-performance-turquoise/10 border border-performance-turquoise/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-performance-turquoise" />
+                        <input type="text" value={firstName} onChange={(e) => { setFirstName(e.target.value); setChanges(true); }} placeholder="First name" className="w-full px-4 py-3 bg-performance-turquoise/10 border border-performance-turquoise/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-performance-turquoise" />
                       </div>
                       <div>
                         <label className="block text-sm font-semibold text-gray-300 mb-2">Last Name</label>
-                        <input type="text" defaultValue="Bond" className="w-full px-4 py-3 bg-performance-turquoise/10 border border-performance-turquoise/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-performance-turquoise" />
+                        <input type="text" value={lastName} onChange={(e) => { setLastName(e.target.value); setChanges(true); }} placeholder="Last name" className="w-full px-4 py-3 bg-performance-turquoise/10 border border-performance-turquoise/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-performance-turquoise" />
                       </div>
                     </div>
 
                     <div>
                       <label className="block text-sm font-semibold text-gray-300 mb-2">Email Address</label>
-                      <input type="email" defaultValue="james@example.com" className="w-full px-4 py-3 bg-performance-turquoise/10 border border-performance-turquoise/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-performance-turquoise" />
+                      <input type="email" value={email} onChange={(e) => { setEmail(e.target.value); setChanges(true); }} placeholder="you@email.com" className="w-full px-4 py-3 bg-performance-turquoise/10 border border-performance-turquoise/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-performance-turquoise" />
                     </div>
 
                     <div>
                       <label className="block text-sm font-semibold text-gray-300 mb-2">Phone Number</label>
-                      <input type="tel" placeholder="+44 (0) 7..." className="w-full px-4 py-3 bg-performance-turquoise/10 border border-performance-turquoise/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-performance-turquoise" onChange={() => setChanges(true)} />
+                      <input type="tel" value={phone} onChange={(e) => { setPhone(e.target.value); setChanges(true); }} placeholder="+44 (0) 7..." className="w-full px-4 py-3 bg-performance-turquoise/10 border border-performance-turquoise/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-performance-turquoise" />
                     </div>
 
+                    {accountError && <p className="text-red-400 text-sm">{accountError}</p>}
+                    {accountStatus === 'success' && <p className="text-green-400 text-sm">Account updated successfully.</p>}
+
                     <div className="pt-6 border-t border-performance-turquoise/20 flex gap-3">
-                      <button className={`px-6 py-3 rounded-lg font-bold transition-all ${changes ? 'bg-performance-turquoise text-performance-grey hover:bg-performance-turquoise/90' : 'bg-gray-700 text-gray-400 cursor-not-allowed'}`}>
-                        Save Changes
-                      </button>
-                      <button className="px-6 py-3 border border-performance-turquoise text-performance-turquoise rounded-lg font-bold hover:bg-performance-turquoise/10 transition-all">
-                        Cancel
+                      <button
+                        onClick={handleAccountSave}
+                        disabled={!changes || accountStatus === 'loading'}
+                        className={`px-6 py-3 rounded-lg font-bold transition-all ${changes && accountStatus !== 'loading' ? 'bg-performance-turquoise text-performance-grey hover:bg-performance-turquoise/90' : 'bg-gray-700 text-gray-400 cursor-not-allowed'}`}
+                      >
+                        {accountStatus === 'loading' ? 'Saving…' : 'Save Changes'}
                       </button>
                     </div>
                   </div>

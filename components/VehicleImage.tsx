@@ -35,8 +35,17 @@ const PHOTO_RULES: PhotoRule[] = [
   { match: 'db12', url: WIKIMEDIA('Aston_Martin_DB12_04.jpg') },
   { match: 'plaid', url: WIKIMEDIA('2023_Tesla_Model_S_Plaid.jpg') },
   { match: 'range rover', url: WIKIMEDIA('2023_Range_Rover_Sport_2.jpg') },
+  // Specific tokens MUST precede the generic 'amg gt' rule — CLA/C63/S63 all
+  // contain "amg", so order matters (first match wins).
+  { match: 'cla', url: WIKIMEDIA('Mercedes-AMG_CLA_45_S_4MATIC%2B_%28C118%29.jpg') },
+  { match: 'c63', url: WIKIMEDIA('Mercedes-AMG_C_63_S_E_Performance_%28W206%29_IAA_2023.jpg') },
+  { match: 's63', url: WIKIMEDIA('Mercedes-AMG_S_63_E_Performance_%28W223%29.jpg') },
+  { match: 'rs3', url: WIKIMEDIA('Audi_RS_3_Sportback_%288Y%29.jpg') },
+  { match: 'golf', url: WIKIMEDIA('VW_Golf_R_%28Mk8%29_IMG_0001.jpg') },
+  { match: 'm3', url: WIKIMEDIA('BMW_M3_Competition_%28G80%29.jpg') },
+  { match: 'm4', url: WIKIMEDIA('BMW_M4_Competition_%28G82%29.jpg') },
   {
-    match: 'amg',
+    match: 'amg gt',
     url: WIKIMEDIA(
       'Osaka_Motor_Show_2019_%28272%29_-_Mercedes-AMG_GT_63_S_4MATIC%2B_%28X290%29.jpg',
     ),
