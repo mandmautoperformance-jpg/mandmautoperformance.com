@@ -133,7 +133,7 @@ export default function HomePage() {
       <section className="px-4 sm:px-6 lg:px-8 py-20 bg-performance-grey/50">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-white mb-4">
+            <h2 className="font-display text-4xl font-bold text-white mb-4">
               Booking Made Simple
             </h2>
             <p className="text-gray-300">
@@ -149,7 +149,7 @@ export default function HomePage() {
       <section className="px-4 sm:px-6 lg:px-8 py-20">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-white mb-4">
+            <h2 className="font-display text-4xl font-bold text-white mb-4">
               Featured Fleet
             </h2>
             <p className="text-gray-300 max-w-2xl mx-auto">
@@ -178,7 +178,7 @@ export default function HomePage() {
       {/* Why M&M Section */}
       <section className="px-4 sm:px-6 lg:px-8 py-20 bg-performance-turquoise/5 border-t border-performance-turquoise/20">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-4xl font-bold text-white mb-12 text-center">
+          <h2 className="font-display text-4xl font-bold text-white mb-12 text-center">
             Why Choose M&M Auto Performance
           </h2>
 
@@ -242,7 +242,7 @@ export default function HomePage() {
       {/* CTA Section */}
       <section className="px-4 sm:px-6 lg:px-8 py-20 bg-gradient-to-r from-performance-turquoise/10 to-performance-babyblue/10 border-t border-performance-turquoise/20">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl font-bold text-white mb-6">
+          <h2 className="font-display text-4xl font-bold text-white mb-6">
             Ready to Experience Elite Performance?
           </h2>
           <p className="text-gray-300 mb-8 max-w-2xl mx-auto">

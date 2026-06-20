@@ -42,15 +42,15 @@ export const FleetCard: React.FC<FleetCardProps> = ({
   const [isFavorited, setIsFavorited] = useState(false);
 
   const categoryColors = {
-    luxury: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-    sports: 'bg-red-500/20 text-red-400 border-red-500/30',
-    supercar: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-    exotic: 'bg-performance-turquoise/20 text-performance-turquoise border-performance-turquoise/30',
-    executive: 'bg-slate-500/20 text-slate-300 border-slate-500/30',
+    luxury: 'bg-performance-turquoise/15 text-performance-gold-light border-performance-turquoise/40',
+    sports: 'bg-performance-turquoise/15 text-performance-gold-light border-performance-turquoise/40',
+    supercar: 'bg-performance-turquoise/20 text-performance-gold-light border-performance-turquoise/50',
+    exotic: 'bg-performance-turquoise/25 text-performance-gold-light border-performance-turquoise/60',
+    executive: 'bg-white/5 text-gray-200 border-white/20',
   };
 
   return (
-    <div className="group relative h-full bg-performance-grey border border-performance-turquoise/20 rounded-xl overflow-hidden hover:border-performance-turquoise/50 transition-all duration-300 hover:shadow-2xl hover:shadow-performance-turquoise/20">
+    <div className="group relative h-full bg-performance-panel border border-performance-turquoise/15 rounded-xl overflow-hidden hover:border-performance-turquoise/60 transition-all duration-300 hover:shadow-gold">
       {/* Image Container */}
       <div className="relative h-64 sm:h-72 overflow-hidden bg-gradient-to-br from-performance-grey to-performance-turquoise/10">
         <VehicleImage vehicleId={vehicleId} model={model} category={category} colorHex={colorHex} />
@@ -97,7 +97,7 @@ export const FleetCard: React.FC<FleetCardProps> = ({
       <div className="p-6">
         {/* Title & Location */}
         <div className="mb-4">
-          <h3 className="text-xl font-bold text-white mb-2">{model}</h3>
+          <h3 className="font-display text-xl font-bold text-white mb-2 tracking-tight">{model}</h3>
           {color && (
             <div className="flex items-center gap-2 text-gray-300 text-sm mb-1">
               <span

@@ -1,11 +1,15 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --gunmetal: #2C2F33;
-  --electric-turquoise: #00CED1;
-  --baby-blue: #89CFF0;
+  --ink: #0B0C0E;
+  --base: #121316;
+  --gold: #C5A572;
+  --gold-light: #E3CFA1;
+  --gold-deep: #A9863F;
 }
 
 * {
@@ -16,11 +20,19 @@
 
 html,
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
-    Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-  background-color: #2C2F33;
-  color: #ffffff;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', sans-serif;
+  background-color: #0B0C0E;
+  color: #f4f1ea;
   scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Elegant serif display for luxury headings */
+.font-display,
+h1.font-display,
+h2.font-display {
+  font-family: 'Playfair Display', Georgia, serif;
 }
 
 a {
@@ -33,17 +45,29 @@ a {
   width: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #1A1C1E;
+  background: #0B0C0E;
 }
 ::-webkit-scrollbar-thumb {
-  background: #00CED1;
+  background: linear-gradient(#E3CFA1, #C5A572);
   border-radius: 4px;
+}
+
+/* Subtle gold text-selection */
+::selection {
+  background: rgba(197, 165, 114, 0.3);
+  color: #fff;
 }
 
 /* Glass effect */
 .glass {
-  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+  background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(0,206,209,0.2);
+  border: 1px solid rgba(197,165,114,0.25);
+}
+
+/* Thin gold hairline utility */
+.gold-hairline {
+  background: linear-gradient(90deg, transparent, rgba(197,165,114,0.6), transparent);
+  height: 1px;
 }
