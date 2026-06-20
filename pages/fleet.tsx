@@ -56,7 +56,7 @@ export default function FleetPage() {
     <>
       <Head>
         <title>Our Fleet | M&M Auto Performance</title>
-        <meta name="description" content="Browse our full fleet of 500+ luxury, supercar, exotic, sports and executive vehicles available to hire across Hertfordshire and London." />
+        <meta name="description" content="Browse our full fleet of luxury, supercar, exotic, sports and executive vehicles available to hire across Hertfordshire and London." />
       </Head>
       <main className="min-h-screen bg-performance-grey text-white">
         <Navbar isLoggedIn={false} userRole="guest" currentPage="fleet" />

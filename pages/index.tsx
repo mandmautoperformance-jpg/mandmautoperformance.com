@@ -7,30 +7,22 @@ import BookingWidget from '@/components/BookingWidget';
 import FleetCard from '@/components/FleetCard';
 import AIConcierge from '@/components/AIConcierge';
 import CategoryShowcase from '@/components/CategoryShowcase';
-import { VEHICLES } from '@/lib/vehicles';
+import { VEHICLES, FLEET_SIZE } from '@/lib/vehicles';
 
-// Pick one showcase car per highlight category for the Featured Fleet strip.
-const FEATURED_KEYS = [
-  'lambo-huracan-rosso-corsa',
-  'ferrari-f8-bianco-white',
-  'porsche-911-nero-black',
-  'rolls-ghost-grigio-silver',
+// Four marquee models for the Featured Fleet strip (first listing of each).
+const FEATURED_MODELS = [
+  'Lamborghini Huracán',
+  'Ferrari F8 Tributo',
+  'Porsche 911 Turbo S',
+  'Rolls-Royce Ghost',
 ];
 
 export default function HomePage() {
   const [conciergeOpen, setConciergeOpen] = useState(false);
 
-  const featuredVehicles = (() => {
-    const specific = VEHICLES.filter((v) => FEATURED_KEYS.includes(v.vehicleId));
-    if (specific.length >= 4) return specific.slice(0, 4);
-    // Fallback: first vehicle from each of 4 distinct makes
-    const seen = new Set<string>();
-    return VEHICLES.filter((v) => {
-      if (seen.has(v.make)) return false;
-      seen.add(v.make);
-      return true;
-    }).slice(0, 4);
-  })();
+  const featuredVehicles = FEATURED_MODELS
+    .map((m) => VEHICLES.find((v) => v.model === m))
+    .filter((v): v is (typeof VEHICLES)[number] => Boolean(v));
 
   return (
     <main className="min-h-screen bg-performance-grey text-white">
@@ -136,7 +128,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {[
-              { label: 'Premium Vehicles', value: '500+' },
+              { label: 'Premium Vehicles', value: `${FLEET_SIZE}` },
               { label: 'Active Users', value: '15K+' },
               { label: 'Bookings This Year', value: '5K+' },
               { label: 'Service Uptime', value: '99.9%' },

@@ -11,6 +11,8 @@ export default function Document() {
         <meta property="og:description" content="Premium luxury and supercar hire powered by MIA - your Motor Intelligence Assistant. Serving Hertfordshire and London." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://mandmautoperformance.com" />
+        <meta property="og:image" content="https://mandmautoperformance.com/logo.svg" />
+        <meta name="twitter:image" content="https://mandmautoperformance.com/logo.svg" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="M&M Auto Performance" />
         <meta name="twitter:description" content="Premium AI-powered luxury car hire in Hertfordshire & London" />

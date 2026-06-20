@@ -8,8 +8,11 @@ export default function App({ Component, pageProps }: AppProps) {
     <>
       <Head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="theme-color" content="#2C2F33" />
-        <link rel="icon" href="/favicon.ico" />
+        <meta name="theme-color" content="#000000" />
+        <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+        <link rel="icon" href="/logo.svg" sizes="any" />
+        <link rel="apple-touch-icon" href="/logo.svg" />
+        <link rel="mask-icon" href="/logo.svg" color="#000000" />
       </Head>
 
       {/* Google Analytics */}

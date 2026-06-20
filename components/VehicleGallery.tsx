@@ -1,13 +1,15 @@
 import React, { useMemo, useState } from 'react';
 import Image from 'next/image';
 import { Car } from 'lucide-react';
-import { galleryFor } from '@/components/VehicleImage';
+import { galleryFor, type Photo } from '@/lib/vehicle-photos';
 
 interface VehicleGalleryProps {
   model: string;
   category: 'luxury' | 'sports' | 'supercar' | 'exotic' | 'executive';
   color?: string;
   colorHex?: string;
+  /** The exact photo pinned to this vehicle — shown first in the gallery. */
+  primaryPhoto?: string;
 }
 
 const CATEGORY_GRADIENT: Record<string, string> = {
@@ -24,8 +26,14 @@ const CATEGORY_GRADIENT: Record<string, string> = {
  * so a broken thumbnail never appears. If no photo loads at all we show the
  * branded, colour-tinted fallback.
  */
-export const VehicleGallery: React.FC<VehicleGalleryProps> = ({ model, category, color, colorHex }) => {
-  const photos = useMemo(() => galleryFor(model), [model]);
+export const VehicleGallery: React.FC<VehicleGalleryProps> = ({ model, category, color, colorHex, primaryPhoto }) => {
+  const photos = useMemo<Photo[]>(() => {
+    const all = galleryFor(model);
+    if (!primaryPhoto) return all;
+    // Put this car's pinned photo first, without duplicating it.
+    const rest = all.filter((p) => p.url !== primaryPhoto);
+    return [{ url: primaryPhoto, kind: 'exterior' as const }, ...rest];
+  }, [model, primaryPhoto]);
   const [active, setActive] = useState(0);
   const [failed, setFailed] = useState<Record<number, boolean>>({});
 

@@ -32,8 +32,9 @@ Core responsibilities:
 4. Guide them toward a booking.
 5. Offer helpful local knowledge (ULEZ, parking, driving routes) when relevant.
 
-Our fleet: 500+ vehicles across five categories, most models available in a wide range of colours
-(e.g. Rosso Corsa red, Nero black, Bianco white, Nardo grey, British Racing Green, blue and more).
+Our fleet spans five categories — exotic, supercar, sports, luxury and executive — with most models
+available in a range of colours (e.g. Rosso Corsa red, Nero black, Bianco white, Nardo grey,
+British Racing Green, blue and more).
 Pickup across Mayfair, Knightsbridge and Chelsea in London, plus St Albans, Watford, Hemel Hempstead,
 Hatfield and Borehamwood in Hertfordshire. Representative models and indicative daily prices (GBP):
 

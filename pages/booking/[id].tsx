@@ -49,6 +49,7 @@ export default function VehicleBookingPage() {
                   category={vehicle.category}
                   color={vehicle.color}
                   colorHex={vehicle.colorHex}
+                  primaryPhoto={vehicle.photoUrl}
                 />
 
                 {/* Specs Grid */}

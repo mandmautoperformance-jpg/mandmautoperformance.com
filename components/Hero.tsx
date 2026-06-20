@@ -1,6 +1,7 @@
 import React from 'react';
 import { ChevronRight, Zap } from 'lucide-react';
 import Link from 'next/link';
+import { FLEET_SIZE } from '@/lib/vehicles';
 
 interface HeroProps {
   title?: string;
@@ -50,7 +51,7 @@ export const Hero: React.FC<HeroProps> = ({
         </div>
         <div className="grid grid-cols-3 gap-6 mt-20 pt-12 border-t border-performance-turquoise/20">
           <div className="text-center">
-            <div className="font-display text-3xl sm:text-4xl font-bold text-performance-turquoise">500+</div>
+            <div className="font-display text-3xl sm:text-4xl font-bold text-performance-turquoise">{FLEET_SIZE}</div>
             <p className="text-gray-400 text-sm mt-2 tracking-wide">Elite Vehicles</p>
           </div>
           <div className="text-center">

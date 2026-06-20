@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { VEHICLES, type VehicleCategory } from '@/lib/vehicles';
+import { VEHICLES, FLEET_SIZE, type VehicleCategory } from '@/lib/vehicles';
 
 const WIKIMEDIA = (file: string) =>
   `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(file)}?width=1200`;
@@ -193,7 +193,7 @@ export const CategoryShowcase: React.FC = () => {
             Find Your Drive
           </h2>
           <p className="text-gray-400 max-w-lg mx-auto text-sm">
-            490 elite vehicles across five curated categories — available across London &amp; Hertfordshire.
+            {FLEET_SIZE} individually-photographed vehicles across five curated categories — available across London &amp; Hertfordshire.
           </p>
         </div>
 

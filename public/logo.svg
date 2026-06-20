@@ -1,52 +1,56 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="M&M Auto Performance">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240" role="img" aria-label="M&M Auto Performance UK">
   <defs>
-    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%"   stop-color="#E3CFA1"/>
-      <stop offset="55%"  stop-color="#C5A572"/>
-      <stop offset="100%" stop-color="#A9863F"/>
-    </linearGradient>
-    <radialGradient id="bg" cx="45%" cy="22%" r="82%">
-      <stop offset="0%"   stop-color="#21242A"/>
-      <stop offset="100%" stop-color="#0B0C0E"/>
+    <!-- Glossy black disc -->
+    <radialGradient id="disc" cx="42%" cy="30%" r="80%">
+      <stop offset="0%"   stop-color="#2a2d31"/>
+      <stop offset="42%"  stop-color="#141619"/>
+      <stop offset="100%" stop-color="#000000"/>
     </radialGradient>
-    <radialGradient id="gloss" cx="50%" cy="8%" r="52%">
-      <stop offset="0%"   stop-color="rgba(255,255,255,0.09)"/>
+    <!-- Beveled rim -->
+    <linearGradient id="rim" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#3a3d42"/>
+      <stop offset="18%"  stop-color="#0d0e10"/>
+      <stop offset="82%"  stop-color="#0a0b0c"/>
+      <stop offset="100%" stop-color="#46494e"/>
+    </linearGradient>
+    <!-- Chrome lettering -->
+    <linearGradient id="chrome" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#ffffff"/>
+      <stop offset="16%"  stop-color="#eef3f6"/>
+      <stop offset="40%"  stop-color="#9aa3ab"/>
+      <stop offset="49%"  stop-color="#d6dde2"/>
+      <stop offset="58%"  stop-color="#697079"/>
+      <stop offset="80%"  stop-color="#e4eaee"/>
+      <stop offset="100%" stop-color="#ffffff"/>
+    </linearGradient>
+    <!-- Top gloss highlight -->
+    <radialGradient id="gloss" cx="50%" cy="6%" r="46%">
+      <stop offset="0%"   stop-color="rgba(255,255,255,0.20)"/>
       <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
     </radialGradient>
   </defs>
 
-  <!-- Base disc -->
-  <circle cx="60" cy="60" r="59" fill="url(#bg)"/>
+  <!-- Outer beveled rim -->
+  <circle cx="120" cy="120" r="116" fill="url(#rim)"/>
+  <!-- Inner black face -->
+  <circle cx="120" cy="120" r="106" fill="url(#disc)"/>
 
-  <!-- Gold outer ring -->
-  <circle cx="60" cy="60" r="57.5" fill="none" stroke="url(#gold)" stroke-width="2"/>
+  <!-- Chrome M&M — diagonal cascade -->
+  <g font-family="'Arial Black','Helvetica Neue',Arial,sans-serif" font-weight="900"
+     fill="url(#chrome)" paint-order="stroke" stroke="#0c0e10" stroke-width="1.6"
+     transform="skewX(-9)">
+    <text x="78"  y="118" font-size="92" text-anchor="middle">M</text>
+    <text x="118" y="158" font-size="86" text-anchor="middle">&amp;</text>
+    <text x="158" y="200" font-size="92" text-anchor="middle">M</text>
+  </g>
 
-  <!-- Subtle inner hairline -->
-  <circle cx="60" cy="60" r="52" fill="none" stroke="#C5A572" stroke-width="0.6" opacity="0.22"/>
+  <!-- Tagline with flanking rules -->
+  <line x1="58"  y1="210" x2="80"  y2="210" stroke="#ffffff" stroke-width="1.6"/>
+  <line x1="160" y1="210" x2="182" y2="210" stroke="#ffffff" stroke-width="1.6"/>
+  <text x="120" y="214"
+    font-family="'Helvetica Neue',Arial,sans-serif" font-size="12.5" font-weight="700"
+    letter-spacing="1.6" text-anchor="middle" fill="#ffffff">AUTO PERFORMANCE UK</text>
 
-  <!-- Soft gloss top -->
-  <circle cx="60" cy="60" r="59" fill="url(#gloss)"/>
-
-  <!-- M&M monogram — dominant, clean, legible at any size -->
-  <text x="60" y="66"
-    font-family="Georgia,'Palatino Linotype','Book Antiqua',serif"
-    font-size="38" font-weight="700"
-    text-anchor="middle"
-    fill="url(#gold)"
-    letter-spacing="1.5"
-    paint-order="stroke"
-    stroke="#0A0B0D"
-    stroke-width="1.5">M&amp;M</text>
-
-  <!-- Hairline rule -->
-  <line x1="22" y1="79" x2="98" y2="79" stroke="#C5A572" stroke-width="0.8" opacity="0.40"/>
-
-  <!-- Tagline — visible at medium/large sizes, becomes decorative texture at small -->
-  <text x="60" y="91"
-    font-family="'Helvetica Neue',Arial,sans-serif"
-    font-size="7.5" font-weight="500"
-    text-anchor="middle"
-    fill="#C5A572"
-    letter-spacing="3.5"
-    opacity="0.85">AUTO PERFORMANCE</text>
+  <!-- Gloss -->
+  <circle cx="120" cy="120" r="106" fill="url(#gloss)"/>
 </svg>
