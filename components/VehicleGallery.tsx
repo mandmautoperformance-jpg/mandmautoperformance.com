@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import Image from 'next/image';
 import { Car } from 'lucide-react';
-import { galleryFor } from '@/components/VehicleImage';
+import { galleryFor, washOpacity } from '@/components/VehicleImage';
 
 interface VehicleGalleryProps {
   model: string;
@@ -70,6 +70,13 @@ export const VehicleGallery: React.FC<VehicleGalleryProps> = ({ model, category,
           />
         ) : (
           fallback
+        )}
+        {activePhoto && activePhoto.kind === 'exterior' && colorHex && (
+          <div
+            aria-hidden
+            className="absolute inset-0 pointer-events-none"
+            style={{ backgroundColor: colorHex, mixBlendMode: 'color', opacity: washOpacity(colorHex) }}
+          />
         )}
         {activePhoto && (
           <span className="absolute bottom-4 left-4 px-3 py-1 rounded-full bg-performance-grey/80 backdrop-blur-sm text-xs font-semibold text-performance-babyblue capitalize">

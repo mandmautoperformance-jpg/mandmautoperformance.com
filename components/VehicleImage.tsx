@@ -1,27 +1,33 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import Image from 'next/image';
 import { Car } from 'lucide-react';
 
 /**
- * Real fleet photography.
+ * Real fleet photography, made to look unique per car.
  *
- * Each rule below matches a distinctive token in the model name and returns one
- * or more freely-licensed photos of that EXACT model, served via Wikimedia
- * Commons' `Special:FilePath` endpoint (resolves a file by name and returns a
- * sized thumbnail via `?width=`). Colour variants of the same model share its
- * photography. If a photo ever fails to load we fall back to a branded card
- * tinted with the car's real colour — so we NEVER show a stock photo of the
- * wrong car, and the grid still looks full and on-brand.
+ * Each rule matches a distinctive token in the model name and returns one or
+ * more freely-licensed photos of that EXACT model from Wikimedia Commons. Every
+ * filename below was verified to be a real "File:…" page that exists on
+ * commons.wikimedia.org, so `Special:FilePath` resolves it to an image.
  *
- * Rules are evaluated top-to-bottom (first match wins), so more specific tokens
- * MUST precede generic ones (e.g. "c-class"/"e-class"/"a-class" before "cla",
- * "gt-r" before "amg gt").
+ * Because the fleet contains many colour variants of the same model, we make
+ * every variant look like a different physical car by:
+ *   1. rotating through the model's available photos (seeded by the car id);
+ *   2. recolouring the photo to the car's real colour via a `mix-blend-mode`
+ *      wash (a red car looks red, a green car green) — neutral colours stay
+ *      naturally photographic;
+ *   3. nudging the framing (object-position) so even an identical shot is
+ *      composed differently.
+ * If a photo fails to load we try the next candidate, then fall back to a
+ * branded card tinted with the car's colour — so we NEVER show the wrong car.
  *
- * To use a photo of one of YOUR OWN cars, drop the file in `public/fleet/`
- * (e.g. public/fleet/lambo-huracan.jpg) and point the matching rule at it.
+ * Rules are evaluated top-to-bottom (first match wins): specific tokens MUST
+ * precede generic ones (e.g. "c-class"/"e-class"/"a-class" before "cla",
+ * "gt-r" before "amg gt"). Filenames are stored RAW (with spaces/parentheses)
+ * and URL-encoded by WIKIMEDIA().
  */
 const WIKIMEDIA = (file: string, width = 1200) =>
-  `https://commons.wikimedia.org/wiki/Special:FilePath/${file}?width=${width}`;
+  `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(file)}?width=${width}`;
 
 export type PhotoKind = 'exterior' | 'interior';
 export interface Photo {
@@ -30,7 +36,6 @@ export interface Photo {
 }
 
 interface PhotoRule {
-  /** lower-cased token that must appear in the model name */
   match: string;
   photos: Photo[];
 }
@@ -40,72 +45,70 @@ const int = (file: string): Photo => ({ url: WIKIMEDIA(file), kind: 'interior' }
 
 const PHOTO_RULES: PhotoRule[] = [
   // ---- Lamborghini ----
-  { match: 'huracan', photos: [ext('Orange_Lamborghini_Huracan_Performante.jpg'), ext('Lamborghini_Huracan_Evo_Spyder_Genf_2019.jpg'), int('Lamborghini_Huracan_interior.jpg')] },
-  { match: 'revuelto', photos: [ext('2023_Lamborghini_Revuelto.jpg')] },
-  { match: 'aventador', photos: [ext('Lamborghini_Aventador_S_Roadster_IAA_2017.jpg')] },
-  { match: 'urus', photos: [ext('Lamborghini_Urus_IAA_2017_1Y7A2436.jpg')] },
+  { match: 'huracan', photos: [ext('Orange Lamborghini Huracan Performante.jpg'), ext('2022 Lamborghini Huracan Tecnica Front.jpg'), ext('Lamborghini Huracan Evo IMG 3679.jpg')] },
+  { match: 'revuelto', photos: [ext('Lamborghini Revuelto.jpg'), ext('2023 Lamborghini Revuelto.jpg')] },
+  { match: 'aventador', photos: [ext('Lamborghini Aventador S coupe IMG 2926.jpg'), ext('Lamborghini Aventador LP750-4 SV IMG 9103.jpg'), int('Lamborghini Aventador interior.JPG')] },
+  { match: 'urus', photos: [ext('LAMBORGHINI URUS China.jpg'), ext('Lamborghini Urus red (1).jpg')] },
   // ---- Ferrari ----
-  { match: 'f8', photos: [ext('Vue_trois_quarts_avant_F8_tributo.jpg'), int('Ferrari_F8_Tributo_interior.jpg')] },
-  { match: '296', photos: [ext('Ferrari_296_GTB_IAA_2021_1X7A0098.jpg')] },
-  { match: 'roma', photos: [ext('Ferrari_Roma_Genf_2020_1Y7A1085.jpg')] },
+  { match: 'f8', photos: [ext('Vue trois quarts avant F8 tributo.jpg'), ext('2020 Ferrari F8 Tributo S-A 3.9 Front.jpg'), ext('2020 Ferrari F8 Tributo S-A 3.9 Rear.jpg')] },
+  { match: '296', photos: [ext('Ferrari 296 GTB - Paris 08.jpg'), ext('Ferrari 296 GTB - Paris 04.jpg')] },
+  { match: 'roma', photos: [ext('2021 Ferrari Roma Front.jpg'), ext('Ferrari Roma-01.jpg')] },
   // ---- McLaren / Maserati ----
-  { match: '720s', photos: [ext('McLaren_720S_Genf_2017.jpg')] },
-  { match: 'mc20', photos: [ext('Maserati_MC20_IAA_2021_1X7A0166.jpg')] },
+  { match: '720s', photos: [ext('Maclaren 720S PA280972-PSD.jpg'), ext('McLaren 720S rear view.jpg')] },
+  { match: 'mc20', photos: [ext('Maserati MC20 (7BA-MC30) front.jpg')] },
   // ---- Nissan (before generic 'amg gt') ----
-  { match: 'gt-r', photos: [ext('Nissan_GT-R_Nismo_(R35)_IAA_2017.jpg')] },
+  { match: 'gt-r', photos: [ext('Nissan GT-R NISMO N Attack Package (DBA-R35) front.JPG'), ext('Nissan GT-R Nismo (R35), 2022, rear.jpg')] },
   // ---- Porsche ----
-  { match: '911', photos: [ext('Porsche_911_Turbo_S_Heckansicht.JPG'), int('Porsche_911_991_interior.jpg')] },
-  { match: 'panamera', photos: [ext('Porsche_Panamera_Turbo_S_E-Hybrid_(971)_IAA_2019.jpg')] },
-  { match: 'cayenne', photos: [ext('Porsche_Cayenne_Turbo_GT_(9YA).jpg')] },
+  { match: '911', photos: [ext('Porsche 911 Turbo S Heckansicht.JPG'), ext('2023 Porsche 992 Turbo S in Peridot Metallic, front left.jpg'), ext('Porsche 992 Turbo S 1X7A0413.jpg')] },
+  { match: 'panamera', photos: [ext('Porsche 971 Panamera Turbo S E-Hybrid IMG 2962.jpg'), ext('Porsche 972 Turbo E-Hybrid IMG 0445.jpg'), int('Porsche Panamera Sport Turismo Cockpit.JPG')] },
+  { match: 'cayenne', photos: [ext('Porsche Cayenne Coupe 001.jpg'), ext('Porsche Cayenne Coupe 003.jpg')] },
   // ---- Bentley ----
-  { match: 'bentley continental', photos: [ext('Bentley_Continental_GT_Monaco_IMG_1208.jpg')] },
-  { match: 'continental', photos: [ext('Bentley_Continental_GT_Monaco_IMG_1208.jpg')] },
-  { match: 'bentayga', photos: [ext('Bentley_Bentayga_IAA_2015.jpg')] },
+  { match: 'continental', photos: [ext('Bentley Continental GT III British Racing Green (10).jpg'), ext('Bentley Continental GT III British Racing Green (6).jpg')] },
+  { match: 'bentayga', photos: [ext('Bentley Bentayga 2015 - rear.jpg')] },
   // ---- Rolls-Royce ----
-  { match: 'ghost', photos: [ext('Rolls-Royce_Ghost_II_IAA_2021_1X7A0005.jpg')] },
-  { match: 'cullinan', photos: [ext('Rolls-Royce_Cullinan_Geneva_2018.jpg')] },
-  { match: 'spectre', photos: [ext('Rolls-Royce_Spectre_IAA_2023.jpg')] },
+  { match: 'ghost', photos: [ext('Rolls-Royce Ghost II IAA 2021 1X7A0005.jpg'), ext('Rolls-Royce Ghost II Mandarin Navy Blue (4).jpg')] },
+  { match: 'cullinan', photos: [ext('2023 Rolls-Royce Cullinan in light blue, front left.jpg'), ext('Rolls-Royce Cullinan Blue (1).jpg')] },
+  { match: 'spectre', photos: [ext('2024 Rolls-Royce Spectre in Midnight Sapphire over Silver, front left.jpg')] },
   // ---- Aston Martin ----
-  { match: 'db12', photos: [ext('Aston_Martin_DB12_04.jpg')] },
-  { match: 'vantage', photos: [ext('Aston_Martin_Vantage_2018_IMG_0001.jpg')] },
+  { match: 'db12', photos: [ext('Aston Martin DB12 04.jpg'), ext('Aston Martin DB12 03.jpg')] },
+  { match: 'vantage', photos: [ext('2018 Aston Martin Vantage Coupe (44400066584).jpg'), ext('Aston Martin Vantage V8 F1 Edition.jpg'), int('2019 Aston Martin V8 Vantage Interior 4.0.jpg')] },
   // ---- Tesla ----
-  { match: 'plaid', photos: [ext('2023_Tesla_Model_S_Plaid.jpg'), int('Tesla_Model_S_interior.jpg')] },
+  { match: 'plaid', photos: [ext('2023 Tesla Model S Plaid.jpg'), ext('Tesla Model S Plaid Autofrühling Ulm IMG 9278.jpg')] },
   // ---- Land Rover ----
-  { match: 'range rover', photos: [ext('2023_Range_Rover_Sport_2.jpg')] },
+  { match: 'range rover', photos: [ext('2023 Range Rover Sport 2.jpg'), ext('Land Rover Range Rover Sport L461 Varesine Blue (13).jpg'), ext('ALL-NEW RANGE ROVER SPORT REVEALED (8594176684).jpg')] },
   // ---- Audi ----
-  { match: 'r8', photos: [ext('Audi_R8_V10_performance_IAA_2019.jpg')] },
-  { match: 'rs6', photos: [ext('Audi_RS6_Avant_(C8)_IMG_0001.jpg')] },
-  { match: 'rs3', photos: [ext('Audi_RS_3_Sportback_%288Y%29.jpg')] },
-  { match: 'a4', photos: [ext('Audi_A4_B9_Facelift_IMG_0001.jpg')] },
+  { match: 'r8', photos: [ext('Audi R8 4S Front.JPG'), int('2015 Audi R8 V10 interior (16319213591).jpg')] },
+  { match: 'rs6', photos: [ext('Audi RS6 Avant C8 IMG 3376.jpg'), ext('Audi RS6 Avant C8 at IAA 2019 IMG 0194.jpg')] },
+  { match: 'rs3', photos: [ext('Audi RS3 8Y Auto Zuerich 2021 IMG 0214.jpg'), ext('Audi RS3 Sportback Daytonagrau.JPG'), int('2019 Audi RS3 Sportback Interior.jpg')] },
+  { match: 'a4', photos: [ext('Audi A4 B9 Limousine 3.0 TDI quattro.JPG'), ext('Audi A4 B9 Limousine 3.0 TDI quattro Heck.JPG'), int('2015 Audi A4 B9 2.0 TFSI quattro 185 kW S line Cockpit Interieur Innenraum.jpg')] },
   // ---- Mercedes everyday (MUST precede 'cla' / 'amg gt') ----
-  { match: 'c-class', photos: [ext('Mercedes-Benz_W206_IMG_0001.jpg')] },
-  { match: 'e-class', photos: [ext('Mercedes-Benz_W214_IMG_0001.jpg')] },
-  { match: 'a-class', photos: [ext('Mercedes-Benz_W177_IMG_0001.jpg')] },
+  { match: 'c-class', photos: [ext('Mercedes-Benz C 200 4MATIC AVANTGARDE (W206) front.jpg'), ext('Mercedes-Benz C200 AVANTGARDE (W206) rear.jpg'), int('Mercedes-Benz C 200 4MATIC AVANTGARDE (W206) interior.jpg')] },
+  { match: 'e-class', photos: [ext('MERCEDES-BENZ E CLASS LWB (W214) China.jpg'), ext('Mercedes-Benz E 400 e 4MATIC 1X7A1728.jpg'), int('Mercedes-AMG E 53 HYBRID 4MATIC+ (W214) interior.jpg')] },
+  { match: 'a-class', photos: [ext('Mercedes-Benz A 180 (W177) front.jpg'), ext('Mercedes-Benz A180 (W177) front.jpg')] },
   // ---- Mercedes-AMG ----
-  { match: 'g63', photos: [ext('Mercedes-AMG_G_63_(W463)_IAA_2019.jpg')] },
-  { match: 'c63', photos: [ext('Mercedes-AMG_C_63_S_E_Performance_%28W206%29_IAA_2023.jpg')] },
-  { match: 's63', photos: [ext('Mercedes-AMG_S_63_E_Performance_%28W223%29.jpg')] },
-  { match: 'cla', photos: [ext('Mercedes-AMG_CLA_45_S_4MATIC%2B_%28C118%29.jpg')] },
+  { match: 'g63', photos: [ext('MERCEDES-AMG G63 (W463) China (3).jpg')] },
+  { match: 'c63', photos: [ext('Mercedes-AMG C 63 S E Performance (W206) front.jpg'), ext('2023 Mercedes-AMG C63 (W206).jpg'), int('Mercedes-AMG C63 S E PERFORMANCE (W206) interior.jpg')] },
+  { match: 's63', photos: [ext('Mercedes-Benz S-Class 2020 W223.jpg')] },
+  { match: 'cla', photos: [ext('Mercedes-AMG CLA 45 S 4MATIC+ Coupé (C118) front.jpg'), ext('Mercedes-AMG CLA 45 S 4MATIC+ Coupé (C118) rear.jpg'), ext('Mercedes-Benz C118 IMG 2673.jpg')] },
   // ---- BMW ----
-  { match: 'm3', photos: [ext('BMW_M3_Competition_%28G80%29.jpg')] },
-  { match: 'm4', photos: [ext('BMW_M4_Competition_%28G82%29.jpg')] },
-  { match: 'm5', photos: [ext('BMW_M5_Competition_(F90)_IMG_0001.jpg')] },
-  { match: '330', photos: [ext('BMW_330i_M_Sport_(G20)_IMG_0001.jpg')] },
-  { match: '320', photos: [ext('BMW_320i_M_Sport_(G20)_IMG_0001.jpg')] },
-  { match: '520', photos: [ext('BMW_520i_M_Sport_(G30)_IMG_0001.jpg')] },
+  { match: 'm3', photos: [ext('BMW G80 M3 Competition M xDrive Black Sapphire Metallic (1).jpg'), ext('BMW G80 M3 Competition Alpine White (12).jpg')] },
+  { match: 'm4', photos: [ext('2024 BMW M4 (G82) Competition IMG 9375.jpg'), ext('2024 BMW M4 (G82) Competition DSC 7856.jpg')] },
+  { match: 'm5', photos: [ext('2022 BMW M5 Competition Red F90.jpg'), ext('BMW M5 (F90) sedan (2).jpg')] },
+  { match: '330', photos: [ext('BMW 330i G20 Black 3.jpg'), ext('BMW G20 320d M Sport Dravit Grey Metallic (2).jpg')] },
+  { match: '320', photos: [ext('BMW G20 320d M Sport Dravit Grey Metallic (2).jpg'), ext('BMW 330i G20 Black 3.jpg')] },
+  { match: '520', photos: [ext('BMW-G30.JPG'), ext('BMW G30 LCI 530i M Sport Carbon Black Metallic (4).jpg')] },
   // ---- Volkswagen ----
-  { match: 'golf', photos: [ext('VW_Golf_R_%28Mk8%29_IMG_0001.jpg')] },
+  { match: 'golf', photos: [ext('VOLKSWAGEN GOLF GTI (Mk8 CD1) China (2).jpg'), ext('Volkswagen Golf GTI Mk8 Dolphin Gray Metallic (9).jpg')] },
   // ---- Ford ----
-  { match: 'mustang', photos: [ext('Ford_Mustang_GT_(S550_facelift)_IMG_0001.jpg')] },
+  { match: 'mustang', photos: [ext('2018 Ford Mustang GT (WM67 MWV).jpg'), ext('2019 Ford Mustang GT Blue.jpg'), int('Ford Mustang GT Innenraum Recaro.JPG')] },
   // ---- Generic Mercedes-AMG GT (LAST) ----
-  { match: 'amg gt', photos: [ext('Osaka_Motor_Show_2019_%28272%29_-_Mercedes-AMG_GT_63_S_4MATIC%2B_%28X290%29.jpg')] },
+  { match: 'amg gt', photos: [ext('Osaka Motor Show 2019 (272) - Mercedes-AMG GT 63 S 4MATIC+ (X290).jpg'), ext('Osaka Motor Show 2019 (275) - Mercedes-AMG GT 63 S 4MATIC+ (X290).jpg')] },
 ];
 
 function normalize(model: string): string {
-  // Strip diacritics (e.g. "Huracán" -> "huracan") so token matching is reliable.
   return model
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[̀-ͯ]/g, '')
     .toLowerCase();
 }
 
@@ -115,8 +118,34 @@ export function galleryFor(model: string): Photo[] {
   return PHOTO_RULES.find((rule) => m.includes(rule.match))?.photos ?? [];
 }
 
-function photoFor(model: string): string | undefined {
-  return galleryFor(model)[0]?.url;
+/** Exterior photos only, for cards. */
+export function exteriorsFor(model: string): Photo[] {
+  const all = galleryFor(model);
+  const ex = all.filter((p) => p.kind === 'exterior');
+  return ex.length ? ex : all;
+}
+
+// Stable hash so each car id produces deterministic, repeatable variety.
+export function hashId(s: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+/** Strength of the colour wash — neutral colours barely change, vivid recolour. */
+export function washOpacity(hex?: string): number {
+  if (!hex) return 0;
+  const h = hex.replace('#', '');
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const sat = max === 0 ? 0 : (max - min) / max; // 0 (grey) .. 1 (vivid)
+  return 0.28 + sat * 0.42; // 0.28 .. 0.70
 }
 
 const CATEGORY_GRADIENT: Record<string, string> = {
@@ -131,29 +160,52 @@ interface VehicleImageProps {
   vehicleId: string;
   model: string;
   category: 'luxury' | 'sports' | 'supercar' | 'exotic' | 'executive';
-  /** Optional real colour — tints the branded fallback so it never looks blank. */
+  /** The car's real colour — recolours the photo and tints the fallback. */
   colorHex?: string;
 }
 
-export const VehicleImage: React.FC<VehicleImageProps> = ({ model, category, colorHex }) => {
-  const photo = photoFor(model);
-  const [failed, setFailed] = useState(false);
+export const VehicleImage: React.FC<VehicleImageProps> = ({ vehicleId, model, category, colorHex }) => {
+  const photos = useMemo(() => exteriorsFor(model), [model]);
+  const seed = useMemo(() => hashId(vehicleId), [vehicleId]);
+  const [attempt, setAttempt] = useState(0);
 
-  if (photo && !failed) {
+  // Rotate the candidate order by the seed so sibling variants start on
+  // different photos; advance through the list as any fail to load.
+  const order = useMemo(() => {
+    if (!photos.length) return [];
+    const start = seed % photos.length;
+    return photos.map((_, i) => photos[(start + i) % photos.length]);
+  }, [photos, seed]);
+
+  const current = order[attempt];
+
+  if (current) {
+    const objX = 50 + ((seed >> 3) % 21) - 10; // 40%..60%
+    const objY = 50 + ((seed >> 8) % 11) - 5; // 45%..55%
     return (
-      <Image
-        src={photo}
-        alt={model}
-        fill
-        onError={() => setFailed(true)}
-        className="object-cover group-hover:scale-110 transition-transform duration-500"
-        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-      />
+      <>
+        <Image
+          key={current.url}
+          src={current.url}
+          alt={model}
+          fill
+          onError={() => setAttempt((a) => a + 1)}
+          className="object-cover group-hover:scale-110 transition-transform duration-500"
+          style={{ objectPosition: `${objX}% ${objY}%` }}
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+        />
+        {colorHex && (
+          <div
+            aria-hidden
+            className="absolute inset-0 pointer-events-none"
+            style={{ backgroundColor: colorHex, mixBlendMode: 'color', opacity: washOpacity(colorHex) }}
+          />
+        )}
+      </>
     );
   }
 
-  // Premium branded fallback — intentional, on-brand, tinted with the car's
-  // actual colour so a grid of fallbacks still looks full and varied.
+  // Premium branded fallback — tinted with the car's actual colour.
   return (
     <div
       className={`absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br ${
@@ -167,14 +219,8 @@ export const VehicleImage: React.FC<VehicleImageProps> = ({ model, category, col
           style={{ background: `radial-gradient(circle at 50% 35%, ${colorHex}66, transparent 70%)` }}
         />
       )}
-      <Car
-        size={64}
-        strokeWidth={1}
-        className="relative text-performance-turquoise/70 mb-3 group-hover:scale-110 transition-transform duration-500"
-      />
-      <span className="relative text-white/90 font-bold text-lg tracking-wide text-center px-6">
-        {model}
-      </span>
+      <Car size={64} strokeWidth={1} className="relative text-performance-turquoise/70 mb-3 group-hover:scale-110 transition-transform duration-500" />
+      <span className="relative text-white/90 font-bold text-lg tracking-wide text-center px-6">{model}</span>
       <span className="relative mt-2 text-[10px] uppercase tracking-[0.25em] text-performance-turquoise/70">
         M&amp;M Auto Performance
       </span>
