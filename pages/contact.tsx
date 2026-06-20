@@ -56,7 +56,7 @@ export default function ContactPage() {
                   {
                     icon: <Mail size={22} className="text-performance-turquoise" />,
                     title: 'Email',
-                    lines: ['hello@mandmautoperformance.com', 'Replies within 2 hours'],
+                    lines: ['mandmautoperformance@gmail.com', 'Replies within 2 hours'],
                   },
                   {
                     icon: <Phone size={22} className="text-performance-turquoise" />,
