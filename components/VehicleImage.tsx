@@ -57,7 +57,7 @@ const PHOTO_RULES: PhotoRule[] = [
   { match: '720s', photos: [ext('Maclaren 720S PA280972-PSD.jpg'), ext('McLaren 720S rear view.jpg')] },
   { match: 'mc20', photos: [ext('Maserati MC20 (7BA-MC30) front.jpg'), ext('Maserati MC20 white.jpg'), ext('Maserati MC20 Cielo.jpg')] },
   // ---- Nissan (before generic 'amg gt') ----
-  { match: 'gt-r', photos: [ext('Nissan GT-R Nismo (R35), 2022, rear.jpg'), ext('Nissan GT-R (R35) (5).jpg'), ext('Nissan GT-R R35 front.jpg')] },
+  { match: 'gt-r', photos: [ext('Nissan GT-R Nismo (R35), 2022, rear.jpg'), ext('Nissan GT-R (R35) (5).jpg')] },
   // ---- Porsche ----
   { match: '911', photos: [ext('Porsche 911 Turbo S Heckansicht.JPG'), ext('2023 Porsche 992 Turbo S in Peridot Metallic, front left.jpg'), ext('Porsche 992 Turbo S 1X7A0413.jpg')] },
   { match: 'panamera', photos: [ext('Porsche 971 Panamera Turbo S E-Hybrid IMG 2962.jpg'), ext('Porsche 972 Turbo E-Hybrid IMG 0445.jpg'), int('Porsche Panamera Sport Turismo Cockpit.JPG')] },
@@ -83,10 +83,10 @@ const PHOTO_RULES: PhotoRule[] = [
   { match: 'a4', photos: [ext('Audi A4 B9 Limousine 3.0 TDI quattro.JPG'), ext('Audi A4 B9 Limousine 3.0 TDI quattro Heck.JPG'), int('2015 Audi A4 B9 2.0 TFSI quattro 185 kW S line Cockpit Interieur Innenraum.jpg')] },
   // ---- Mercedes everyday (MUST precede 'cla' / 'amg gt') ----
   { match: 'c-class', photos: [ext('Mercedes-Benz C 200 4MATIC AVANTGARDE (W206) front.jpg'), ext('Mercedes-Benz C200 AVANTGARDE (W206) rear.jpg'), int('Mercedes-Benz C 200 4MATIC AVANTGARDE (W206) interior.jpg')] },
-  { match: 'e-class', photos: [ext('Mercedes-Benz E 400 e 4MATIC 1X7A1728.jpg'), ext('2024 Mercedes-Benz E 220 d (W214) front.jpg'), int('Mercedes-AMG E 53 HYBRID 4MATIC+ (W214) interior.jpg')] },
+  { match: 'e-class', photos: [ext('Mercedes-Benz E 400 e 4MATIC 1X7A1728.jpg'), ext('Mercedes-Benz E 400 e 4MATIC, IAA Open Space 2023, Munich (P1120186).jpg'), int('Mercedes-AMG E 53 HYBRID 4MATIC+ (W214) interior.jpg')] },
   { match: 'a-class', photos: [ext('Mercedes-Benz A 180 (W177) front.jpg'), ext('Mercedes-Benz A180 (W177) front.jpg')] },
   // ---- Mercedes-AMG ----
-  { match: 'g63', photos: [ext('Mercedes-AMG G 63 (W463A) front.jpg'), ext('Mercedes-AMG G 63 (W463) black.jpg'), ext('2019 Mercedes-AMG G 63 (W463).jpg')] },
+  { match: 'g63', photos: [ext('Mercedes-AMG G 63 (W464) front.jpg'), ext('Mercedes-AMG G 63 (W464) rear.jpg')] },
   { match: 'c63', photos: [ext('Mercedes-AMG C 63 S E Performance (W206) front.jpg'), ext('2023 Mercedes-AMG C63 (W206).jpg'), int('Mercedes-AMG C63 S E PERFORMANCE (W206) interior.jpg')] },
   { match: 's63', photos: [ext('Mercedes-AMG S 63 E Performance (W223) front.jpg'), ext('Mercedes-Benz S-Class 2020 W223.jpg'), ext('Mercedes-AMG S 63 4MATIC+ (Z223) front.jpg')] },
   { match: 'cla', photos: [ext('Mercedes-AMG CLA 45 S 4MATIC+ Coupé (C118) front.jpg'), ext('Mercedes-AMG CLA 45 S 4MATIC+ Coupé (C118) rear.jpg'), ext('Mercedes-Benz C118 IMG 2673.jpg')] },
@@ -102,7 +102,7 @@ const PHOTO_RULES: PhotoRule[] = [
   // ---- Ford ----
   { match: 'mustang', photos: [ext('2018 Ford Mustang GT (WM67 MWV).jpg'), ext('2019 Ford Mustang GT Blue.jpg'), int('Ford Mustang GT Innenraum Recaro.JPG')] },
   // ---- Generic Mercedes-AMG GT (LAST) ----
-  { match: 'amg gt', photos: [ext('Mercedes-AMG GT 63 S 4MATIC+ (X290) front.jpg'), ext('2020 Mercedes-AMG GT 63 S.jpg'), ext('Mercedes-AMG GT 63 S E Performance.jpg')] },
+  { match: 'amg gt', photos: [ext('Mercedes-AMG GT63 S 4MATIC+ (X290) front.jpg'), ext('Mercedes-AMG C192 1X7A0832.jpg'), ext('Mercedes-AMG C192 GT 63 S E Performance IMG 9255 (cropped).jpg')] },
 ];
 
 function normalize(model: string): string {
