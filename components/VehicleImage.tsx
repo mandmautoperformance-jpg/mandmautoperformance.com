@@ -51,7 +51,7 @@ const PHOTO_RULES: PhotoRule[] = [
   { match: 'urus', photos: [ext('Lamborghini Urus red (1).jpg'), ext('2019 Lamborghini Urus.jpg'), ext('Lamborghini Urus - front.jpg')] },
   // ---- Ferrari ----
   { match: 'f8', photos: [ext('Vue trois quarts avant F8 tributo.jpg'), ext('2020 Ferrari F8 Tributo S-A 3.9 Front.jpg'), ext('2020 Ferrari F8 Tributo S-A 3.9 Rear.jpg')] },
-  { match: '296', photos: [ext('Ferrari 296 GTB - Paris 08.jpg'), ext('Ferrari 296 GTB - Paris 04.jpg')] },
+  { match: '296', photos: [ext('Ferrari 296 GTB - Paris 08.jpg'), ext('Ferrari 296 GTB - Paris 04.jpg'), ext('Ferrari 296 GTB Assetto Fiorano front.png'), ext('2022 Ferrari 296 GTB 1.jpg')] },
   { match: 'roma', photos: [ext('2021 Ferrari Roma Front.jpg'), ext('Ferrari Roma-01.jpg')] },
   // ---- McLaren / Maserati ----
   { match: '720s', photos: [ext('Maclaren 720S PA280972-PSD.jpg'), ext('McLaren 720S rear view.jpg')] },
