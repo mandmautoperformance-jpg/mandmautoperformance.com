@@ -34,11 +34,10 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    // Our own brand logo is an SVG; the optimizer rejects SVGs by default.
-    // Safe to allow because we only render first-party SVGs, and we sandbox
-    // them with a strict CSP and download-style content disposition.
+    // Our own brand logo is an SVG; allow the optimizer to serve it.
+    // contentDispositionType is intentionally omitted — "attachment" would cause
+    // browsers to treat the SVG as a download instead of displaying it.
     dangerouslyAllowSVG: true,
-    contentDispositionType: "attachment",
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   headers: async () => {

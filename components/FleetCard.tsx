@@ -10,7 +10,6 @@ interface FleetCardProps {
   image?: string;
   color?: string;
   colorHex?: string;
-  photoUrl?: string;
   specs: {
     horsepower: number;
     acceleration: string; // 0-60 time
@@ -33,7 +32,6 @@ export const FleetCard: React.FC<FleetCardProps> = ({
   category,
   color,
   colorHex,
-  photoUrl,
   specs,
   pricing,
   availability,
@@ -55,7 +53,7 @@ export const FleetCard: React.FC<FleetCardProps> = ({
     <div className="group relative h-full bg-performance-panel border border-performance-turquoise/15 rounded-xl overflow-hidden hover:border-performance-turquoise/60 transition-all duration-300 hover:shadow-gold">
       {/* Image Container */}
       <div className="relative h-64 sm:h-72 overflow-hidden bg-gradient-to-br from-performance-grey to-performance-turquoise/10">
-        <VehicleImage vehicleId={vehicleId} model={model} category={category} colorHex={colorHex} photoUrl={photoUrl} />
+        <VehicleImage vehicleId={vehicleId} model={model} category={category} colorHex={colorHex} />
 
         {/* Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-performance-grey via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -94,22 +92,11 @@ export const FleetCard: React.FC<FleetCardProps> = ({
           ⭐ {rating}
         </div>
 
-        {/* UK number plate — branded, sits where the registration would be */}
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-stretch h-[22px] rounded-[3px] overflow-hidden border border-black shadow-[0_2px_6px_rgba(0,0,0,0.5)]">
-          {/* Blue UK identifier strip */}
-          <div className="flex flex-col items-center justify-center bg-[#063298] px-1.5">
-            <span className="text-[5px] leading-none text-yellow-300">★</span>
-            <span className="text-white font-bold text-[8px] leading-none mt-0.5">UK</span>
-          </div>
-          {/* Yellow plate field */}
-          <div className="flex items-center justify-center bg-[#f4d521] px-2">
-            <span
-              className="text-black font-extrabold text-[14px] leading-none tracking-[0.06em]"
-              style={{ fontFamily: "'Arial Narrow', 'Helvetica Neue', Arial, sans-serif" }}
-            >
-              M&amp;M AUTO
-            </span>
-          </div>
+        {/* Branded floating label */}
+        <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-20 px-3 py-0.5 bg-performance-grey/90 backdrop-blur-sm rounded-sm border border-performance-turquoise/30">
+          <span className="block text-performance-turquoise font-bold tracking-[0.22em] text-[8px] whitespace-nowrap">
+            M&amp;M AUTO PERFORMANCE
+          </span>
         </div>
       </div>
 

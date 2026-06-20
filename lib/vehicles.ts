@@ -1,18 +1,15 @@
 /**
  * Single source of truth for the M&M Auto Performance fleet.
  *
- * The fleet is generated from a curated set of BASE MODELS. Each model is
- * expanded into one listing per available photo, and every listing is pinned to
- * a DISTINCT image (deduped globally) so no two cars ever look the same. Every
- * surface (fleet listing, vehicle detail page, booking widget and the MIA
- * system prompt) still reads from this one list. Photos are resolved via
- * `lib/vehicle-photos` by a token match on the model name.
+ * The fleet is generated from a curated set of BASE MODELS expanded across the
+ * full colour palette. Each model's weight controls how many colour variants
+ * appear (weight 3 → all 16, weight 2 → 12, weight 1 → 7). Photos are
+ * resolved at render time by VehicleImage via lib/vehicle-photos, which tries
+ * a seeded pool so every card shows a real photo with automatic fallback.
  *
  * The generator is fully deterministic (seeded), so the same fleet is produced
  * on every server render and static build — slugs never shift between requests.
  */
-
-import { exteriorsFor } from '@/lib/vehicle-photos';
 
 export type VehicleCategory = 'exotic' | 'supercar' | 'sports' | 'luxury' | 'executive';
 
@@ -42,8 +39,6 @@ export interface Vehicle {
   colorHex: string;
   /** UK registration plate (cosmetic) */
   plate: string;
-  /** The exact, unique photo pinned to this vehicle (no two cars share one). */
-  photoUrl: string;
   specs: {
     horsepower: number;
     acceleration: string; // 0-60 time, e.g. "2.9s"
@@ -199,25 +194,17 @@ function makePlate(rng: () => number): string {
 }
 
 function generateFleet(): Vehicle[] {
-  // Every vehicle is pinned to ONE distinct photo, so the showroom never
-  // repeats a car. For each base model we create exactly as many listings as
-  // that model has real photos, giving each a different factory colour.
   const fleet: Vehicle[] = [];
   const usedSlugs = new Set<string>();
-  const usedPhotos = new Set<string>(); // guarantees globally-unique photography
 
   BASE_MODELS.forEach((base, modelIdx) => {
-    // Only photos not already claimed by another model — never repeat an image.
-    const photos = exteriorsFor(base.model).filter((p) => {
-      if (usedPhotos.has(p.url)) return false;
-      usedPhotos.add(p.url);
-      return true;
-    });
-    if (!photos.length) return; // no unique photography → skip (never show a blank)
+    // weight 3 → 16 colours, weight 2 → 12, weight 1 → 7
+    const numColors = Math.min(PALETTE.length, 2 + base.weight * 5);
 
-    photos.forEach((photo, i) => {
-      // Offset the colour per model so the fleet as a whole stays varied.
-      const color = PALETTE[(modelIdx * 3 + i) % PALETTE.length];
+    for (let i = 0; i < numColors; i++) {
+      // Offset start per model so the palette is varied across categories.
+      const colorIdx = (modelIdx * 7 + i) % PALETTE.length;
+      const color = PALETTE[colorIdx];
       const rng = mulberry32(
         (modelIdx + 1) * 2654435761 + (i + 1) * 40503 + base.key.length * 97,
       );
@@ -226,10 +213,9 @@ function generateFleet(): Vehicle[] {
       if (usedSlugs.has(slug)) slug = `${slug}-${i + 1}`;
       usedSlugs.add(slug);
 
-      // Deterministic per-car variance.
-      const rating = Math.round((4.5 + rng() * 0.5) * 10) / 10; // 4.5–5.0
+      const rating = Math.round((4.5 + rng() * 0.5) * 10) / 10;
       const reviews = 6 + Math.floor(rng() * 240);
-      const availability = rng() > 0.22; // ~78% available
+      const availability = rng() > 0.22;
       const location = LOCATIONS[Math.floor(rng() * LOCATIONS.length)];
       const plate = makePlate(rng);
 
@@ -241,7 +227,6 @@ function generateFleet(): Vehicle[] {
         color: color.name,
         colorHex: color.hex,
         plate,
-        photoUrl: photo.url,
         specs: base.specs,
         pricing: { daily: base.daily, hourly: base.hourly },
         availability,
@@ -251,7 +236,7 @@ function generateFleet(): Vehicle[] {
         reviews,
         description: base.description,
       });
-    });
+    }
   });
 
   return fleet;
@@ -259,15 +244,12 @@ function generateFleet(): Vehicle[] {
 
 export const VEHICLES: Vehicle[] = generateFleet();
 
-/** Real fleet size — every entry has its own unique photo. */
 export const FLEET_SIZE: number = VEHICLES.length;
 
 /** One representative listing per base model — used for compact pickers. */
 export const MODEL_OPTIONS: { vehicleId: string; model: string; daily: number }[] =
   BASE_MODELS
     .map((base) => {
-      // A model may have no listing if all its photos were claimed by another
-      // model that shares the same photo rule — skip those rather than crash.
       const first = VEHICLES.find((v) => v.model === base.model);
       if (!first) return null;
       return { vehicleId: first.vehicleId, model: base.model, daily: base.daily };

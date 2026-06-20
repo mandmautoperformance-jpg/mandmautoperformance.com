@@ -8,8 +8,6 @@ interface VehicleGalleryProps {
   category: 'luxury' | 'sports' | 'supercar' | 'exotic' | 'executive';
   color?: string;
   colorHex?: string;
-  /** The exact photo pinned to this vehicle — shown first in the gallery. */
-  primaryPhoto?: string;
 }
 
 const CATEGORY_GRADIENT: Record<string, string> = {
@@ -26,14 +24,8 @@ const CATEGORY_GRADIENT: Record<string, string> = {
  * so a broken thumbnail never appears. If no photo loads at all we show the
  * branded, colour-tinted fallback.
  */
-export const VehicleGallery: React.FC<VehicleGalleryProps> = ({ model, category, color, colorHex, primaryPhoto }) => {
-  const photos = useMemo<Photo[]>(() => {
-    const all = galleryFor(model);
-    if (!primaryPhoto) return all;
-    // Put this car's pinned photo first, without duplicating it.
-    const rest = all.filter((p) => p.url !== primaryPhoto);
-    return [{ url: primaryPhoto, kind: 'exterior' as const }, ...rest];
-  }, [model, primaryPhoto]);
+export const VehicleGallery: React.FC<VehicleGalleryProps> = ({ model, category, color, colorHex }) => {
+  const photos = useMemo<Photo[]>(() => galleryFor(model), [model]);
   const [active, setActive] = useState(0);
   const [failed, setFailed] = useState<Record<number, boolean>>({});
 

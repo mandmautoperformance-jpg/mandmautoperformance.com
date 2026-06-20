@@ -19,14 +19,7 @@ interface VehicleImageProps {
   vehicleId: string;
   model: string;
   category: 'luxury' | 'sports' | 'supercar' | 'exotic' | 'executive';
-  /** The car's real colour — tints the branded fallback. */
   colorHex?: string;
-  /**
-   * The exact photo pinned to this vehicle. When supplied, this is the ONLY
-   * photo shown (so no two cars ever share an image); if it fails to load we
-   * fall straight to the branded card rather than borrowing another car's shot.
-   */
-  photoUrl?: string;
 }
 
 export const VehicleImage: React.FC<VehicleImageProps> = ({
@@ -34,19 +27,17 @@ export const VehicleImage: React.FC<VehicleImageProps> = ({
   model,
   category,
   colorHex,
-  photoUrl,
 }) => {
   const seed = useMemo(() => hashId(vehicleId), [vehicleId]);
 
-  // When a photo is pinned, use only that one. Otherwise rotate the model's
-  // pool (seeded by id) and advance through it as candidates fail to load.
+  // Rotate through the model's photo pool seeded by vehicleId so cards look
+  // varied; advance to the next candidate when one fails to load.
   const pool = useMemo<Photo[]>(() => {
-    if (photoUrl) return [{ url: photoUrl, kind: 'exterior' }];
     const photos = exteriorsFor(model);
     if (!photos.length) return [];
     const start = seed % photos.length;
     return photos.map((_, i) => photos[(start + i) % photos.length]);
-  }, [photoUrl, model, seed]);
+  }, [model, seed]);
 
   const [attempt, setAttempt] = useState(0);
   const current = pool[attempt];
