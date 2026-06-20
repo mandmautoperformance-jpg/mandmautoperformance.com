@@ -91,6 +91,13 @@ export const FleetCard: React.FC<FleetCardProps> = ({
         <div className="absolute bottom-4 left-4 bg-performance-grey/80 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-bold text-performance-babyblue">
           ⭐ {rating}
         </div>
+
+        {/* Brand plate — covers foreign registration area with M&M branding */}
+        <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-20 px-3 py-0.5 bg-performance-grey/90 backdrop-blur-sm rounded-sm border border-performance-turquoise/30">
+          <span className="block text-performance-turquoise font-bold tracking-[0.22em] text-[8px] whitespace-nowrap">
+            M&amp;M AUTO PERFORMANCE
+          </span>
+        </div>
       </div>
 
       {/* Content */}

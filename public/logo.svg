@@ -1,75 +1,52 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" width="220" height="220" role="img" aria-label="M&M Auto Performance UK">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="M&M Auto Performance">
   <defs>
-    <!-- Deep piano-black disc -->
-    <radialGradient id="disc" cx="50%" cy="32%" r="75%">
-      <stop offset="0%"  stop-color="#262a2e"/>
-      <stop offset="55%" stop-color="#0d0f11"/>
-      <stop offset="100%" stop-color="#000000"/>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#E3CFA1"/>
+      <stop offset="55%"  stop-color="#C5A572"/>
+      <stop offset="100%" stop-color="#A9863F"/>
+    </linearGradient>
+    <radialGradient id="bg" cx="45%" cy="22%" r="82%">
+      <stop offset="0%"   stop-color="#21242A"/>
+      <stop offset="100%" stop-color="#0B0C0E"/>
     </radialGradient>
-    <!-- Polished platinum ring -->
-    <linearGradient id="ring" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%"   stop-color="#ffffff"/>
-      <stop offset="25%"  stop-color="#cfd6dc"/>
-      <stop offset="50%"  stop-color="#7f878e"/>
-      <stop offset="75%"  stop-color="#c2c9cf"/>
-      <stop offset="100%" stop-color="#eef2f5"/>
-    </linearGradient>
-    <!-- Brushed platinum for the lettering — light, high-contrast, legible -->
-    <linearGradient id="letters" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%"   stop-color="#ffffff"/>
-      <stop offset="42%"  stop-color="#e3e8ec"/>
-      <stop offset="52%"  stop-color="#aeb6bd"/>
-      <stop offset="62%"  stop-color="#e8edf1"/>
-      <stop offset="100%" stop-color="#ffffff"/>
-    </linearGradient>
-    <!-- Gold hairline accent -->
-    <linearGradient id="gold" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%"   stop-color="#f7e4b0"/>
-      <stop offset="50%"  stop-color="#caa14e"/>
-      <stop offset="100%" stop-color="#f3dca0"/>
-    </linearGradient>
-    <!-- Soft top gloss -->
-    <radialGradient id="gloss" cx="50%" cy="16%" r="50%">
-      <stop offset="0%"   stop-color="rgba(255,255,255,0.22)"/>
+    <radialGradient id="gloss" cx="50%" cy="8%" r="52%">
+      <stop offset="0%"   stop-color="rgba(255,255,255,0.09)"/>
       <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
     </radialGradient>
   </defs>
 
-  <!-- Outer polished platinum rim -->
-  <circle cx="110" cy="110" r="106" fill="url(#ring)"/>
-  <circle cx="110" cy="110" r="99"  fill="#000000"/>
-  <!-- Main disc -->
-  <circle cx="110" cy="110" r="96"  fill="url(#disc)"/>
-  <!-- Gold hairline ring -->
-  <circle cx="110" cy="110" r="88"  fill="none" stroke="url(#gold)" stroke-width="1.4" opacity="0.9"/>
+  <!-- Base disc -->
+  <circle cx="60" cy="60" r="59" fill="url(#bg)"/>
 
-  <!-- M&M — clean, bold, wide-tracked for clarity -->
-  <text x="110" y="120"
-    font-family="'Trajan Pro','Georgia','Times New Roman',serif"
-    font-size="74" font-weight="700" letter-spacing="2"
-    text-anchor="middle"
-    fill="url(#letters)"
-    paint-order="stroke" stroke="#05070a" stroke-width="1"
-  >M&amp;M</text>
+  <!-- Gold outer ring -->
+  <circle cx="60" cy="60" r="57.5" fill="none" stroke="url(#gold)" stroke-width="2"/>
 
-  <!-- Divider lines flanking the tagline -->
-  <line x1="44"  y1="150" x2="74"  y2="150" stroke="url(#gold)" stroke-width="1.2"/>
-  <line x1="146" y1="150" x2="176" y2="150" stroke="url(#gold)" stroke-width="1.2"/>
+  <!-- Subtle inner hairline -->
+  <circle cx="60" cy="60" r="52" fill="none" stroke="#C5A572" stroke-width="0.6" opacity="0.22"/>
 
-  <!-- Tagline -->
-  <text x="110" y="154"
-    font-family="'Helvetica Neue',Arial,sans-serif"
-    font-size="11" font-weight="600" letter-spacing="3.4"
-    text-anchor="middle"
-    fill="#e9edf0"
-  >AUTO PERFORMANCE</text>
-  <text x="110" y="172"
-    font-family="'Helvetica Neue',Arial,sans-serif"
-    font-size="10" font-weight="700" letter-spacing="6"
+  <!-- Soft gloss top -->
+  <circle cx="60" cy="60" r="59" fill="url(#gloss)"/>
+
+  <!-- M&M monogram — dominant, clean, legible at any size -->
+  <text x="60" y="66"
+    font-family="Georgia,'Palatino Linotype','Book Antiqua',serif"
+    font-size="38" font-weight="700"
     text-anchor="middle"
     fill="url(#gold)"
-  >UNITED KINGDOM</text>
+    letter-spacing="1.5"
+    paint-order="stroke"
+    stroke="#0A0B0D"
+    stroke-width="1.5">M&amp;M</text>
 
-  <!-- Top gloss highlight -->
-  <ellipse cx="110" cy="74" rx="76" ry="40" fill="url(#gloss)"/>
+  <!-- Hairline rule -->
+  <line x1="22" y1="79" x2="98" y2="79" stroke="#C5A572" stroke-width="0.8" opacity="0.40"/>
+
+  <!-- Tagline — visible at medium/large sizes, becomes decorative texture at small -->
+  <text x="60" y="91"
+    font-family="'Helvetica Neue',Arial,sans-serif"
+    font-size="7.5" font-weight="500"
+    text-anchor="middle"
+    fill="#C5A572"
+    letter-spacing="3.5"
+    opacity="0.85">AUTO PERFORMANCE</text>
 </svg>

@@ -6,121 +6,31 @@ import Hero from '@/components/Hero';
 import BookingWidget from '@/components/BookingWidget';
 import FleetCard from '@/components/FleetCard';
 import AIConcierge from '@/components/AIConcierge';
-import { Star, MapPin, Zap } from 'lucide-react';
+import CategoryShowcase from '@/components/CategoryShowcase';
+import { VEHICLES } from '@/lib/vehicles';
 
-interface Vehicle {
-  vehicleId: string;
-  model: string;
-  category: 'luxury' | 'sports' | 'supercar' | 'exotic';
-  image: string;
-  specs: {
-    horsepower: number;
-    acceleration: string;
-    topSpeed: number;
-    transmission: string;
-  };
-  pricing: {
-    daily: number;
-    hourly: number;
-  };
-  availability: boolean;
-  features: string[];
-  location?: string;
-  rating?: number;
-}
+// Pick one showcase car per highlight category for the Featured Fleet strip.
+const FEATURED_KEYS = [
+  'lambo-huracan-rosso-corsa',
+  'ferrari-f8-bianco-white',
+  'porsche-911-nero-black',
+  'rolls-ghost-grigio-silver',
+];
 
 export default function HomePage() {
   const [conciergeOpen, setConciergeOpen] = useState(false);
 
-  const featuredVehicles: Vehicle[] = [
-    {
-      vehicleId: '1',
-      model: 'Lamborghini Huracán',
-      category: 'supercar',
-      image:
-        'https://images.unsplash.com/photo-1552820728-8ac41f1ce891?w=500&h=400&fit=crop',
-      specs: {
-        horsepower: 657,
-        acceleration: '2.9s',
-        topSpeed: 217,
-        transmission: 'Automatic',
-      },
-      pricing: { daily: 1500, hourly: 200 },
-      availability: true,
-      features: [
-        'GPS Navigation',
-        'Premium Sound',
-        'Leather Seats',
-        'Climate Control',
-      ],
-      location: 'Mayfair, London',
-      rating: 4.9,
-    },
-    {
-      vehicleId: '2',
-      model: 'Ferrari F8 Tributo',
-      category: 'supercar',
-      image:
-        'https://images.unsplash.com/photo-1567818735868-e71b99932e29?w=500&h=400&fit=crop',
-      specs: {
-        horsepower: 710,
-        acceleration: '2.9s',
-        topSpeed: 211,
-        transmission: 'Automatic',
-      },
-      pricing: { daily: 1800, hourly: 250 },
-      availability: true,
-      features: [
-        'Carbon Fiber',
-        'Sport Package',
-        'Premium Audio',
-        'Daytona Seats',
-      ],
-      location: 'St Albans, Herts',
-      rating: 5.0,
-    },
-    {
-      vehicleId: '3',
-      model: 'Porsche 911 Turbo S',
-      category: 'sports',
-      image:
-        'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=500&h=400&fit=crop',
-      specs: {
-        horsepower: 640,
-        acceleration: '2.7s',
-        topSpeed: 211,
-        transmission: 'Automatic',
-      },
-      pricing: { daily: 800, hourly: 120 },
-      availability: true,
-      features: [
-        'Night Vision',
-        'Adaptive Suspension',
-        'Premium Interior',
-        'Paddle Shifters',
-      ],
-      location: 'Watford, Herts',
-      rating: 4.8,
-    },
-    {
-      vehicleId: '4',
-      model: 'Bentley Continental',
-      category: 'luxury',
-      image:
-        'https://images.unsplash.com/photo-1566023967268-de0b93b10c73?w=500&h=400&fit=crop',
-      specs: {
-        horsepower: 626,
-        acceleration: '3.6s',
-        topSpeed: 198,
-        transmission: 'Automatic',
-      },
-      pricing: { daily: 600, hourly: 100 },
-      availability: false,
-      features: ['Leather Interiors', 'Heated Seats', 'WiFi', 'Premium Bar'],
-      location: 'Mayfair, London',
-      rating: 4.7,
-    },
-  ];
+  const featuredVehicles = (() => {
+    const specific = VEHICLES.filter((v) => FEATURED_KEYS.includes(v.vehicleId));
+    if (specific.length >= 4) return specific.slice(0, 4);
+    // Fallback: first vehicle from each of 4 distinct makes
+    const seen = new Set<string>();
+    return VEHICLES.filter((v) => {
+      if (seen.has(v.make)) return false;
+      seen.add(v.make);
+      return true;
+    }).slice(0, 4);
+  })();
 
   return (
     <main className="min-h-screen bg-performance-grey text-white">
@@ -128,6 +38,9 @@ export default function HomePage() {
 
       {/* Hero Section */}
       <Hero />
+
+      {/* Category Showcase */}
+      <CategoryShowcase />
 
       {/* Booking Widget Section */}
       <section className="px-4 sm:px-6 lg:px-8 py-20 bg-performance-grey/50">

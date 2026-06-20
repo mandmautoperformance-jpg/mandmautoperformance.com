@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Head from 'next/head';
+import { useRouter } from 'next/router';
 import Navbar from '@/components/Navbar';
 import FleetCard from '@/components/FleetCard';
 import { Search, SlidersHorizontal } from 'lucide-react';
@@ -9,6 +10,7 @@ const CATEGORIES: (VehicleCategory | 'all')[] = ['all', 'exotic', 'supercar', 's
 const PAGE_SIZE = 24;
 
 export default function FleetPage() {
+  const router = useRouter();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<string>('all');
   const [make, setMake] = useState<string>('all');
@@ -34,6 +36,14 @@ export default function FleetPage() {
       }),
     [search, category, make, maxPrice, showAvailableOnly],
   );
+
+  // Pre-select category from URL query param (e.g. /fleet?cat=exotic)
+  useEffect(() => {
+    const { cat } = router.query;
+    if (cat && CATEGORIES.includes(cat as VehicleCategory)) {
+      setCategory(cat as string);
+    }
+  }, [router.query]);
 
   // Reset how many cards are shown whenever the filters change.
   useEffect(() => {

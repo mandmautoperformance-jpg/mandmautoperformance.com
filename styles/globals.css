@@ -71,3 +71,19 @@ a {
   background: linear-gradient(90deg, transparent, rgba(197,165,114,0.6), transparent);
   height: 1px;
 }
+
+/* Ken Burns animations for category showcase */
+@keyframes kenburns {
+  0%   { transform: scale(1.00) translate(0%,     0%);    }
+  40%  { transform: scale(1.08) translate(-1.5%,  -0.8%); }
+  100% { transform: scale(1.00) translate(0%,     0%);    }
+}
+
+@keyframes kenburns-fast {
+  0%   { transform: scale(1.08) translate(-2.5%, 0%);   }
+  100% { transform: scale(1.20) translate( 2.5%, -2%);  }
+}
+
+/* Hide scrollbar cross-browser */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
