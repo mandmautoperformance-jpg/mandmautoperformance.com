@@ -1,76 +1,75 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" width="220" height="220" role="img" aria-label="M&M Auto Performance UK">
   <defs>
-    <!-- Outer bevel gradient -->
-    <radialGradient id="bevelGrad" cx="40%" cy="30%" r="70%">
-      <stop offset="0%" stop-color="#666"/>
-      <stop offset="60%" stop-color="#222"/>
-      <stop offset="100%" stop-color="#080808"/>
+    <!-- Deep piano-black disc -->
+    <radialGradient id="disc" cx="50%" cy="32%" r="75%">
+      <stop offset="0%"  stop-color="#262a2e"/>
+      <stop offset="55%" stop-color="#0d0f11"/>
+      <stop offset="100%" stop-color="#000000"/>
     </radialGradient>
-    <!-- Disc background -->
-    <radialGradient id="discGrad" cx="50%" cy="35%" r="65%">
-      <stop offset="0%" stop-color="#1c1c1c"/>
-      <stop offset="100%" stop-color="#050505"/>
-    </radialGradient>
-    <!-- Chrome metallic gradient for M&M text -->
-    <linearGradient id="chromeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%"   stop-color="#f0f0f0"/>
-      <stop offset="20%"  stop-color="#b0b0b0"/>
-      <stop offset="45%"  stop-color="#e8e8e8"/>
-      <stop offset="60%"  stop-color="#787878"/>
-      <stop offset="80%"  stop-color="#c8c8c8"/>
-      <stop offset="100%" stop-color="#a0a0a0"/>
+    <!-- Polished platinum ring -->
+    <linearGradient id="ring" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#ffffff"/>
+      <stop offset="25%"  stop-color="#cfd6dc"/>
+      <stop offset="50%"  stop-color="#7f878e"/>
+      <stop offset="75%"  stop-color="#c2c9cf"/>
+      <stop offset="100%" stop-color="#eef2f5"/>
     </linearGradient>
-    <!-- Subtle chrome for tagline -->
-    <linearGradient id="taglineGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%"   stop-color="#d0d0d0"/>
-      <stop offset="100%" stop-color="#888"/>
+    <!-- Brushed platinum for the lettering — light, high-contrast, legible -->
+    <linearGradient id="letters" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#ffffff"/>
+      <stop offset="42%"  stop-color="#e3e8ec"/>
+      <stop offset="52%"  stop-color="#aeb6bd"/>
+      <stop offset="62%"  stop-color="#e8edf1"/>
+      <stop offset="100%" stop-color="#ffffff"/>
     </linearGradient>
-    <!-- Glossy highlight -->
-    <radialGradient id="glossGrad" cx="50%" cy="20%" r="55%">
-      <stop offset="0%"   stop-color="rgba(255,255,255,0.18)"/>
+    <!-- Gold hairline accent -->
+    <linearGradient id="gold" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#f7e4b0"/>
+      <stop offset="50%"  stop-color="#caa14e"/>
+      <stop offset="100%" stop-color="#f3dca0"/>
+    </linearGradient>
+    <!-- Soft top gloss -->
+    <radialGradient id="gloss" cx="50%" cy="16%" r="50%">
+      <stop offset="0%"   stop-color="rgba(255,255,255,0.22)"/>
       <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
     </radialGradient>
-    <!-- Carbon dot pattern -->
-    <pattern id="carbon" x="0" y="0" width="4" height="4" patternUnits="userSpaceOnUse">
-      <rect width="4" height="4" fill="transparent"/>
-      <circle cx="1" cy="1" r="0.6" fill="rgba(255,255,255,0.04)"/>
-      <circle cx="3" cy="3" r="0.6" fill="rgba(255,255,255,0.04)"/>
-    </pattern>
   </defs>
 
-  <!-- Outer bevel/rim -->
-  <circle cx="100" cy="100" r="98" fill="url(#bevelGrad)"/>
+  <!-- Outer polished platinum rim -->
+  <circle cx="110" cy="110" r="106" fill="url(#ring)"/>
+  <circle cx="110" cy="110" r="99"  fill="#000000"/>
   <!-- Main disc -->
-  <circle cx="100" cy="100" r="90" fill="url(#discGrad)"/>
-  <!-- Carbon texture overlay -->
-  <circle cx="100" cy="100" r="90" fill="url(#carbon)"/>
+  <circle cx="110" cy="110" r="96"  fill="url(#disc)"/>
+  <!-- Gold hairline ring -->
+  <circle cx="110" cy="110" r="88"  fill="none" stroke="url(#gold)" stroke-width="1.4" opacity="0.9"/>
 
-  <!-- M&M text — large bold italic chrome -->
-  <text
-    x="100" y="118"
-    font-family="'Arial Black', 'Impact', 'Haettenschweiler', sans-serif"
-    font-size="72"
-    font-weight="900"
-    font-style="italic"
+  <!-- M&M — clean, bold, wide-tracked for clarity -->
+  <text x="110" y="120"
+    font-family="'Trajan Pro','Georgia','Times New Roman',serif"
+    font-size="74" font-weight="700" letter-spacing="2"
     text-anchor="middle"
-    fill="url(#chromeGrad)"
-    paint-order="stroke"
-    stroke="#1a1a1a"
-    stroke-width="2"
-    stroke-linejoin="round"
+    fill="url(#letters)"
+    paint-order="stroke" stroke="#05070a" stroke-width="1"
   >M&amp;M</text>
 
-  <!-- Tagline -->
-  <text
-    x="100" y="150"
-    font-family="'Arial', 'Helvetica Neue', sans-serif"
-    font-size="10"
-    font-weight="700"
-    letter-spacing="2.5"
-    text-anchor="middle"
-    fill="url(#taglineGrad)"
-  >— AUTO PERFORMANCE UK —</text>
+  <!-- Divider lines flanking the tagline -->
+  <line x1="44"  y1="150" x2="74"  y2="150" stroke="url(#gold)" stroke-width="1.2"/>
+  <line x1="146" y1="150" x2="176" y2="150" stroke="url(#gold)" stroke-width="1.2"/>
 
-  <!-- Glossy highlight at top -->
-  <ellipse cx="100" cy="68" rx="68" ry="38" fill="url(#glossGrad)"/>
+  <!-- Tagline -->
+  <text x="110" y="154"
+    font-family="'Helvetica Neue',Arial,sans-serif"
+    font-size="11" font-weight="600" letter-spacing="3.4"
+    text-anchor="middle"
+    fill="#e9edf0"
+  >AUTO PERFORMANCE</text>
+  <text x="110" y="172"
+    font-family="'Helvetica Neue',Arial,sans-serif"
+    font-size="10" font-weight="700" letter-spacing="6"
+    text-anchor="middle"
+    fill="url(#gold)"
+  >UNITED KINGDOM</text>
+
+  <!-- Top gloss highlight -->
+  <ellipse cx="110" cy="74" rx="76" ry="40" fill="url(#gloss)"/>
 </svg>

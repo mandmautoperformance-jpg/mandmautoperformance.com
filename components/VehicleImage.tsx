@@ -97,8 +97,10 @@ const PHOTO_RULES: PhotoRule[] = [
   { match: '330', photos: [ext('BMW 330i G20 Black 3.jpg'), ext('BMW G20 320d M Sport Dravit Grey Metallic (2).jpg')] },
   { match: '320', photos: [ext('BMW G20 320d M Sport Dravit Grey Metallic (2).jpg'), ext('BMW 330i G20 Black 3.jpg')] },
   { match: '520', photos: [ext('BMW-G30.JPG'), ext('BMW G30 LCI 530i M Sport Carbon Black Metallic (4).jpg')] },
-  // ---- Volkswagen ----
-  { match: 'golf', photos: [ext('Volkswagen Golf GTI Mk8 Dolphin Gray Metallic (9).jpg'), ext('Volkswagen Golf 8 GTI IMG 1552.jpg'), ext('VW Golf R Mk8.jpg')] },
+  // ---- Volkswagen (specific Golf trims MUST precede generic 'golf') ----
+  { match: 'golf r', photos: [ext('Volkswagen Golf VIII R IMG 4081.jpg'), ext('Volkswagen Golf VIII R 333 Limited Edition IMG 9486.jpg')] },
+  { match: 'golf gti', photos: [ext('Volkswagen Golf GTI Mk8 Dolphin Gray Metallic (9).jpg'), ext('Volkswagen Golf 8 GTI IMG 1552.jpg'), ext('VW Golf GTI (VIII) – f 03012021.jpg')] },
+  { match: 'golf', photos: [ext('Volkswagen Golf VIII Variant Facelift IMG 8874.jpg'), ext('Volkswagen Golf VIII GTE Facelift IMG 0059.jpg')] },
   // ---- Ford ----
   { match: 'mustang', photos: [ext('2018 Ford Mustang GT (WM67 MWV).jpg'), ext('2019 Ford Mustang GT Blue.jpg'), int('Ford Mustang GT Innenraum Recaro.JPG')] },
   // ---- Generic Mercedes-AMG GT (LAST) ----

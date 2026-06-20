@@ -194,7 +194,7 @@ function makePlate(rng: () => number): string {
   return `${area}${age} ${tail}`;
 }
 
-const TARGET_FLEET_SIZE = 504;
+const TARGET_FLEET_SIZE = 490;
 
 function generateFleet(): Vehicle[] {
   // Build a weighted rotation of base models.
