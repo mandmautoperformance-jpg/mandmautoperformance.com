@@ -1,11 +1,11 @@
 /**
  * Single source of truth for the M&M Auto Performance fleet.
  *
- * The fleet is generated from a curated set of BASE MODELS expanded across the
- * full colour palette. Each model's weight controls how many colour variants
- * appear (weight 3 → all 16, weight 2 → 12, weight 1 → 7). Photos are
- * resolved at render time by VehicleImage via lib/vehicle-photos, which tries
- * a seeded pool so every card shows a real photo with automatic fallback.
+ * The fleet is generated from a curated set of BASE MODELS. Each model appears
+ * at most twice — two distinct colour variants — so the showroom never has more
+ * than two of the same car. Photos are resolved at render time by VehicleImage
+ * via lib/vehicle-photos, which tries a seeded pool so every card shows a real
+ * photo with automatic fallback.
  *
  * The generator is fully deterministic (seeded), so the same fleet is produced
  * on every server render and static build — slugs never shift between requests.
@@ -198,8 +198,8 @@ function generateFleet(): Vehicle[] {
   const usedSlugs = new Set<string>();
 
   BASE_MODELS.forEach((base, modelIdx) => {
-    // weight 3 → 16 colours, weight 2 → 12, weight 1 → 7
-    const numColors = Math.min(PALETTE.length, 2 + base.weight * 5);
+    // Max two of any given car model — two distinct colour variants each.
+    const numColors = 2;
 
     for (let i = 0; i < numColors; i++) {
       // Offset start per model so the palette is varied across categories.
