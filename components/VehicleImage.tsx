@@ -183,25 +183,16 @@ export const VehicleImage: React.FC<VehicleImageProps> = ({ vehicleId, model, ca
     const objX = 50 + ((seed >> 3) % 21) - 10; // 40%..60%
     const objY = 50 + ((seed >> 8) % 11) - 5; // 45%..55%
     return (
-      <>
-        <Image
-          key={current.url}
-          src={current.url}
-          alt={model}
-          fill
-          onError={() => setAttempt((a) => a + 1)}
-          className="object-cover group-hover:scale-110 transition-transform duration-500"
-          style={{ objectPosition: `${objX}% ${objY}%` }}
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-        />
-        {colorHex && (
-          <div
-            aria-hidden
-            className="absolute inset-0 pointer-events-none"
-            style={{ backgroundColor: colorHex, mixBlendMode: 'color', opacity: washOpacity(colorHex) }}
-          />
-        )}
-      </>
+      <Image
+        key={current.url}
+        src={current.url}
+        alt={model}
+        fill
+        onError={() => setAttempt((a) => a + 1)}
+        className="object-cover group-hover:scale-110 transition-transform duration-500"
+        style={{ objectPosition: `${objX}% ${objY}%` }}
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+      />
     );
   }
 
