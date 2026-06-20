@@ -1,46 +1,63 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200" role="img" aria-label="M&amp;M Auto Performance">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200" role="img" aria-label="M&amp;M Auto Performance UK">
   <defs>
-    <radialGradient id="mm-disc" cx="38%" cy="26%" r="76%">
-      <stop offset="0%" stop-color="#2c2f35"/>
-      <stop offset="45%" stop-color="#131519"/>
-      <stop offset="100%" stop-color="#07080a"/>
+    <!-- Black textured disc -->
+    <radialGradient id="mm-disc" cx="40%" cy="30%" r="78%">
+      <stop offset="0%" stop-color="#23211c"/>
+      <stop offset="45%" stop-color="#141210"/>
+      <stop offset="100%" stop-color="#050505"/>
     </radialGradient>
-    <linearGradient id="mm-rim" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#484c56"/>
-      <stop offset="18%" stop-color="#0e0f12"/>
-      <stop offset="82%" stop-color="#0b0c0f"/>
-      <stop offset="100%" stop-color="#4c5059"/>
+    <!-- Gold ring -->
+    <linearGradient id="mm-ring" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fbe7a8"/>
+      <stop offset="22%" stop-color="#d4af37"/>
+      <stop offset="50%" stop-color="#a87b22"/>
+      <stop offset="78%" stop-color="#e8c869"/>
+      <stop offset="100%" stop-color="#8a6418"/>
     </linearGradient>
-    <linearGradient id="mm-chrome" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#ffffff"/>
-      <stop offset="18%" stop-color="#eef2f6"/>
-      <stop offset="42%" stop-color="#9aa3ac"/>
-      <stop offset="50%" stop-color="#d6dde3"/>
-      <stop offset="60%" stop-color="#6a7179"/>
-      <stop offset="82%" stop-color="#e0e7ec"/>
-      <stop offset="100%" stop-color="#ffffff"/>
+    <!-- Gold lettering -->
+    <linearGradient id="mm-gold" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fff3c4"/>
+      <stop offset="20%" stop-color="#f4d878"/>
+      <stop offset="44%" stop-color="#d4af37"/>
+      <stop offset="52%" stop-color="#f7e08a"/>
+      <stop offset="62%" stop-color="#b8860b"/>
+      <stop offset="82%" stop-color="#e8c869"/>
+      <stop offset="100%" stop-color="#8a6418"/>
     </linearGradient>
-    <radialGradient id="mm-gloss" cx="50%" cy="6%" r="46%">
-      <stop offset="0%" stop-color="rgba(255,255,255,0.18)"/>
+    <radialGradient id="mm-gloss" cx="50%" cy="8%" r="48%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.14)"/>
       <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
     </radialGradient>
   </defs>
 
-  <circle cx="100" cy="100" r="98" fill="url(#mm-rim)"/>
-  <circle cx="100" cy="100" r="88" fill="url(#mm-disc)"/>
+  <!-- Outer gold ring -->
+  <circle cx="100" cy="100" r="97" fill="url(#mm-ring)"/>
+  <!-- Black inner face -->
+  <circle cx="100" cy="100" r="89" fill="url(#mm-disc)"/>
+  <!-- Thin inner gold pinstripe -->
+  <circle cx="100" cy="100" r="86" fill="none" stroke="url(#mm-ring)" stroke-width="1.2" opacity="0.7"/>
 
-  <text x="54" y="102"
+  <!-- Diagonal M&amp;M cascade -->
+  <text x="58" y="98"
     font-family="'Arial Black','Helvetica Neue',Arial,sans-serif"
-    font-weight="900" font-size="80" text-anchor="middle"
-    fill="url(#mm-chrome)">M</text>
-  <text x="100" y="140"
+    font-weight="900" font-size="82" text-anchor="middle"
+    fill="url(#mm-gold)" stroke="#5a3f10" stroke-width="0.8" paint-order="stroke">M</text>
+  <text x="100" y="132"
     font-family="'Arial Black','Helvetica Neue',Arial,sans-serif"
-    font-weight="900" font-size="60" text-anchor="middle"
-    fill="url(#mm-chrome)">&amp;</text>
-  <text x="148" y="176"
+    font-weight="900" font-size="54" text-anchor="middle"
+    fill="url(#mm-gold)" stroke="#5a3f10" stroke-width="0.8" paint-order="stroke">&amp;</text>
+  <text x="142" y="166"
     font-family="'Arial Black','Helvetica Neue',Arial,sans-serif"
-    font-weight="900" font-size="80" text-anchor="middle"
-    fill="url(#mm-chrome)">M</text>
+    font-weight="900" font-size="82" text-anchor="middle"
+    fill="url(#mm-gold)" stroke="#5a3f10" stroke-width="0.8" paint-order="stroke">M</text>
 
-  <circle cx="100" cy="100" r="88" fill="url(#mm-gloss)"/>
+  <!-- Tagline with flanking rules -->
+  <line x1="48" y1="180" x2="62" y2="180" stroke="url(#mm-ring)" stroke-width="1.4"/>
+  <line x1="138" y1="180" x2="152" y2="180" stroke="url(#mm-ring)" stroke-width="1.4"/>
+  <text x="100" y="183"
+    font-family="'Helvetica Neue',Arial,sans-serif" font-size="9.5" font-weight="700"
+    letter-spacing="1.5" text-anchor="middle" fill="url(#mm-gold)">AUTO PERFORMANCE UK</text>
+
+  <!-- Top gloss -->
+  <circle cx="100" cy="100" r="89" fill="url(#mm-gloss)"/>
 </svg>
