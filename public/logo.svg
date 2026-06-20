@@ -6,23 +6,23 @@
       <stop offset="45%" stop-color="#141210"/>
       <stop offset="100%" stop-color="#050505"/>
     </radialGradient>
-    <!-- Gold ring -->
+    <!-- Champagne-gold ring (matches theme #C5A572 / #E3CFA1) -->
     <linearGradient id="mm-ring" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#fbe7a8"/>
-      <stop offset="22%" stop-color="#d4af37"/>
-      <stop offset="50%" stop-color="#a87b22"/>
-      <stop offset="78%" stop-color="#e8c869"/>
-      <stop offset="100%" stop-color="#8a6418"/>
+      <stop offset="0%" stop-color="#F0E4C8"/>
+      <stop offset="22%" stop-color="#E3CFA1"/>
+      <stop offset="50%" stop-color="#C5A572"/>
+      <stop offset="78%" stop-color="#D8C49A"/>
+      <stop offset="100%" stop-color="#8A7350"/>
     </linearGradient>
-    <!-- Gold lettering -->
+    <!-- Champagne-gold lettering -->
     <linearGradient id="mm-gold" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#fff3c4"/>
-      <stop offset="20%" stop-color="#f4d878"/>
-      <stop offset="44%" stop-color="#d4af37"/>
-      <stop offset="52%" stop-color="#f7e08a"/>
-      <stop offset="62%" stop-color="#b8860b"/>
-      <stop offset="82%" stop-color="#e8c869"/>
-      <stop offset="100%" stop-color="#8a6418"/>
+      <stop offset="0%" stop-color="#F5ECD6"/>
+      <stop offset="20%" stop-color="#E3CFA1"/>
+      <stop offset="44%" stop-color="#C5A572"/>
+      <stop offset="52%" stop-color="#E3CFA1"/>
+      <stop offset="62%" stop-color="#9C8359"/>
+      <stop offset="82%" stop-color="#D8C49A"/>
+      <stop offset="100%" stop-color="#8A7350"/>
     </linearGradient>
     <radialGradient id="mm-gloss" cx="50%" cy="8%" r="48%">
       <stop offset="0%" stop-color="rgba(255,255,255,0.14)"/>
@@ -41,15 +41,15 @@
   <text x="58" y="98"
     font-family="'Arial Black','Helvetica Neue',Arial,sans-serif"
     font-weight="900" font-size="82" text-anchor="middle"
-    fill="url(#mm-gold)" stroke="#5a3f10" stroke-width="0.8" paint-order="stroke">M</text>
+    fill="url(#mm-gold)" stroke="#6E5A3A" stroke-width="0.8" paint-order="stroke">M</text>
   <text x="100" y="132"
     font-family="'Arial Black','Helvetica Neue',Arial,sans-serif"
     font-weight="900" font-size="54" text-anchor="middle"
-    fill="url(#mm-gold)" stroke="#5a3f10" stroke-width="0.8" paint-order="stroke">&amp;</text>
+    fill="url(#mm-gold)" stroke="#6E5A3A" stroke-width="0.8" paint-order="stroke">&amp;</text>
   <text x="142" y="166"
     font-family="'Arial Black','Helvetica Neue',Arial,sans-serif"
     font-weight="900" font-size="82" text-anchor="middle"
-    fill="url(#mm-gold)" stroke="#5a3f10" stroke-width="0.8" paint-order="stroke">M</text>
+    fill="url(#mm-gold)" stroke="#6E5A3A" stroke-width="0.8" paint-order="stroke">M</text>
 
   <!-- Tagline with flanking rules -->
   <line x1="48" y1="180" x2="62" y2="180" stroke="url(#mm-ring)" stroke-width="1.4"/>
