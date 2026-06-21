@@ -2,11 +2,9 @@ import React from 'react';
 import Link from 'next/link';
 import { ChevronDown } from 'lucide-react';
 
-// Photo is fetched directly by the browser (plain CSS background-image),
-// not proxied through Next.js / Vercel — so Wikimedia serves it fine.
-// Drop your own branded shot into public/luxury-london-banner.jpg and
-// change the URL to "/luxury-london-banner.jpg" whenever you're ready.
-const BG = 'https://commons.wikimedia.org/wiki/Special:FilePath/Rolls-Royce_Ghost_II_IAA_2021_1X7A0005.jpg?width=1920';
+// Branded hero photo, served locally from public/ — fetched directly by the
+// browser as a plain CSS background, so it always displays.
+const BG = '/luxury-london-banner.webp';
 
 export const CinematicHero: React.FC = () => (
   <>
