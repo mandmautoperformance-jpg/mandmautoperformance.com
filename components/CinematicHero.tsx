@@ -1,6 +1,5 @@
 import React from 'react';
 import Link from 'next/link';
-import { ChevronDown } from 'lucide-react';
 
 // Branded hero photo, served locally from public/ — fetched directly by the
 // browser as a plain CSS background, so it always displays.
@@ -25,7 +24,7 @@ export const CinematicHero: React.FC = () => (
       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, #121316 0%, transparent 40%)' }} />
 
       {/* Hero content */}
-      <div className="absolute inset-0 flex flex-col items-center justify-end text-center pb-28 px-6">
+      <div className="absolute inset-0 flex flex-col items-center justify-end text-center pb-10 px-6">
         <p className="text-performance-turquoise text-[10px] font-bold tracking-[0.45em] uppercase mb-5">
           London &amp; Hertfordshire
         </p>
@@ -55,10 +54,6 @@ export const CinematicHero: React.FC = () => (
             </svg>
             Contact Us
           </Link>
-        </div>
-
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/40 animate-bounce">
-          <ChevronDown size={26} />
         </div>
       </div>
     </section>
