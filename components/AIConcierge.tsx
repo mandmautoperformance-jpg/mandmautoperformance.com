@@ -23,15 +23,23 @@ interface ISpeechRecognition extends EventTarget {
   continuous: boolean;
   interimResults: boolean;
   lang: string;
+  maxAlternatives: number;
   start(): void;
   stop(): void;
+  abort(): void;
   onstart: ((ev: Event) => void) | null;
+  onaudiostart: ((ev: Event) => void) | null;
+  onspeechstart: ((ev: Event) => void) | null;
   onend: ((ev: Event) => void) | null;
-  onerror: ((ev: Event) => void) | null;
+  onerror: ((ev: SpeechRecognitionErrorEvent) => void) | null;
   onresult: ((ev: SpeechRecognitionEvent) => void) | null;
 }
 interface SpeechRecognitionEvent extends Event {
   results: SpeechRecognitionResultList;
+}
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string;
+  message?: string;
 }
 declare global {
   interface Window {
@@ -62,6 +70,7 @@ export const AIConcierge: React.FC<AIConciergeProps> = ({ isOpen, onClose, userI
   const voiceRef = useRef<SpeechSynthesisVoice | null>(null);
   const recognitionRef = useRef<ISpeechRecognition | null>(null);
   const transcriptRef = useRef('');
+  const recogErrorRef = useRef(false);
 
   const { conversationId, setConversationId } = useBookingStore();
 
@@ -238,28 +247,32 @@ export const AIConcierge: React.FC<AIConciergeProps> = ({ isOpen, onClose, userI
   );
 
   // ── Voice input ────────────────────────────────────────────────────────────
-  const toggleListening = useCallback(() => {
-    if (isListening) {
-      recognitionRef.current?.stop();
-      return;
-    }
-
+  const beginRecognition = useCallback(() => {
     const SR = window.SpeechRecognition ?? window.webkitSpeechRecognition;
     if (!SR) {
-      setError('Voice input is not supported in your browser. Try Chrome or Edge.');
+      setError('Voice input is not supported in this browser. Try Chrome, Edge, or Safari.');
       return;
     }
 
-    setError(null);
+    // Don't let MIA talk over the customer while she's listening.
+    synthRef.current?.cancel();
+    setSpeakingId(null);
+
     transcriptRef.current = '';
+    recogErrorRef.current = false;
 
     const recognition = new SR();
     recognitionRef.current = recognition;
     recognition.continuous = false;
     recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
     recognition.lang = 'en-GB';
 
-    recognition.onstart = () => setIsListening(true);
+    recognition.onstart = () => {
+      recogErrorRef.current = false;
+      setError(null);
+      setIsListening(true);
+    };
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
       let interim = '';
@@ -269,17 +282,38 @@ export const AIConcierge: React.FC<AIConciergeProps> = ({ isOpen, onClose, userI
         if (result.isFinal) final += result[0].transcript;
         else interim += result[0].transcript;
       }
-      transcriptRef.current = final || interim;
+      transcriptRef.current = (final || interim).trim();
       setInputValue(transcriptRef.current);
     };
 
-    recognition.onerror = () => {
+    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+      recogErrorRef.current = true;
       setIsListening(false);
-      setError('Could not hear you clearly. Please try again.');
+      switch (event.error) {
+        case 'no-speech':
+          setError("I didn't catch that — tap the mic and speak after the prompt.");
+          break;
+        case 'not-allowed':
+        case 'service-not-allowed':
+          setError('Microphone access is blocked. Tap the 🔒 in your address bar, allow the microphone, then try again.');
+          break;
+        case 'audio-capture':
+          setError('No microphone was found. Please check your device and try again.');
+          break;
+        case 'network':
+          setError('Voice needs an internet connection. Please check your signal and try again.');
+          break;
+        case 'aborted':
+          setError(null); // user cancelled — no scary message
+          break;
+        default:
+          setError('Voice input hit a snag. Please try again, or type your message.');
+      }
     };
 
     recognition.onend = () => {
       setIsListening(false);
+      if (recogErrorRef.current) return;
       const text = transcriptRef.current.trim();
       if (text) {
         setInputValue('');
@@ -287,8 +321,45 @@ export const AIConcierge: React.FC<AIConciergeProps> = ({ isOpen, onClose, userI
       }
     };
 
-    recognition.start();
-  }, [isListening, handleSendMessage]);
+    try {
+      recognition.start();
+    } catch {
+      // start() throws InvalidStateError if called while already active — ignore.
+    }
+  }, [handleSendMessage]);
+
+  const toggleListening = useCallback(() => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      return;
+    }
+
+    const SR = window.SpeechRecognition ?? window.webkitSpeechRecognition;
+    if (!SR) {
+      setError('Voice input is not supported in this browser. Try Chrome, Edge, or Safari.');
+      return;
+    }
+
+    setError(null);
+
+    // Pre-flight the mic permission so the prompt is clean and any denial is
+    // reported clearly — rather than surfacing later as a vague recognition error.
+    if (navigator.mediaDevices?.getUserMedia) {
+      navigator.mediaDevices
+        .getUserMedia({ audio: true })
+        .then((stream) => {
+          // We only needed the permission grant; release the stream so the
+          // recognizer can claim the mic itself.
+          stream.getTracks().forEach((t) => t.stop());
+          beginRecognition();
+        })
+        .catch(() => {
+          setError('Microphone access is blocked. Tap the 🔒 in your address bar, allow the microphone, then try again.');
+        });
+    } else {
+      beginRecognition();
+    }
+  }, [isListening, beginRecognition]);
 
   if (!isOpen) return null;
 
