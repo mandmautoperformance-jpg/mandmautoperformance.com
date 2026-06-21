@@ -328,9 +328,9 @@ export const PHOTO_RULES: PhotoRule[] = [
   ] },
   // ---- Super-SUVs ----
   { match: 'dbx', photos: [
-    ext('Aston Martin DBX707 AMR23 Edition IMG 0007.jpg'),
     ext('Aston Martin DBX707 1X7A0203.jpg'),
-    ext('Aston Martin DBX (2020) front.jpg'),
+    ext('Aston Martin DBX707 AMR23 Edition IMG 0007.jpg'),
+    ext('ASTON MARTIN DBX707 China (2).jpg'),
   ] },
   { match: 'purosangue', photos: [
     ext('Ferrari Purosangue IMG 9554.jpg'),
@@ -341,11 +341,12 @@ export const PHOTO_RULES: PhotoRule[] = [
   { match: 'rs q8', photos: [
     ext('2020 Audi RS Q8 Front.jpg'),
     ext('2020 Audi RS Q8 Front End.jpg'),
+    int('2020 Audi RS Q8 Interior.jpg'),
   ] },
   { match: 'bmw xm', photos: [
-    ext('BMW XM Label Red IAA 2023 1X7A0743.jpg'),
-    ext('2023 BMW XM.jpg'),
-    ext('BMW XM 1X7A6874.jpg'),
+    ext('BMW G09 XM Cape York Green Metallic (20).jpg'),
+    ext('BMW G09 XM Cape York Green Metallic (90).jpg'),
+    ext('BMW G09 XM Cape York Green Metallic (62).jpg'),
   ] },
   { match: 'macan', photos: [
     ext('Porsche Macan GTS (Facelift) – f 10052021.jpg'),
