@@ -17,7 +17,7 @@ export type VehicleCategory = 'exotic' | 'supercar' | 'sports' | 'luxury' | 'suv
 // here; driver-eligibility imports just the VehicleCategory *type* from this file,
 // so there is no runtime import cycle.
 import { CATEGORY_REQUIREMENTS } from './driver-eligibility';
-import { exteriorsFor, detectColor, hashId } from './vehicle-photos';
+import { exteriorsFor, detectColor, detectVariant, hashId } from './vehicle-photos';
 
 export const CATEGORY_LABELS: Record<VehicleCategory, string> = {
   exotic: 'Exotic',
@@ -224,6 +224,13 @@ function generateFleet(): Vehicle[] {
   BASE_MODELS.forEach((base, modelIdx) => {
     // Max two of any given car model — two distinct colour variants each.
     const numColors = 2;
+    // Labels (colour OR body/edition) already taken by THIS model's earlier car,
+    // so the two cars of a model never share a descriptor when the pool allows.
+    const modelLabels = new Set<string>();
+    // The descriptor a given photo would carry: paint colour first, else a body/
+    // edition variant — both read honestly from the filename.
+    const labelOf = (url: string): string | null =>
+      detectColor(url)?.name ?? detectVariant(url, base.model);
 
     for (let i = 0; i < numColors; i++) {
       // Offset start per model so the palette is varied across categories.
@@ -238,28 +245,43 @@ function generateFleet(): Vehicle[] {
       usedSlugs.add(slug);
 
       // Pin a hero photo that is unique across the ENTIRE fleet. Walk the
-      // model's exterior pool in a per-car seeded order. First pass prefers an
-      // unused photo whose filename actually names its colour (so we can
-      // advertise it accurately); second pass takes any unused photo; finally
-      // fall back to the seeded image if the pool is exhausted.
+      // model's exterior pool in a per-car seeded order, then choose by priority:
+      //   1. unused photo whose descriptor (colour OR body/edition) is NEW to
+      //      this model — so the two cars never read the same
+      //   2. unused photo with no descriptor at all ("As pictured")
+      //   3. any unused photo (last-resort)
+      //   4. the seeded image if the pool is exhausted
+      // This guarantees the two cars of a model look different AND, whenever the
+      // pool allows, carry different colour/trim labels — without ever asserting
+      // a colour that contradicts the picture.
       const exterior = exteriorsFor(base.model);
       let heroPhoto = '';
       if (exterior.length) {
         const startIdx = hashId(slug) % exterior.length;
         const ordered = exterior.map((_, k) => exterior[(startIdx + k) % exterior.length].url);
         heroPhoto =
-          ordered.find((u) => !usedPhotos.has(u) && detectColor(u)) ||
+          ordered.find((u) => {
+            if (usedPhotos.has(u)) return false;
+            const label = labelOf(u);
+            return label !== null && !modelLabels.has(label);
+          }) ||
+          ordered.find((u) => !usedPhotos.has(u) && labelOf(u) === null) ||
           ordered.find((u) => !usedPhotos.has(u)) ||
           ordered[0];
         usedPhotos.add(heroPhoto);
       }
 
-      // The advertised colour MUST match the photo we actually show: read it
-      // straight from the pinned hero photo. Only fall back to a non-committal
-      // label when the filename names no colour — never assert a colour that
-      // contradicts the picture. The slug keeps its palette name so URLs stay stable.
+      // The advertised label MUST match the photo we actually show. Read paint
+      // colour straight from the pinned hero photo (with a swatch); when no
+      // colour is named, fall back to an honest body/edition descriptor read
+      // from the same photo; only then to a non-committal "As pictured". We
+      // never assert a colour that contradicts the picture. The slug keeps its
+      // palette name so URLs stay stable.
       const detected = heroPhoto ? detectColor(heroPhoto) : null;
-      const displayColor = detected ?? { name: 'As pictured', hex: '' };
+      const variant = heroPhoto && !detected ? detectVariant(heroPhoto, base.model) : null;
+      const displayColor = detected ?? { name: variant ?? 'As pictured', hex: '' };
+      const heroLabel = heroPhoto ? labelOf(heroPhoto) : null;
+      if (heroLabel) modelLabels.add(heroLabel);
 
       const rating = Math.round((4.5 + rng() * 0.5) * 10) / 10;
       const reviews = 6 + Math.floor(rng() * 240);

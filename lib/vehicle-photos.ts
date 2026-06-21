@@ -468,6 +468,65 @@ export function detectColor(url: string): DetectedColor | null {
   return null;
 }
 
+// ---------------------------------------------------------------------------
+// Body-style / edition detection.
+//
+// When a filename names no paint colour we still want the two cars of a model
+// to read differently. Wikimedia filenames often name the body style or special
+// edition (Spider, Roadster, Coupé, Pur Sport, AMR23 …) — an HONEST descriptor
+// read straight from the actual photo. Ordered specific → generic; first wins.
+// ---------------------------------------------------------------------------
+const VARIANT_KEYWORDS: [string, string][] = [
+  ['pur sport', 'Pur Sport'],
+  ['super sport', 'Super Sport'],
+  ['grand sport', 'Grand Sport'],
+  ['black badge', 'Black Badge'],
+  ['amr23', 'AMR23 Edition'],
+  ['mulliner', 'Mulliner'],
+  ['performante', 'Performante'],
+  ['svj', 'SVJ'],
+  ['lp750-4 sv', 'SV'],
+  ['ultimae', 'Ultimae'],
+  ['spyder', 'Spyder'],
+  ['spider', 'Spider'],
+  ['roadster', 'Roadster'],
+  ['volante', 'Volante'],
+  ['convertible', 'Convertible'],
+  ['cabriolet', 'Cabriolet'],
+  ['cielo', 'Cielo'],
+  ['gte', 'GTE'],
+  ['variant', 'Estate'],
+  ['avant', 'Avant'],
+  ['sportback', 'Sportback'],
+  ['shelby', 'Shelby'],
+  ['gt500', 'GT500'],
+  ['coupe', 'Coupé'],
+  ['e-hybrid', 'E-Hybrid'],
+  ['4s', '4S'],
+];
+
+/**
+ * Read a body-style / edition descriptor from a photo, skipping any token that
+ * already appears in the model name (so we never label a car with what its name
+ * already says). Returns null when nothing distinctive is found.
+ */
+export function detectVariant(url: string, model: string): string | null {
+  let name = '';
+  try {
+    name = decodeURIComponent(url);
+  } catch {
+    name = url;
+  }
+  const hay = name.toLowerCase();
+  const modelLc = model.toLowerCase();
+  for (const [kw, label] of VARIANT_KEYWORDS) {
+    if (hay.includes(kw) && !modelLc.includes(label.toLowerCase())) {
+      return label;
+    }
+  }
+  return null;
+}
+
 /**
  * The exterior photo a card/gallery shows FIRST for a given vehicle. Mirrors the
  * deterministic seeding in VehicleImage so the advertised colour always matches

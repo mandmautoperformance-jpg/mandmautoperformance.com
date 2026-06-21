@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Send, X, Loader, AlertCircle, Volume2, VolumeX, Mic, Square } from 'lucide-react';
 import { useBookingStore } from '@/lib/store';
 
@@ -124,25 +124,57 @@ export const AIConcierge: React.FC<AIConciergeProps> = ({ isOpen, onClose, userI
   const { conversationId, setConversationId } = useBookingStore();
 
   // ── Voice (TTS) selection ──────────────────────────────────────────────────
-  const pickVoice = useCallback((voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null => {
-    if (!voices.length) return null;
-    const ranked: ((v: SpeechSynthesisVoice) => boolean)[] = [
-      (v) => /sonia/i.test(v.name) && /Natural|Online/i.test(v.name),
-      (v) => /libby/i.test(v.name) && /Natural|Online/i.test(v.name),
-      (v) => /(maisie|olivia|ada)/i.test(v.name) && /Natural|Online/i.test(v.name),
-      (v) => /google uk english female/i.test(v.name),
-      (v) => v.lang === 'en-GB' && /Natural|Online/i.test(v.name),
-      (v) => v.lang === 'en-GB' && /(kate|serena|stephanie|martha|fiona|moira)/i.test(v.name),
-      (v) => v.lang === 'en-GB' && /female/i.test(v.name),
-      (v) => v.lang === 'en-GB',
-      (v) => v.lang.startsWith('en') && /(samantha|female|google us english)/i.test(v.name),
-    ];
-    for (const test of ranked) {
-      const match = voices.find(test);
-      if (match) return match;
-    }
-    return voices.find((v) => v.lang.startsWith('en')) ?? voices[0];
-  }, []);
+  // MIA must always sound like a British woman. The hard part is iOS/iPadOS:
+  // its default en-GB voice is "Daniel" (male), and the named female voices
+  // (Kate/Serena/Martha/Stephanie) are present but never first — so any "first
+  // en-GB" pick lands on a man. We therefore (a) prefer known female voices and
+  // (b) HARD-EXCLUDE every known male voice at every fallback tier, so we never
+  // drop onto Daniel/Arthur/etc.
+  const MALE_VOICE = useMemo(
+    () =>
+      /\b(daniel|arthur|oliver|thomas|gordon|rishi|aaron|fred|albert|george|jacques|reed|rocko|eddy|grandpa|junior|ralph|bruce|nathan|harry|liam|alex|tom|male|man)\b/i,
+    [],
+  );
+  const FEMALE_VOICE = useMemo(
+    () =>
+      /\b(sonia|libby|maisie|hazel|kate|serena|stephanie|martha|fiona|moira|susan|emily|amy|ada|olivia|samantha|victoria|karen|tessa|veena|female|woman)\b/i,
+    [],
+  );
+
+  const pickVoice = useCallback(
+    (voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null => {
+      if (!voices.length) return null;
+      const notMale = (v: SpeechSynthesisVoice) => !MALE_VOICE.test(v.name);
+      const female = (v: SpeechSynthesisVoice) => FEMALE_VOICE.test(v.name);
+      const ranked: ((v: SpeechSynthesisVoice) => boolean)[] = [
+        // Premium British female neural voices (Edge / Windows / Chrome)
+        (v) => /sonia/i.test(v.name) && /Natural|Online/i.test(v.name),
+        (v) => /libby/i.test(v.name) && /Natural|Online/i.test(v.name),
+        (v) => /(maisie|olivia|ada)/i.test(v.name) && /Natural|Online/i.test(v.name),
+        (v) => /google uk english female/i.test(v.name),
+        // Any en-GB voice that is explicitly female (covers iOS Kate/Serena/Martha)
+        (v) => v.lang === 'en-GB' && female(v),
+        (v) => v.lang === 'en-GB' && /Natural|Online/i.test(v.name) && notMale(v),
+        // Any en-GB voice that is NOT a known male voice (avoids iOS "Daniel")
+        (v) => v.lang === 'en-GB' && notMale(v),
+        // Other English female voices (e.g. US "Samantha" on iOS, Google US female)
+        (v) => v.lang.startsWith('en') && female(v),
+        (v) => v.lang.startsWith('en') && notMale(v),
+      ];
+      for (const test of ranked) {
+        const match = voices.find(test);
+        if (match) return match;
+      }
+      // Last resort: any non-male voice, else any English, else anything.
+      return (
+        voices.find((v) => v.lang.startsWith('en') && notMale(v)) ??
+        voices.find(notMale) ??
+        voices.find((v) => v.lang.startsWith('en')) ??
+        voices[0]
+      );
+    },
+    [MALE_VOICE, FEMALE_VOICE],
+  );
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.speechSynthesis) return;
@@ -194,10 +226,13 @@ export const AIConcierge: React.FC<AIConciergeProps> = ({ isOpen, onClose, userI
         .replace(/([.!?])\s/g, '$1   ')
         .trim();
       const utter = new SpeechSynthesisUtterance(clean);
-      utter.rate = 0.88;
-      utter.pitch = 0.95;
+      utter.rate = 0.9;
+      // Slightly above neutral for a warm, feminine British timbre (0.95 read low).
+      utter.pitch = 1.12;
       utter.volume = 1;
-      const voice = voiceRef.current ?? pickVoice(synth.getVoices());
+      // Re-pick every time: on iOS the voice list often isn't ready on mount, so
+      // a cached null/male choice from first render must never stick.
+      const voice = pickVoice(synth.getVoices()) ?? voiceRef.current;
       if (voice) {
         utter.voice = voice;
         utter.lang = voice.lang;
