@@ -80,7 +80,7 @@ function getNextStep(r: ReservationStatus): string {
     return `Please upload your ${missing.map((t) => DOC_TYPE_LABELS[t] || t).join(' and ')} using your secure link.`;
   }
   const pending = r.documents.filter((d) => d.status === 'pending');
-  if (pending.length > 0) return 'Your documents are under review. We'll be in touch shortly.';
+  if (pending.length > 0) return 'Your documents are under review. We will be in touch shortly.';
   return 'All done — our team will contact you to arrange handover details.';
 }
 
