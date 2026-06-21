@@ -248,12 +248,36 @@ const AdminReservations: React.FC = () => {
           <h2 className="text-2xl font-bold text-white">Reservation Requests</h2>
           <p className="text-gray-400 text-sm">Leads from the booking widget — work them through to confirmed.</p>
         </div>
-        <button
-          onClick={load}
-          className="px-4 py-2 rounded-lg bg-electric-turquoise/10 border border-electric-turquoise/30 text-electric-turquoise hover:bg-electric-turquoise/20 transition text-sm font-semibold"
-        >
-          ↻ Refresh
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={async () => {
+              const token = await getToken();
+              if (!token) return;
+              const url = '/api/admin/export-csv';
+              const link = document.createElement('a');
+              link.href = url;
+              link.setAttribute('download', '');
+              // Pass auth via a query param isn't ideal — use fetch + blob instead
+              const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+              if (!res.ok) { setError('Export failed.'); return; }
+              const blob = await res.blob();
+              const blobUrl = URL.createObjectURL(blob);
+              link.href = blobUrl;
+              link.download = `reservations-${new Date().toISOString().split('T')[0]}.csv`;
+              link.click();
+              URL.revokeObjectURL(blobUrl);
+            }}
+            className="px-4 py-2 rounded-lg bg-gray-700/40 border border-gray-600/40 text-gray-300 hover:bg-gray-700/60 transition text-sm font-semibold"
+          >
+            ↓ Export CSV
+          </button>
+          <button
+            onClick={load}
+            className="px-4 py-2 rounded-lg bg-electric-turquoise/10 border border-electric-turquoise/30 text-electric-turquoise hover:bg-electric-turquoise/20 transition text-sm font-semibold"
+          >
+            ↻ Refresh
+          </button>
+        </div>
       </div>
 
       {/* Filter chips */}
@@ -395,6 +419,16 @@ const AdminReservations: React.FC = () => {
                       <button onClick={() => copyVerifyLink(r)} className="text-gray-400 hover:text-gray-200 text-xs">
                         Copy upload link
                       </button>
+                      {r.upload_token && (
+                        <a
+                          href={`/status/${r.upload_token}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-gray-400 hover:text-gray-200 text-xs"
+                        >
+                          Status page ↗
+                        </a>
+                      )}
                     </div>
                   </td>
                 </tr>
