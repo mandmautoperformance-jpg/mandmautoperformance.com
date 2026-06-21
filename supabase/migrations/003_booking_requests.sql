@@ -1,0 +1,42 @@
+-- Structured store for guest reservation requests (lead capture).
+--
+-- The public site posts to /api/bookings/request using the Supabase service
+-- key. Before this table existed those leads fell back into contact_messages;
+-- this gives them a first-class home with a status workflow the admin panel
+-- can manage (new → contacted → confirmed → completed / cancelled).
+
+create table if not exists public.booking_requests (
+  id              uuid primary key default gen_random_uuid(),
+  vehicle_id      text not null,
+  model           text not null,
+  pickup_date     date not null,
+  return_date     date not null,
+  pickup_time     text,
+  passengers      integer not null default 1,
+  estimate_pence  integer not null default 0,
+  customer_name   text not null,
+  customer_email  text not null,
+  customer_phone  text not null,
+  notes           text,
+  status          text not null default 'new'
+                    check (status in ('new','contacted','confirmed','completed','cancelled')),
+  created_at      timestamptz not null default now(),
+  updated_at      timestamptz not null default now()
+);
+
+create index if not exists booking_requests_status_idx  on public.booking_requests (status);
+create index if not exists booking_requests_created_idx on public.booking_requests (created_at desc);
+
+alter table public.booking_requests enable row level security;
+
+-- Service role only. Guests never read these; they are inserted by the server
+-- API (service key) and read/updated by admins through service-role endpoints.
+drop policy if exists "service role manages booking requests" on public.booking_requests;
+create policy "service role manages booking requests"
+  on public.booking_requests for all using (auth.role() = 'service_role');
+
+-- Reuse the shared updated_at trigger function from the initial schema.
+drop trigger if exists booking_requests_updated_at on public.booking_requests;
+create trigger booking_requests_updated_at
+  before update on public.booking_requests
+  for each row execute function public.set_updated_at();
