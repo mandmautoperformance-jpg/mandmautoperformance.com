@@ -1,6 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getSupabaseServer } from '@/lib/supabase-server';
 import { rateLimit } from '@/lib/rate-limit';
+import {
+  sendEmail,
+  OWNER_EMAIL,
+  reservationOwnerEmail,
+  reservationCustomerEmail,
+  type LeadEmailData,
+} from '@/lib/email';
 
 const requestRateLimit = rateLimit('booking-request', 10, 60_000); // 10/min per IP
 
@@ -98,6 +105,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
   } else {
     console.warn('Reservation request received but Supabase not configured:\n' + summary);
+  }
+
+  // Notify the owner and confirm to the customer. Best-effort: email problems
+  // must never fail the customer's request.
+  const leadData: LeadEmailData = {
+    model,
+    vehicleId,
+    pickupDate,
+    returnDate,
+    pickupTime: body.pickupTime,
+    passengers: body.passengers,
+    estimateGbp: Number(body.estimateGbp) || Number(body.dailyRate) || undefined,
+    name,
+    email,
+    phone,
+    notes: body.notes,
+  };
+  try {
+    await Promise.allSettled([
+      sendEmail({
+        to: OWNER_EMAIL,
+        subject: `New reservation request — ${model}`,
+        replyTo: email,
+        html: reservationOwnerEmail(leadData),
+      }),
+      sendEmail({
+        to: email,
+        subject: 'We’ve received your request — M&M Auto Performance',
+        html: reservationCustomerEmail(leadData),
+      }),
+    ]);
+  } catch (err) {
+    console.error('Reservation email send failed (continuing):', err);
   }
 
   return res.status(200).json({ success: true });

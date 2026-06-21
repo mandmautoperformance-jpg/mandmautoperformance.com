@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createClient } from '@supabase/supabase-js';
+import { sendEmail, OWNER_EMAIL, contactOwnerEmail } from '@/lib/email';
 
 const ALLOWED_SUBJECTS = ['booking', 'fleet', 'pricing', 'support', 'other'];
 
@@ -48,6 +49,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (error) {
     console.error('Contact insert error:', error.message);
     return res.status(500).json({ error: 'Failed to save message' });
+  }
+
+  // Notify the owner (best-effort — never fail the submission over email).
+  try {
+    await sendEmail({
+      to: OWNER_EMAIL,
+      subject: `New contact message — ${subject}`,
+      replyTo: email.trim(),
+      html: contactOwnerEmail({
+        name: name.trim(),
+        email: email.trim(),
+        subject,
+        message: message.trim(),
+      }),
+    });
+  } catch (err) {
+    console.error('Contact notification email failed (continuing):', err);
   }
 
   return res.status(200).json({ success: true });
