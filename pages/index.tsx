@@ -29,11 +29,11 @@ export default function HomePage() {
     <main className="min-h-screen bg-performance-grey text-white relative">
       <Navbar isLoggedIn={false} userRole="guest" currentPage="home" />
 
-      {/* Cinematic hero — full-viewport parallax background */}
+      {/* Cinematic hero */}
       <CinematicHero />
 
-      {/* Everything below slides over the fixed hero background */}
-      <div className="relative z-10 bg-performance-grey">
+      {/* Page content */}
+      <div>
       {/* Category Showcase */}
       <CategoryShowcase />
 
