@@ -30,18 +30,20 @@ export const int = (file: string): Photo => ({ url: WIKIMEDIA(file), kind: 'inte
 export const PHOTO_RULES: PhotoRule[] = [
   // ---- Bugatti ----
   { match: 'chiron', photos: [
-    ext('Bugatti Chiron (45888477935).jpg'),
-    ext('2017 Bugatti Chiron.jpg'),
-    ext('Bugatti Chiron, Mondial de l\'Automobile de Paris, 2018.jpg'),
-    ext('Bugatti Chiron front.jpg'),
-    int('Bugatti Chiron interior.jpg'),
+    ext('Bugatti Chiron (1).jpg'),
+    ext('Bugatti Chiron Super Sport.jpg'),
+    ext('Bugatti Chiron Pur Sport.jpg'),
+    ext('Bugatti Chiron (53257968845).jpg'),
+    ext('2021 Bugatti Chiron Super Sport 8.0 Front.jpg'),
+    ext('Bugatti Chiron Sport (51405376237).jpg'),
   ] },
   { match: 'veyron', photos: [
-    ext('Bugatti Veyron 16.4 - Flickr - Supermac1961 (4).jpg'),
-    ext('Bugatti Veyron 16.4.jpg'),
-    ext('White Bugatti Veyron.jpg'),
-    ext('Bugatti Veyron Grand Sport.jpg'),
-    int('Bugatti Veyron interior.jpg'),
+    ext('Silver Bugatti Veyron front left corner.jpg'),
+    ext('Blue Bugatti Veyron front.JPG'),
+    ext('Bugatti Veyron 16.4 2.JPG'),
+    ext('Bugatti Veyron in Berlin.jpg'),
+    ext('Bugatti Veyron Super Sport side view.jpg'),
+    ext('White Bugatti Veyron Grand Sport with Red Interior (11975814436).jpg'),
   ] },
   // ---- Lamborghini ----
   { match: 'huracan', photos: [
@@ -51,26 +53,24 @@ export const PHOTO_RULES: PhotoRule[] = [
     ext('Lamborghini Huracan LP 610-4 in Bianco Isis.jpg'),
     ext('Lamborghini Huracan EVO RWD 2020 front.jpg'),
     ext('Lamborghini Huracan Performante (27473584488).jpg'),
-    int('Lamborghini Huracan LP 610-4 interior.jpg'),
   ] },
   { match: 'revuelto', photos: [
     ext('Lamborghini Revuelto.jpg'),
     ext('2023 Lamborghini Revuelto.jpg'),
     ext('Lamborghini Revuelto front.jpg'),
-    int('Lamborghini Revuelto interior.jpg'),
   ] },
   { match: 'aventador', photos: [
     ext('Lamborghini Aventador S coupe IMG 2926.jpg'),
     ext('Lamborghini Aventador LP750-4 SV IMG 9103.jpg'),
     ext('Lamborghini Aventador LP 700-4 (8395891139).jpg'),
     ext('Lamborghini Aventador SVJ front.jpg'),
+    int('Lamborghini Aventador interior.JPG'),
   ] },
   { match: 'urus', photos: [
     ext('Lamborghini Urus red (1).jpg'),
     ext('2019 Lamborghini Urus.jpg'),
     ext('Lamborghini Urus - front.jpg'),
     ext('Lamborghini Urus Performante front.jpg'),
-    int('Lamborghini Urus interior.jpg'),
   ] },
   // ---- Ferrari ----
   { match: 'f8', photos: [
@@ -79,7 +79,6 @@ export const PHOTO_RULES: PhotoRule[] = [
     ext('2020 Ferrari F8 Tributo S-A 3.9 Rear.jpg'),
     ext('Ferrari F8 Spider front.jpg'),
     ext('Ferrari F8 Tributo - Flickr - Alexandre Prévot (2).jpg'),
-    int('Ferrari F8 Tributo interior.jpg'),
   ] },
   { match: '296', photos: [
     ext('Ferrari 296 GTB - Paris 08.jpg'),
@@ -91,7 +90,6 @@ export const PHOTO_RULES: PhotoRule[] = [
     ext('2021 Ferrari Roma Front.jpg'),
     ext('Ferrari Roma-01.jpg'),
     ext('Ferrari Roma 2020 rear.jpg'),
-    int('Ferrari Roma interior.jpg'),
   ] },
   // ---- McLaren / Maserati ----
   { match: '720s', photos: [
@@ -99,7 +97,7 @@ export const PHOTO_RULES: PhotoRule[] = [
     ext('McLaren 720S rear view.jpg'),
     ext('McLaren 720S Spider front.jpg'),
     ext('McLaren 720S (43604399365).jpg'),
-    int('McLaren 720S interior (38497017972).jpg'),
+    ext('McLaren 720S-doors open.jpg'),
   ] },
   { match: 'mc20', photos: [
     ext('Maserati MC20 (7BA-MC30) front.jpg'),
@@ -120,7 +118,6 @@ export const PHOTO_RULES: PhotoRule[] = [
     ext('Porsche 992 GT3 Touring Package (5).jpg'),
     ext('Porsche 911 Carrera 4 GTS (992) front.jpg'),
     ext('Porsche 992 Turbo S Cabriolet (3).jpg'),
-    int('Porsche 992 Turbo S interior.jpg'),
   ] },
   { match: 'panamera', photos: [
     ext('Porsche 971 Panamera Turbo S E-Hybrid IMG 2962.jpg'),
@@ -139,7 +136,6 @@ export const PHOTO_RULES: PhotoRule[] = [
     ext('Bentley Continental GT Convertible (5).jpg'),
     ext('Bentley Continental GT III British Racing Green (6).jpg'),
     ext('Bentley Continental GT W12 Mulliner (4).jpg'),
-    int('Bentley Continental GT interior.jpg'),
   ] },
   { match: 'bentayga', photos: [
     ext('Bentley Bentayga 2015 - rear.jpg'),
@@ -153,14 +149,13 @@ export const PHOTO_RULES: PhotoRule[] = [
     ext('Rolls-Royce Ghost II Mandarin Navy Blue (4).jpg'),
     ext('Rolls-Royce Ghost Black Badge 2022.jpg'),
     ext('2021 Rolls-Royce Ghost LWB rear.jpg'),
-    int('Rolls-Royce Ghost II interior.jpg'),
   ] },
   { match: 'cullinan', photos: [
     ext('2023 Rolls-Royce Cullinan in light blue, front left.jpg'),
     ext('Rolls-Royce Cullinan Blue (1).jpg'),
     ext('Rolls-Royce Cullinan Black Badge.jpg'),
     ext('Rolls-Royce Cullinan Series II front.jpg'),
-    int('Rolls-Royce Cullinan interior.jpg'),
+    int('Rolls Royce Cullinan Center Console.jpg'),
   ] },
   { match: 'spectre', photos: [
     ext('2024 Rolls-Royce Spectre in Midnight Sapphire over Silver, front left.jpg'),
@@ -173,7 +168,6 @@ export const PHOTO_RULES: PhotoRule[] = [
     ext('Aston Martin DB12 Volante.jpg'),
     ext('Aston Martin DB12 front 3q.jpg'),
     ext('Aston Martin DB12 in Bright Yellow (53520054049).jpg'),
-    int('Aston Martin DB12 interior.jpg'),
   ] },
   { match: 'vantage', photos: [
     ext('2018 Aston Martin Vantage Coupe (44400066584).jpg'),
@@ -187,7 +181,6 @@ export const PHOTO_RULES: PhotoRule[] = [
     ext('Tesla Model S Plaid Autofrühling Ulm IMG 9278.jpg'),
     ext('2021 Tesla Model S Plaid front.jpg'),
     ext('Tesla Model S Plaid (2022) red front.jpg'),
-    int('Tesla Model S Plaid interior.jpg'),
   ] },
   // ---- Land Rover ----
   { match: 'range rover', photos: [
@@ -197,7 +190,6 @@ export const PHOTO_RULES: PhotoRule[] = [
     ext('2022 Range Rover L460 front.jpg'),
     ext('Land Rover Range Rover P530 First Edition (L460) front.jpg'),
     ext('Range Rover Sport L461 (2022) front.jpg'),
-    int('Range Rover Sport L461 interior.jpg'),
   ] },
   // ---- Audi ----
   { match: 'r8', photos: [
@@ -223,6 +215,7 @@ export const PHOTO_RULES: PhotoRule[] = [
     ext('Audi A4 B9 Limousine 3.0 TDI quattro.JPG'),
     ext('Audi A4 B9 Limousine 3.0 TDI quattro Heck.JPG'),
     ext('2020 Audi A4 S line front.jpg'),
+    int('2015 Audi A4 B9 2.0 TFSI quattro 185 kW S line Cockpit Interieur Innenraum.jpg'),
   ] },
   // ---- Mercedes everyday (MUST precede 'cla' / 'amg gt') ----
   { match: 'c-class', photos: [
@@ -230,7 +223,7 @@ export const PHOTO_RULES: PhotoRule[] = [
     ext('Mercedes-Benz C200 AVANTGARDE (W206) rear.jpg'),
     ext('Mercedes-Benz C 300 AMG Line (W206) front.jpg'),
     ext('2022 Mercedes-Benz C300 AMG (W206) front.jpg'),
-    int('Mercedes-Benz C-Class W206 interior.jpg'),
+    int('Mercedes-Benz C 200 4MATIC AVANTGARDE (W206) interior.jpg'),
   ] },
   { match: 'e-class', photos: [
     ext('Mercedes-Benz E 400 e 4MATIC 1X7A1728.jpg'),
@@ -250,7 +243,7 @@ export const PHOTO_RULES: PhotoRule[] = [
     ext('Mercedes-AMG G 63 (W464) rear.jpg'),
     ext('Mercedes-AMG G 63 Stronger Than Time Edition front.jpg'),
     ext('2022 Mercedes-AMG G63 W464 Night Package front.jpg'),
-    int('Mercedes-AMG G 63 (W464) interior.jpg'),
+    int('Mercedes-Benz G350d (W464) interior.jpg'),
   ] },
   { match: 'c63', photos: [
     ext('Mercedes-AMG C 63 S E Performance (W206) front.jpg'),
@@ -262,6 +255,7 @@ export const PHOTO_RULES: PhotoRule[] = [
     ext('Mercedes-AMG S 63 E Performance (W223) front.jpg'),
     ext('Mercedes-Benz S-Class 2020 W223.jpg'),
     ext('Mercedes-AMG S 63 4MATIC+ (Z223) front.jpg'),
+    int('Mercedes-AMG S 63 E Performance (W223) interior.jpg'),
   ] },
   { match: 'cla', photos: [
     ext('Mercedes-AMG CLA 45 S 4MATIC+ Coupé (C118) front.jpg'),
@@ -290,7 +284,6 @@ export const PHOTO_RULES: PhotoRule[] = [
     ext('BMW M5 (F90) sedan (2).jpg'),
     ext('BMW M5 Competition F90 Carbon Black (3).jpg'),
     ext('BMW G90 M5 front.jpg'),
-    int('BMW M5 Competition F90 interior.jpg'),
   ] },
   { match: '330', photos: [
     ext('BMW 330i G20 Black 3.jpg'),
@@ -389,6 +382,11 @@ export function exteriorsFor(model: string): Photo[] {
   const all = galleryFor(model);
   const ex = all.filter((p) => p.kind === 'exterior');
   return ex.length ? ex : all;
+}
+
+/** Interior photos only, for the hover reveal on cards. */
+export function interiorsFor(model: string): Photo[] {
+  return galleryFor(model).filter((p) => p.kind === 'interior');
 }
 
 // Stable hash so each car id produces deterministic, repeatable variety.

@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import Image from 'next/image';
 import { Car } from 'lucide-react';
-import { exteriorsFor, hashId, type Photo } from '@/lib/vehicle-photos';
+import { exteriorsFor, interiorsFor, hashId, type Photo } from '@/lib/vehicle-photos';
 
 // Re-export so existing imports from this module keep working.
-export { galleryFor, exteriorsFor, hashId } from '@/lib/vehicle-photos';
+export { galleryFor, exteriorsFor, interiorsFor, hashId } from '@/lib/vehicle-photos';
 export type { Photo, PhotoKind } from '@/lib/vehicle-photos';
 
 const CATEGORY_GRADIENT: Record<string, string> = {
@@ -40,24 +40,51 @@ export const VehicleImage: React.FC<VehicleImageProps> = ({
     return photos.map((_, i) => photos[(start + i) % photos.length]);
   }, [model, seed]);
 
+  // Interior shot (if licensed photography exists) — revealed on card hover.
+  const interior = useMemo<Photo | undefined>(() => interiorsFor(model)[0], [model]);
+
   const [attempt, setAttempt] = useState(0);
+  const [interiorFailed, setInteriorFailed] = useState(false);
   const current = pool[attempt];
 
   if (current) {
     // Wide crop variation so cards never feel like the same framing.
     const objX = 30 + ((seed >> 3) % 41); // 30%..70%
     const objY = 35 + ((seed >> 8) % 31); // 35%..65%
+    const showInterior = interior && !interiorFailed;
     return (
-      <Image
-        key={current.url}
-        src={current.url}
-        alt={model}
-        fill
-        onError={() => setAttempt((a) => a + 1)}
-        className="object-cover group-hover:scale-110 transition-transform duration-500"
-        style={{ objectPosition: `${objX}% ${objY}%` }}
-        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-      />
+      <>
+        <Image
+          key={current.url}
+          src={current.url}
+          alt={model}
+          fill
+          onError={() => setAttempt((a) => a + 1)}
+          className={`object-cover transition-all duration-500 ${
+            showInterior ? 'group-hover:opacity-0' : 'group-hover:scale-110'
+          }`}
+          style={{ objectPosition: `${objX}% ${objY}%` }}
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+        />
+        {showInterior && (
+          <>
+            {/* Interior crossfade layer */}
+            <Image
+              key={interior!.url}
+              src={interior!.url}
+              alt={`${model} interior`}
+              fill
+              onError={() => setInteriorFailed(true)}
+              className="object-cover opacity-0 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+            />
+            {/* "Interior" hint pill, appears on hover */}
+            <span className="absolute top-4 left-1/2 -translate-x-1/2 z-20 px-2.5 py-0.5 rounded-full bg-performance-grey/85 backdrop-blur-sm border border-performance-turquoise/40 text-performance-turquoise text-[9px] font-bold tracking-[0.2em] uppercase opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+              Interior
+            </span>
+          </>
+        )}
+      </>
     );
   }
 
