@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Calendar, Clock, Users, User, Mail, Phone, ShieldCheck } from 'lucide-react';
+import { Calendar, Clock, Users, User, Mail, Phone, ShieldCheck, CalendarClock, CreditCard, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { VEHICLES, MODEL_OPTIONS, weekendPrice, type Vehicle } from '@/lib/vehicles';
+import { checkEligibility, getCategoryRequirement, requirementLabel } from '@/lib/driver-eligibility';
 
 interface BookingWidgetProps {
   mode?: 'quick' | 'detailed';
@@ -29,6 +30,12 @@ export const BookingWidget: React.FC<BookingWidgetProps> = ({ vehicle }) => {
   const [notes, setNotes] = useState('');
   const [consent, setConsent] = useState(false);
 
+  // Driver eligibility (age-gating + DVLA-style licence check)
+  const [dob, setDob] = useState('');
+  const [licenceHeldSince, setLicenceHeldSince] = useState('');
+  const [licenceNumber, setLicenceNumber] = useState('');
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
+
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,11 +47,35 @@ export const BookingWidget: React.FC<BookingWidgetProps> = ({ vehicle }) => {
     [vehicle, vehicleId],
   );
 
+  const requirement = selected ? getCategoryRequirement(selected.category) : null;
+
+  // Live eligibility against the selected vehicle's category rules.
+  const eligibility = useMemo(() => {
+    if (!selected) return null;
+    return checkEligibility({
+      category: selected.category,
+      dob: dob || null,
+      licenceHeldSince: licenceHeldSince || null,
+      licenceNumber: licenceNumber || null,
+    });
+  }, [selected, dob, licenceHeldSince, licenceNumber]);
+
+  // Only surface eligibility errors once the driver has entered the basics.
+  const driverDetailsStarted = Boolean(dob || licenceHeldSince || licenceNumber);
+
   const days = daysBetween(pickupDate, returnDate);
   const estimate = selected && days ? selected.pricing.daily * days : 0;
 
   const step1Valid = pickupDate && returnDate && days > 0 && !!selected;
-  const step2Valid = name.trim() && /\S+@\S+\.\S+/.test(email) && phone.trim() && consent;
+  const step2Valid =
+    name.trim() &&
+    /\S+@\S+\.\S+/.test(email) &&
+    phone.trim() &&
+    consent &&
+    ageConfirmed &&
+    !!dob &&
+    !!licenceHeldSince &&
+    !!eligibility?.eligible;
 
   const handleSubmit = async () => {
     if (!step2Valid || !selected) return;
@@ -68,6 +99,10 @@ export const BookingWidget: React.FC<BookingWidgetProps> = ({ vehicle }) => {
           email,
           phone,
           notes,
+          dateOfBirth: dob,
+          licenceHeldSince,
+          licenceNumber: licenceNumber || undefined,
+          ageConfirmed,
         }),
       });
       if (!res.ok) {
@@ -226,19 +261,87 @@ export const BookingWidget: React.FC<BookingWidgetProps> = ({ vehicle }) => {
               <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="Occasion, delivery address, questions…" className={`${inputClass} resize-none`} />
             </div>
 
+            {/* Driver eligibility */}
+            <div className="pt-2 border-t border-performance-turquoise/15">
+              <div className="flex items-center justify-between mb-1 mt-4">
+                <h4 className="text-sm font-bold text-white">Driver eligibility</h4>
+                {requirement && (
+                  <span className="text-[11px] font-semibold text-performance-turquoise bg-performance-turquoise/10 border border-performance-turquoise/30 rounded-full px-2.5 py-0.5">
+                    {requirementLabel(requirement)}
+                  </span>
+                )}
+              </div>
+              <p className="text-gray-400 text-xs mb-4">
+                This vehicle is age-restricted. We run an instant licence check — your number is verified, never stored.
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-300 mb-2"><Calendar className="inline mr-2" size={16} />Date of birth</label>
+                  <input type="date" max={today} value={dob} onChange={(e) => setDob(e.target.value)} className={inputClass} />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-300 mb-2"><CalendarClock className="inline mr-2" size={16} />Test passed</label>
+                  <input type="date" max={today} value={licenceHeldSince} onChange={(e) => setLicenceHeldSince(e.target.value)} className={inputClass} />
+                </div>
+              </div>
+              <div className="mt-4">
+                <label className="block text-sm font-semibold text-gray-300 mb-2"><CreditCard className="inline mr-2" size={16} />Driving licence number <span className="text-gray-500 font-normal">(optional, speeds up verification)</span></label>
+                <input
+                  type="text"
+                  value={licenceNumber}
+                  onChange={(e) => setLicenceNumber(e.target.value.toUpperCase())}
+                  placeholder="MORGA657054SM9IJ"
+                  maxLength={18}
+                  autoComplete="off"
+                  spellCheck={false}
+                  className={`${inputClass} tracking-wider font-mono`}
+                />
+              </div>
+
+              {/* Live eligibility feedback */}
+              {driverDetailsStarted && eligibility && !eligibility.eligible && eligibility.reasons.length > 0 && (
+                <div className="mt-4 bg-red-500/10 border border-red-500/30 rounded-lg p-3 flex gap-3">
+                  <AlertTriangle size={18} className="text-red-400 flex-shrink-0 mt-0.5" />
+                  <ul className="text-xs text-red-300 space-y-1">
+                    {eligibility.reasons.map((r, i) => (<li key={i}>{r}</li>))}
+                  </ul>
+                </div>
+              )}
+              {eligibility?.eligible && dob && licenceHeldSince && (
+                <div className="mt-4 bg-green-500/10 border border-green-500/30 rounded-lg p-3 flex gap-3 items-center">
+                  <CheckCircle2 size={18} className="text-green-400 flex-shrink-0" />
+                  <p className="text-xs text-green-300">
+                    You meet the requirements for the {selected?.model}.
+                    {eligibility.licenceVerified ? ' Licence number verified ✓' : ''}
+                  </p>
+                </div>
+              )}
+            </div>
+
             <div className="bg-performance-babyblue/10 border border-performance-babyblue/30 rounded-lg p-4 flex gap-3">
               <ShieldCheck size={18} className="text-performance-babyblue flex-shrink-0 mt-0.5" />
               <p className="text-xs text-gray-300">
-                Drivers must be 25+ with a full licence held 12+ months. Bring your licence &amp; insurance to collection,
-                or upload them securely once we confirm. A refundable deposit applies.
+                Bring your licence &amp; insurance to collection, or upload them securely once we confirm. A refundable deposit applies.
+                We verify your licence with DVLA-grade checks before handover.
               </p>
             </div>
 
             <label className="flex items-start gap-3 cursor-pointer">
+              <input type="checkbox" checked={ageConfirmed} onChange={(e) => setAgeConfirmed(e.target.checked)} className="mt-1 w-5 h-5 rounded border-performance-turquoise/30 text-performance-turquoise focus:ring-performance-turquoise" />
+              <span className="text-sm text-gray-300">
+                I confirm the details above are accurate and that I hold a valid full driving licence.
+              </span>
+            </label>
+
+            <label className="flex items-start gap-3 cursor-pointer">
               <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-1 w-5 h-5 rounded border-performance-turquoise/30 text-performance-turquoise focus:ring-performance-turquoise" />
               <span className="text-sm text-gray-300">
-                I confirm I meet the driver requirements and agree to the{' '}
-                <Link href="/terms" className="text-performance-turquoise hover:underline">terms</Link>.
+                I agree to the{' '}
+                <Link href="/terms" className="text-performance-turquoise hover:underline">terms</Link>
+                {' '}and{' '}
+                <Link href="/privacy" className="text-performance-turquoise hover:underline">privacy policy</Link>,
+                including a DVLA licence check.
               </span>
             </label>
 

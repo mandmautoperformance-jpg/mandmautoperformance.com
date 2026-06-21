@@ -6,7 +6,8 @@ import Navbar from '@/components/Navbar';
 import BookingWidget from '@/components/BookingWidget';
 import VehicleGallery from '@/components/VehicleGallery';
 import { getVehicle, weekendPrice } from '@/lib/vehicles';
-import { ChevronLeft, Star, Zap, Shield, Clock } from 'lucide-react';
+import { getCategoryRequirement, requirementLabel } from '@/lib/driver-eligibility';
+import { ChevronLeft, Star, Zap, Shield, Clock, ShieldCheck } from 'lucide-react';
 
 export default function VehicleBookingPage() {
   const router = useRouter();
@@ -134,6 +135,11 @@ export default function VehicleBookingPage() {
                   <p className="text-sm text-performance-turquoise font-semibold mb-4">
                     {vehicle.availability ? '✓ Available to reserve now' : 'Currently on hire — request dates'}
                   </p>
+
+                  <div className="flex items-start gap-2 text-xs text-gray-300 bg-performance-grey/40 border border-performance-turquoise/20 rounded-lg px-3 py-2">
+                    <ShieldCheck size={15} className="text-performance-turquoise flex-shrink-0 mt-0.5" />
+                    <span>{requirementLabel(getCategoryRequirement(vehicle.category))}. Instant DVLA-grade licence check at booking.</span>
+                  </div>
                 </div>
 
                 {/* Booking Widget */}

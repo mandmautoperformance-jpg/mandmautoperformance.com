@@ -1,6 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getSupabaseServer } from '@/lib/supabase-server';
 import { rateLimit } from '@/lib/rate-limit';
+import { getVehicle } from '@/lib/vehicles';
+import { checkEligibility } from '@/lib/driver-eligibility';
+import { checkDrivingLicence } from '@/lib/dvla';
 import {
   sendEmail,
   OWNER_EMAIL,
@@ -25,6 +28,11 @@ interface ReservationRequest {
   email: string;
   phone: string;
   notes?: string;
+  // Driver eligibility (age-gating + DVLA-style licence check)
+  dateOfBirth?: string; // YYYY-MM-DD
+  licenceHeldSince?: string; // YYYY-MM-DD
+  licenceNumber?: string;
+  ageConfirmed?: boolean;
 }
 
 function supabaseConfigured(): boolean {
@@ -58,6 +66,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'Return date must be after pickup date' });
   }
 
+  // ---- Driver eligibility (server-side enforcement) ----------------------
+  // The client gates the UI, but we re-check here so the rules can't be skipped.
+  // The vehicle's category determines the age / licence-tenure thresholds.
+  const reqVehicle = getVehicle(vehicleId);
+  const category = reqVehicle?.category ?? 'sports';
+  const eligibility = checkEligibility({
+    category,
+    dob: body.dateOfBirth,
+    licenceHeldSince: body.licenceHeldSince,
+    licenceNumber: body.licenceNumber,
+  });
+  if (!body.ageConfirmed) {
+    return res.status(400).json({ error: 'Please confirm you meet the driver requirements.' });
+  }
+  if (!eligibility.eligible) {
+    return res.status(422).json({ error: eligibility.reasons[0] || 'Driver does not meet the requirements for this vehicle.', reasons: eligibility.reasons });
+  }
+
+  // Verify the licence (offline DVLA-style) and keep only a masked reference —
+  // the raw licence number is never persisted.
+  let licenceRef: string | null = null;
+  let licenceVerified = false;
+  if (body.licenceNumber && body.dateOfBirth) {
+    try {
+      const lic = await checkDrivingLicence(body.licenceNumber, body.dateOfBirth);
+      licenceRef = lic.reference;
+      licenceVerified = lic.ok;
+    } catch (err) {
+      console.error('Licence check failed (continuing):', err);
+    }
+  }
+
   const summary =
     `Reservation request: ${model} (${vehicleId})\n` +
     `Dates: ${pickupDate} ${body.pickupTime || ''} → ${returnDate} (${body.days ?? '?'} days)\n` +
@@ -85,6 +125,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           customer_phone: phone,
           notes: body.notes || null,
           status: 'new',
+          date_of_birth: body.dateOfBirth || null,
+          licence_held_since: body.licenceHeldSince || null,
+          driver_age: eligibility.age,
+          licence_years: eligibility.licenceYears,
+          eligibility_passed: eligibility.eligible,
+          licence_verified: licenceVerified,
+          licence_check_ref: licenceRef,
+          age_confirmed_at: body.ageConfirmed ? new Date().toISOString() : null,
         },
       ]);
 

@@ -64,11 +64,12 @@ export default function BookingPage() {
                   <h3 className="font-bold text-white mb-4 text-lg">What You'll Need</h3>
                   <ul className="space-y-2 text-sm text-gray-300">
                     {[
-                      '✓ Valid UK driving licence (min. 3 years)',
+                      '✓ Valid full UK/EU driving licence',
+                      '✓ Date of birth & test-pass date (age-gated fleet)',
                       '✓ Proof of insurance or we arrange cover',
                       '✓ Photo ID (passport or national ID)',
-                      '✓ Security deposit (refundable)',
-                      '✓ Must be 21+ years of age',
+                      '✓ Refundable security deposit',
+                      '✓ Premium models require drivers 25–30+',
                     ].map((item, i) => (
                       <li key={i}>{item}</li>
                     ))}

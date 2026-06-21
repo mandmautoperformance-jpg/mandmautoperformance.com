@@ -2,7 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Head from 'next/head';
 import Navbar from '@/components/Navbar';
 import { createClient } from '@supabase/supabase-js';
-import { Bell, Lock, User } from 'lucide-react';
+import { Bell, Lock, User, BadgeCheck, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { CATEGORY_REQUIREMENTS, ageFromDob, licenceYearsHeld } from '@/lib/driver-eligibility';
+import { CATEGORY_LABELS, type VehicleCategory } from '@/lib/vehicles';
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('account');
@@ -27,6 +29,13 @@ export default function SettingsPage() {
   const [accountStatus, setAccountStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [accountError, setAccountError] = useState('');
 
+  // Driver details (age-gating eligibility)
+  const [dob, setDob] = useState('');
+  const [licenceHeldSince, setLicenceHeldSince] = useState('');
+  const [driverChanges, setDriverChanges] = useState(false);
+  const [driverStatus, setDriverStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [driverError, setDriverError] = useState('');
+
   useEffect(() => {
     if (!supabase) return;
     supabase.auth.getUser().then(({ data }) => {
@@ -37,8 +46,30 @@ export default function SettingsPage() {
       setLastName(meta.last_name || '');
       setPhone(meta.phone || '');
       setEmail(u.email || '');
+      setDob(meta.date_of_birth || '');
+      setLicenceHeldSince(meta.licence_held_since || '');
     });
   }, [supabase]);
+
+  const driverAge = ageFromDob(dob || null);
+  const driverLicenceYears = licenceYearsHeld(licenceHeldSince || null);
+
+  const handleDriverSave = async () => {
+    if (!supabase || !driverChanges) return;
+    setDriverStatus('loading');
+    setDriverError('');
+    const { error } = await supabase.auth.updateUser({
+      data: { date_of_birth: dob, licence_held_since: licenceHeldSince },
+    });
+    if (error) {
+      setDriverError(error.message);
+      setDriverStatus('error');
+    } else {
+      setDriverStatus('success');
+      setDriverChanges(false);
+      setTimeout(() => setDriverStatus('idle'), 3000);
+    }
+  };
 
   const handleAccountSave = async () => {
     if (!supabase || !changes) return;
@@ -114,6 +145,7 @@ export default function SettingsPage() {
               <div className="md:col-span-1">
                 {[
                   { id: 'account', label: 'Account', icon: <User size={18} /> },
+                  { id: 'driver', label: 'Driver Details', icon: <BadgeCheck size={18} /> },
                   { id: 'notifications', label: 'Notifications', icon: <Bell size={18} /> },
                   { id: 'security', label: 'Security', icon: <Lock size={18} /> },
                 ].map((tab) => (
@@ -170,6 +202,90 @@ export default function SettingsPage() {
                         className={`px-6 py-3 rounded-lg font-bold transition-all ${changes && accountStatus !== 'loading' ? 'bg-performance-turquoise text-performance-grey hover:bg-performance-turquoise/90' : 'bg-gray-700 text-gray-400 cursor-not-allowed'}`}
                       >
                         {accountStatus === 'loading' ? 'Saving…' : 'Save Changes'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Driver Details Tab */}
+                {activeTab === 'driver' && (
+                  <div className="bg-performance-grey border border-performance-turquoise/20 rounded-xl p-8 space-y-6">
+                    <div>
+                      <h2 className="text-2xl font-bold text-white">Driver Details</h2>
+                      <p className="text-gray-400 text-sm mt-1">
+                        Save your details once and breeze through checkout. We use these to confirm which vehicles you can hire.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-300 mb-2">Date of birth</label>
+                        <input
+                          type="date"
+                          value={dob}
+                          max={new Date().toISOString().split('T')[0]}
+                          onChange={(e) => { setDob(e.target.value); setDriverChanges(true); }}
+                          className="w-full px-4 py-3 bg-performance-turquoise/10 border border-performance-turquoise/30 rounded-lg text-white focus:outline-none focus:border-performance-turquoise"
+                        />
+                        {driverAge !== null && <p className="text-xs text-gray-500 mt-1">Age: {driverAge}</p>}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-300 mb-2">Test passed</label>
+                        <input
+                          type="date"
+                          value={licenceHeldSince}
+                          max={new Date().toISOString().split('T')[0]}
+                          onChange={(e) => { setLicenceHeldSince(e.target.value); setDriverChanges(true); }}
+                          className="w-full px-4 py-3 bg-performance-turquoise/10 border border-performance-turquoise/30 rounded-lg text-white focus:outline-none focus:border-performance-turquoise"
+                        />
+                        {driverLicenceYears !== null && <p className="text-xs text-gray-500 mt-1">Licence held: {Math.max(0, driverLicenceYears)} {driverLicenceYears === 1 ? 'year' : 'years'}</p>}
+                      </div>
+                    </div>
+
+                    {/* What you can drive */}
+                    <div className="rounded-xl border border-performance-turquoise/20 bg-performance-grey/40 p-5">
+                      <h3 className="font-bold text-white mb-3 flex items-center gap-2">
+                        <ShieldCheck size={18} className="text-performance-turquoise" /> What you can hire
+                      </h3>
+                      {driverAge === null || driverLicenceYears === null ? (
+                        <p className="text-gray-400 text-sm">Add your date of birth and test-pass date to see your eligible classes.</p>
+                      ) : (
+                        <div className="flex flex-wrap gap-2">
+                          {(Object.keys(CATEGORY_REQUIREMENTS) as VehicleCategory[]).map((cat) => {
+                            const req = CATEGORY_REQUIREMENTS[cat];
+                            const ok = driverAge >= req.minAge && driverLicenceYears >= req.minLicenceYears;
+                            return (
+                              <span
+                                key={cat}
+                                className={
+                                  ok
+                                    ? 'px-3 py-1 rounded-full text-xs font-semibold border bg-green-500/10 text-green-300 border-green-500/30'
+                                    : 'px-3 py-1 rounded-full text-xs font-semibold border bg-gray-500/10 text-gray-400 border-gray-500/30'
+                                }
+                              >
+                                {ok ? '✓ ' : '· '}{CATEGORY_LABELS[cat]}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-start gap-3 text-xs text-gray-400 bg-performance-babyblue/10 border border-performance-babyblue/30 rounded-lg p-4">
+                      <AlertTriangle size={16} className="text-performance-babyblue flex-shrink-0 mt-0.5" />
+                      <span>Your driving licence number is verified only at the point of booking and is never stored on your profile.</span>
+                    </div>
+
+                    {driverError && <p className="text-red-400 text-sm">{driverError}</p>}
+                    {driverStatus === 'success' && <p className="text-green-400 text-sm">Driver details saved.</p>}
+
+                    <div className="pt-6 border-t border-performance-turquoise/20 flex gap-3">
+                      <button
+                        onClick={handleDriverSave}
+                        disabled={!driverChanges || driverStatus === 'loading'}
+                        className={`px-6 py-3 rounded-lg font-bold transition-all ${driverChanges && driverStatus !== 'loading' ? 'bg-performance-turquoise text-performance-grey hover:bg-performance-turquoise/90' : 'bg-gray-700 text-gray-400 cursor-not-allowed'}`}
+                      >
+                        {driverStatus === 'loading' ? 'Saving…' : 'Save Driver Details'}
                       </button>
                     </div>
                   </div>

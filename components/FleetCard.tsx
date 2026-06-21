@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Heart, MapPin, Zap, Gauge } from 'lucide-react';
+import { Heart, MapPin, Zap, Gauge, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import VehicleImage from '@/components/VehicleImage';
 
@@ -24,6 +24,8 @@ interface FleetCardProps {
   features: string[];
   location?: string;
   rating?: number;
+  minAge?: number;
+  minLicenceYears?: number;
 }
 
 export const FleetCard: React.FC<FleetCardProps> = ({
@@ -38,6 +40,8 @@ export const FleetCard: React.FC<FleetCardProps> = ({
   features,
   location = 'London, UK',
   rating = 4.9,
+  minAge,
+  minLicenceYears,
 }) => {
   const [isFavorited, setIsFavorited] = useState(false);
 
@@ -120,6 +124,12 @@ export const FleetCard: React.FC<FleetCardProps> = ({
             <MapPin size={16} className="text-performance-turquoise" />
             {location}
           </div>
+          {minAge && (
+            <div className="flex items-center gap-2 text-gray-400 text-xs mt-1">
+              <ShieldCheck size={14} className="text-performance-turquoise" />
+              Drivers {minAge}+ · licence {minLicenceYears}+ {minLicenceYears === 1 ? 'yr' : 'yrs'}
+            </div>
+          )}
         </div>
 
         {/* Specs Grid */}

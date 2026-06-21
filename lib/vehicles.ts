@@ -13,6 +13,11 @@
 
 export type VehicleCategory = 'exotic' | 'supercar' | 'sports' | 'luxury' | 'suv' | 'executive';
 
+// Age / licence-tenure rules live in driver-eligibility. The import is value-only
+// here; driver-eligibility imports just the VehicleCategory *type* from this file,
+// so there is no runtime import cycle.
+import { CATEGORY_REQUIREMENTS } from './driver-eligibility';
+
 export const CATEGORY_LABELS: Record<VehicleCategory, string> = {
   exotic: 'Exotic',
   supercar: 'Supercar',
@@ -56,6 +61,10 @@ export interface Vehicle {
   rating: number;
   reviews: number;
   description: string;
+  /** Minimum driver age for this vehicle (derived from category). */
+  minAge: number;
+  /** Minimum full-licence tenure in years (derived from category). */
+  minLicenceYears: number;
 }
 
 interface BaseModel {
@@ -245,6 +254,8 @@ function generateFleet(): Vehicle[] {
         rating,
         reviews,
         description: base.description,
+        minAge: CATEGORY_REQUIREMENTS[base.category].minAge,
+        minLicenceYears: CATEGORY_REQUIREMENTS[base.category].minLicenceYears,
       });
     }
   });
