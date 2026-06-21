@@ -14,7 +14,7 @@ export default function FleetPage() {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<string>('all');
   const [make, setMake] = useState<string>('all');
-  const [maxPrice, setMaxPrice] = useState<number>(2500);
+  const [maxPrice, setMaxPrice] = useState<number>(5000);
   const [showAvailableOnly, setShowAvailableOnly] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [visible, setVisible] = useState(PAGE_SIZE);
@@ -138,14 +138,14 @@ export default function FleetPage() {
                   <input
                     type="range"
                     min={100}
-                    max={2500}
+                    max={5000}
                     step={50}
                     value={maxPrice}
                     onChange={(e) => setMaxPrice(Number(e.target.value))}
                     className="w-full accent-performance-turquoise"
                   />
                   <div className="flex justify-between text-xs text-gray-500 mt-1">
-                    <span>£100</span><span>£2,500</span>
+                    <span>£100</span><span>£5,000</span>
                   </div>
                 </div>
 
@@ -219,7 +219,7 @@ export default function FleetPage() {
                 <p className="text-white font-bold text-xl mb-2">No vehicles match your filters</p>
                 <p className="text-gray-400">Try adjusting your search or filters</p>
                 <button
-                  onClick={() => { setSearch(''); setCategory('all'); setMake('all'); setMaxPrice(2500); setShowAvailableOnly(false); }}
+                  onClick={() => { setSearch(''); setCategory('all'); setMake('all'); setMaxPrice(5000); setShowAvailableOnly(false); }}
                   className="mt-6 px-6 py-3 bg-performance-turquoise text-performance-grey font-bold rounded-lg"
                 >
                   Reset Filters

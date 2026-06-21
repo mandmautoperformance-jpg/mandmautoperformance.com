@@ -201,7 +201,7 @@ export const CategoryShowcase: React.FC = () => {
             Find Your Drive
           </h2>
           <p className="text-gray-400 max-w-lg mx-auto text-sm">
-            {FLEET_SIZE} individually-photographed vehicles across five curated categories — available across London &amp; Hertfordshire.
+            {FLEET_SIZE} individually-photographed vehicles across six curated categories — available across London &amp; Hertfordshire.
           </p>
         </div>
 

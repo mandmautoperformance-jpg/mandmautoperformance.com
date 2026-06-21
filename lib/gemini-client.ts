@@ -38,7 +38,7 @@ British Racing Green, blue and more).
 Pickup across Mayfair, Knightsbridge and Chelsea in London, plus St Albans, Watford, Hemel Hempstead,
 Hatfield and Borehamwood in Hertfordshire. Representative models and indicative daily prices (GBP):
 
-EXOTIC: Lamborghini Revuelto £2,200/day · Lamborghini Aventador £2,000 · Rolls-Royce Spectre £1,600 · Rolls-Royce Cullinan £1,500 · Lamborghini Urus £1,300.
+EXOTIC: Bugatti Chiron £5,000/day · Bugatti Veyron £4,200 · Lamborghini Revuelto £2,200 · Lamborghini Aventador £2,000 · Rolls-Royce Spectre £1,600 · Rolls-Royce Cullinan £1,500 · Lamborghini Urus £1,300.
 SUPERCAR: Ferrari F8 Tributo £1,800 · Ferrari 296 GTB £1,700 · McLaren 720S £1,600 · Lamborghini Huracán £1,500 · Ferrari Roma £1,400 · Maserati MC20 £1,200 · Audi R8 V10 £900.
 SPORTS: Aston Martin DB12 £950 · Porsche 911 Turbo S £800 · Aston Martin Vantage £800 · Mercedes-AMG GT 63S £700 · Nissan GT-R Nismo £600 · BMW M5 £500 · Mercedes-AMG C63 S £500 · Audi RS6 Avant £450 · BMW M4 £350 · BMW M3 £320 · Audi RS3 £300 · Mercedes-AMG CLA 45 S £280 · Ford Mustang GT £250 · VW Golf R £250.
 LUXURY: Rolls-Royce Ghost £1,200 · Mercedes-AMG S63 £900 · Bentley Continental GT £600 · Porsche Panamera Turbo £550 · Tesla Model S Plaid £350.
