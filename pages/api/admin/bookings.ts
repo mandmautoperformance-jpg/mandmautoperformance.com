@@ -56,11 +56,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(200).json({ requests: [], tableReady: false, reason: error.message });
     }
 
-    const requests = (data || []).map((r) => ({
-      ...r,
-      estimate_gbp: Math.round((r.estimate_pence || 0) / 100),
-      deposit_gbp: r.deposit_pence != null ? Math.round(r.deposit_pence / 100) : null,
-    }));
+    // Document summary per reservation (best-effort: table may not exist yet).
+    const docSummary = new Map<string, { total: number; pending: number; approved: number }>();
+    const docsRes = await supabase.from('reservation_documents').select('request_id, status');
+    if (!docsRes.error) {
+      for (const d of docsRes.data || []) {
+        const s = docSummary.get(d.request_id) || { total: 0, pending: 0, approved: 0 };
+        s.total += 1;
+        if (d.status === 'pending') s.pending += 1;
+        if (d.status === 'approved') s.approved += 1;
+        docSummary.set(d.request_id, s);
+      }
+    }
+
+    const requests = (data || []).map((r) => {
+      const docs = docSummary.get(r.id) || { total: 0, pending: 0, approved: 0 };
+      return {
+        ...r,
+        estimate_gbp: Math.round((r.estimate_pence || 0) / 100),
+        deposit_gbp: r.deposit_pence != null ? Math.round(r.deposit_pence / 100) : null,
+        doc_total: docs.total,
+        doc_pending: docs.pending,
+        doc_approved: docs.approved,
+      };
+    });
     return res.status(200).json({ requests, tableReady: true });
   }
 

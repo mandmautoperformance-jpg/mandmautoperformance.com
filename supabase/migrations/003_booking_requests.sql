@@ -27,6 +27,8 @@ create table if not exists public.booking_requests (
   stripe_session_id        text,
   stripe_payment_intent_id text,
   paid_at                  timestamptz,
+  -- Secret capability token for the customer document-upload link
+  upload_token             uuid not null default gen_random_uuid(),
   created_at      timestamptz not null default now(),
   updated_at      timestamptz not null default now()
 );
@@ -38,6 +40,7 @@ alter table public.booking_requests add column if not exists payment_status     
 alter table public.booking_requests add column if not exists stripe_session_id        text;
 alter table public.booking_requests add column if not exists stripe_payment_intent_id text;
 alter table public.booking_requests add column if not exists paid_at                  timestamptz;
+alter table public.booking_requests add column if not exists upload_token             uuid not null default gen_random_uuid();
 
 create index if not exists booking_requests_status_idx  on public.booking_requests (status);
 create index if not exists booking_requests_created_idx on public.booking_requests (created_at desc);
@@ -55,3 +58,26 @@ drop trigger if exists booking_requests_updated_at on public.booking_requests;
 create trigger booking_requests_updated_at
   before update on public.booking_requests
   for each row execute function public.set_updated_at();
+
+-- ---------------------------------------------------------------------------
+-- Customer-submitted documents for a reservation (licence / insurance / ID).
+-- Files live in the existing private "booking-documents" storage bucket; this
+-- table tracks them and the admin review status. Customers submit via a
+-- tokenised link (no account); only the service role reads/updates here.
+-- ---------------------------------------------------------------------------
+create table if not exists public.reservation_documents (
+  id            uuid primary key default gen_random_uuid(),
+  request_id    uuid not null references public.booking_requests(id) on delete cascade,
+  document_type text not null check (document_type in ('driving_licence','insurance','photo_id')),
+  storage_path  text not null,
+  status        text not null default 'pending' check (status in ('pending','approved','rejected')),
+  created_at    timestamptz not null default now(),
+  reviewed_at   timestamptz
+);
+
+create index if not exists reservation_documents_request_idx on public.reservation_documents (request_id);
+
+alter table public.reservation_documents enable row level security;
+drop policy if exists "service role manages reservation documents" on public.reservation_documents;
+create policy "service role manages reservation documents"
+  on public.reservation_documents for all using (auth.role() = 'service_role');

@@ -160,6 +160,23 @@ export function reservationCustomerEmail(d: LeadEmailData): string {
   );
 }
 
+/** Sent to the customer after a deposit is paid — asks them to upload docs. */
+export function reservationVerifyEmail(d: { name: string; model: string; verifyUrl: string }): string {
+  const first = (d.name || '').split(' ')[0] || 'there';
+  return layout(
+    'One last step — verify your documents',
+    `<p style="margin:0 0 14px 0;">Hi ${escapeHtml(first)},</p>
+     <p style="margin:0 0 14px 0;">Thank you — your deposit for the <strong style="color:#fff;">${escapeHtml(d.model)}</strong>
+     has been received and your reservation is confirmed.</p>
+     <p style="margin:0 0 14px 0;">To complete your hire, please upload your driving licence and insurance
+     using your secure link below:</p>
+     <p style="margin:22px 0;">
+       <a href="${d.verifyUrl}" style="background:${BRAND};color:#121316;text-decoration:none;font-weight:bold;padding:12px 22px;border-radius:8px;display:inline-block;">Upload my documents</a>
+     </p>
+     <p style="margin:0;color:#8b8e93;font-size:12px;">Or paste this link into your browser:<br/>${escapeHtml(d.verifyUrl)}</p>`,
+  );
+}
+
 export interface ContactEmailData {
   name: string;
   email: string;

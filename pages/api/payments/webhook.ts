@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 import type { IncomingMessage } from 'http';
+import { sendEmail, reservationVerifyEmail } from '@/lib/email';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -57,7 +58,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           typeof session.payment_intent === 'string'
             ? session.payment_intent
             : session.payment_intent?.id ?? null;
-        const { error } = await supabase
+        const { data: updated, error } = await supabase
           .from('booking_requests')
           .update({
             payment_status: 'paid',
@@ -65,8 +66,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             stripe_payment_intent_id: paymentIntentId,
             paid_at: new Date().toISOString(),
           })
-          .eq('id', requestId);
-        if (error) console.error('Failed to mark reservation paid:', error.message);
+          .eq('id', requestId)
+          .select('upload_token, customer_email, customer_name, model')
+          .single();
+        if (error) {
+          console.error('Failed to mark reservation paid:', error.message);
+        } else if (updated?.upload_token && updated.customer_email) {
+          // Email the customer their secure document-upload link.
+          const site = process.env.NEXT_PUBLIC_SITE_URL || 'https://mandmautoperformance.com';
+          try {
+            await sendEmail({
+              to: updated.customer_email,
+              subject: 'Confirmed — please verify your documents',
+              html: reservationVerifyEmail({
+                name: updated.customer_name,
+                model: updated.model,
+                verifyUrl: `${site}/verify/${updated.upload_token}`,
+              }),
+            });
+          } catch (e) {
+            console.error('Verify email failed (continuing):', e);
+          }
+        }
       }
     }
 

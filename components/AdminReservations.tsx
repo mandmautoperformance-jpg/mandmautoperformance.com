@@ -17,7 +17,19 @@ interface ReservationRequest {
   status: string;
   payment_status?: string | null;
   deposit_gbp?: number | null;
+  upload_token?: string | null;
+  doc_total?: number;
+  doc_pending?: number;
+  doc_approved?: number;
   created_at: string;
+}
+
+interface ReservationDoc {
+  id: string;
+  document_type: string;
+  status: string;
+  created_at: string;
+  viewUrl: string | null;
 }
 
 const STATUSES = ['new', 'contacted', 'confirmed', 'completed', 'cancelled'] as const;
@@ -52,6 +64,9 @@ const AdminReservations: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('all');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [docs, setDocs] = useState<Record<string, ReservationDoc[]>>({});
+  const [docsLoading, setDocsLoading] = useState<string | null>(null);
 
   const getToken = useCallback(async (): Promise<string | null> => {
     const supabase = createClient(
@@ -157,6 +172,69 @@ const AdminReservations: React.FC = () => {
     setSavingId(null);
   };
 
+  const copyVerifyLink = async (r: ReservationRequest) => {
+    if (!r.upload_token) {
+      setError('No verification link yet — run migration 003 so reservations get an upload token.');
+      return;
+    }
+    const url = `${window.location.origin}/verify/${r.upload_token}`;
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      /* fall through to prompt */
+    }
+    window.prompt('Document upload link — send this to the customer:', url);
+  };
+
+  const loadDocs = async (requestId: string) => {
+    setDocsLoading(requestId);
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/admin/reservation-documents?id=${encodeURIComponent(requestId)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok) setDocs((d) => ({ ...d, [requestId]: data.documents || [] }));
+      else setError(data.error || 'Failed to load documents.');
+    } catch {
+      setError('Network error loading documents.');
+    }
+    setDocsLoading(null);
+  };
+
+  const toggleDocs = (requestId: string) => {
+    if (expandedId === requestId) {
+      setExpandedId(null);
+      return;
+    }
+    setExpandedId(requestId);
+    if (!docs[requestId]) loadDocs(requestId);
+  };
+
+  const reviewDoc = async (requestId: string, docId: string, status: string) => {
+    setSavingId(docId);
+    try {
+      const token = await getToken();
+      const res = await fetch('/api/admin/reservation-documents', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ docId, status }),
+      });
+      if (res.ok) {
+        setDocs((d) => ({
+          ...d,
+          [requestId]: (d[requestId] || []).map((x) => (x.id === docId ? { ...x, status } : x)),
+        }));
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || 'Failed to update document.');
+      }
+    } catch {
+      setError('Network error updating document.');
+    }
+    setSavingId(null);
+  };
+
   const visible = filter === 'all' ? requests : requests.filter((r) => r.status === filter);
   const counts = STATUSES.reduce<Record<string, number>>((acc, s) => {
     acc[s] = requests.filter((r) => r.status === s).length;
@@ -230,11 +308,13 @@ const AdminReservations: React.FC = () => {
                 <th className="px-4 py-3 font-semibold">Received</th>
                 <th className="px-4 py-3 font-semibold">Status</th>
                 <th className="px-4 py-3 font-semibold">Payment</th>
+                <th className="px-4 py-3 font-semibold">Documents</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-700/50">
               {visible.map((r) => (
-                <tr key={r.id} className="hover:bg-gunmetal/40 align-top">
+                <React.Fragment key={r.id}>
+                <tr className="hover:bg-gunmetal/40 align-top">
                   <td className="px-4 py-3">
                     <div className="text-white font-semibold">{r.customer_name}</div>
                     <a href={`mailto:${r.customer_email}`} className="text-electric-turquoise hover:underline block text-xs">{r.customer_email}</a>
@@ -292,7 +372,78 @@ const AdminReservations: React.FC = () => {
                       </button>
                     )}
                   </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    {r.doc_total ? (
+                      <span
+                        className={`inline-block px-2 py-1 rounded-md text-xs font-bold border ${
+                          r.doc_pending
+                            ? 'bg-yellow-500/15 text-yellow-300 border-yellow-500/40'
+                            : 'bg-green-500/15 text-green-400 border-green-500/40'
+                        }`}
+                      >
+                        {r.doc_approved}/{r.doc_total} approved
+                      </span>
+                    ) : (
+                      <span className="text-gray-500 text-xs">None</span>
+                    )}
+                    <div className="mt-1 flex gap-2">
+                      {!!r.doc_total && (
+                        <button onClick={() => toggleDocs(r.id)} className="text-electric-turquoise hover:underline text-xs">
+                          {expandedId === r.id ? 'Hide' : 'Review'}
+                        </button>
+                      )}
+                      <button onClick={() => copyVerifyLink(r)} className="text-gray-400 hover:text-gray-200 text-xs">
+                        Copy upload link
+                      </button>
+                    </div>
+                  </td>
                 </tr>
+                {expandedId === r.id && (
+                  <tr className="bg-gunmetal/30">
+                    <td colSpan={8} className="px-4 py-4">
+                      {docsLoading === r.id ? (
+                        <p className="text-gray-400 text-sm">Loading documents…</p>
+                      ) : (docs[r.id] || []).length === 0 ? (
+                        <p className="text-gray-400 text-sm">No documents uploaded yet.</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {(docs[r.id] || []).map((doc) => (
+                            <div key={doc.id} className="flex items-center justify-between gap-3 flex-wrap rounded-lg border border-gray-700/60 px-3 py-2">
+                              <div className="flex items-center gap-3">
+                                <span className="text-white text-sm font-semibold capitalize">{doc.document_type.replace('_', ' ')}</span>
+                                <span className={`px-2 py-0.5 rounded text-[11px] font-bold capitalize border ${
+                                  doc.status === 'approved' ? 'bg-green-500/15 text-green-400 border-green-500/40'
+                                  : doc.status === 'rejected' ? 'bg-red-500/15 text-red-400 border-red-500/40'
+                                  : 'bg-yellow-500/15 text-yellow-300 border-yellow-500/40'
+                                }`}>{doc.status}</span>
+                                {doc.viewUrl && (
+                                  <a href={doc.viewUrl} target="_blank" rel="noopener noreferrer" className="text-electric-turquoise hover:underline text-xs">View file</a>
+                                )}
+                              </div>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => reviewDoc(r.id, doc.id, 'approved')}
+                                  disabled={savingId === doc.id}
+                                  className="px-3 py-1 rounded-md text-xs font-semibold bg-green-500/15 border border-green-500/40 text-green-400 hover:bg-green-500/25 disabled:opacity-50"
+                                >
+                                  Approve
+                                </button>
+                                <button
+                                  onClick={() => reviewDoc(r.id, doc.id, 'rejected')}
+                                  disabled={savingId === doc.id}
+                                  className="px-3 py-1 rounded-md text-xs font-semibold bg-red-500/15 border border-red-500/40 text-red-400 hover:bg-red-500/25 disabled:opacity-50"
+                                >
+                                  Reject
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                )}
+                </React.Fragment>
               ))}
             </tbody>
           </table>
