@@ -42,9 +42,12 @@ export default function ContactPage() {
           <div className="max-w-7xl mx-auto">
 
             <div className="text-center mb-14">
-              <h1 className="text-5xl font-bold text-white mb-4">Get in Touch</h1>
+              <p className="text-performance-turquoise text-[10px] font-bold tracking-[0.45em] uppercase mb-3">
+                We're Here For You
+              </p>
+              <h1 className="font-display text-5xl font-bold text-white mb-4">Get in Touch</h1>
               <p className="text-gray-400 text-lg max-w-xl mx-auto">
-                We're available 24/7 via MIA, or reach us directly below.
+                Available 24/7 via MIA, or reach our team directly below.
               </p>
             </div>
 

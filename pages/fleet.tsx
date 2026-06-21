@@ -65,9 +65,12 @@ export default function FleetPage() {
         <section className="px-4 sm:px-6 lg:px-8 pt-20 pb-12">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-10">
-              <h1 className="text-5xl font-bold text-white mb-4">Our Fleet</h1>
+              <p className="text-performance-turquoise text-[10px] font-bold tracking-[0.45em] uppercase mb-3">
+                London &amp; Hertfordshire
+              </p>
+              <h1 className="font-display text-5xl sm:text-6xl font-bold text-white mb-4">The Collection</h1>
               <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-                {ALL_VEHICLES.length} elite vehicles available across London & Hertfordshire
+                {ALL_VEHICLES.length} individually curated vehicles — supercars, luxury saloons, prestige SUVs &amp; more
               </p>
             </div>
 

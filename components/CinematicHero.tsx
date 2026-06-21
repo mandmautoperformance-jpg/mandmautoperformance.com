@@ -30,11 +30,11 @@ export const CinematicHero: React.FC = () => (
         </p>
 
         <h1 className="font-display text-5xl sm:text-6xl lg:text-[5.5rem] font-bold text-white mb-6 leading-[1.05] tracking-tight drop-shadow-[0_2px_20px_rgba(0,0,0,0.7)]">
-          Rent luxury car<br className="hidden sm:block" /> in London
+          Drive what others<br className="hidden sm:block" /> only dream of
         </h1>
 
         <p className="text-white/70 text-base sm:text-lg max-w-xl mx-auto mb-12 leading-relaxed">
-          Find your favourite model — M&amp;M Auto Performance specialises in luxury car hire across London &amp; Hertfordshire.
+          Curated supercars and luxury vehicles — instantly booked, AI-verified, and delivered across London &amp; Hertfordshire.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">

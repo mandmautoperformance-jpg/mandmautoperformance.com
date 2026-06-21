@@ -3,6 +3,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import { Shield, Zap, Award, MapPin } from 'lucide-react';
+import { FLEET_SIZE } from '@/lib/vehicles';
 
 export default function AboutPage() {
   return (
@@ -23,7 +24,7 @@ export default function AboutPage() {
               <Zap size={14} className="text-performance-turquoise" />
               <span className="text-sm font-medium text-performance-turquoise">Premium AI Car Hire — Hertfordshire &amp; London</span>
             </div>
-            <h1 className="text-5xl sm:text-6xl font-bold text-white mb-6">
+            <h1 className="font-display text-5xl sm:text-6xl font-bold text-white mb-6">
               Built for Drivers Who <span className="bg-gradient-to-r from-performance-turquoise to-performance-babyblue bg-clip-text text-transparent">Demand More</span>
             </h1>
             <p className="text-gray-300 text-lg max-w-2xl mx-auto">M&M Auto Performance is the UK's most advanced vehicle hire platform — combining elite cars with AI-powered booking and a rewards system that actually respects your time.</p>
@@ -40,7 +41,7 @@ export default function AboutPage() {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              {[{ value: '10+', label: 'Elite Vehicles' }, { value: '24/7', label: 'AI Concierge' }, { value: 'Herts', label: '& London Coverage' }, { value: '4.9★', label: 'Average Rating' }].map((stat, i) => (
+              {[{ value: `${FLEET_SIZE}`, label: 'Elite Vehicles' }, { value: '24/7', label: 'AI Concierge' }, { value: 'Herts', label: '& London Coverage' }, { value: '4.9★', label: 'Average Rating' }].map((stat, i) => (
                 <div key={i} className="bg-performance-grey border border-performance-turquoise/20 rounded-xl p-6 text-center hover:border-performance-turquoise/40 transition-all">
                   <div className="text-3xl font-bold text-performance-turquoise mb-2">{stat.value}</div>
                   <div className="text-gray-400 text-sm">{stat.label}</div>

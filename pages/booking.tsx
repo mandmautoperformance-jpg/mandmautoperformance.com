@@ -31,8 +31,8 @@ export default function BookingPage() {
 
               {/* Left: Booking Widget */}
               <div className="lg:col-span-2">
-                <h1 className="text-4xl font-bold text-white mb-2">Book Your Experience</h1>
-                <p className="text-gray-400 mb-8">AI-powered booking with instant document verification</p>
+                <h1 className="font-display text-4xl font-bold text-white mb-2">Book Your Experience</h1>
+                <p className="text-gray-400 mb-8">AI-powered booking with instant document verification — confirmed in minutes</p>
                 <BookingWidget mode="detailed" />
               </div>
 

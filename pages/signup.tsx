@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { Eye, EyeOff, Zap, AlertCircle, CheckCircle } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
@@ -61,12 +62,10 @@ export default function SignupPage() {
         <div className="relative w-full max-w-md">
           <div className="text-center mb-8">
             <Link href="/" className="inline-flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-gradient-to-br from-performance-turquoise to-performance-babyblue rounded-xl flex items-center justify-center">
-                <span className="text-performance-grey font-bold text-xl">M</span>
-              </div>
-              <span className="text-white font-bold text-xl">M&M Auto Performance</span>
+              <Image src="/logo.svg" alt="M&M Auto Performance" width={44} height={44} unoptimized className="rounded-full" />
+              <span className="text-white font-bold text-xl">M&amp;M Auto Performance</span>
             </Link>
-            <h1 className="text-3xl font-bold text-white">Create your account</h1>
+            <h1 className="font-display text-3xl font-bold text-white">Create your account</h1>
             <p className="text-gray-400 mt-2">Join thousands of elite drivers</p>
           </div>
 
