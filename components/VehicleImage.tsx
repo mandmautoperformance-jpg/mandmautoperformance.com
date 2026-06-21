@@ -21,6 +21,8 @@ interface VehicleImageProps {
   model: string;
   category: 'luxury' | 'sports' | 'supercar' | 'exotic' | 'suv' | 'executive';
   colorHex?: string;
+  /** Fleet-unique pinned hero photo; shown first so no two cards match. */
+  heroPhoto?: string;
 }
 
 export const VehicleImage: React.FC<VehicleImageProps> = ({
@@ -28,17 +30,23 @@ export const VehicleImage: React.FC<VehicleImageProps> = ({
   model,
   category,
   colorHex,
+  heroPhoto,
 }) => {
   const seed = useMemo(() => hashId(vehicleId), [vehicleId]);
 
-  // Rotate through the model's photo pool seeded by vehicleId so cards look
-  // varied; advance to the next candidate when one fails to load.
+  // Lead with the fleet-unique hero photo pinned at generation time, then keep
+  // the rest of the model's pool as load-failure fallbacks. This guarantees the
+  // grid never shows the same image twice and the colour label always matches.
   const pool = useMemo<Photo[]>(() => {
     const photos = exteriorsFor(model);
     if (!photos.length) return [];
+    if (heroPhoto) {
+      const hero = photos.find((p) => p.url === heroPhoto);
+      if (hero) return [hero, ...photos.filter((p) => p.url !== heroPhoto)];
+    }
     const start = seed % photos.length;
     return photos.map((_, i) => photos[(start + i) % photos.length]);
-  }, [model, seed]);
+  }, [model, seed, heroPhoto]);
 
   // Interior shot (if licensed photography exists) — revealed on card hover.
   const interior = useMemo<Photo | undefined>(() => interiorsFor(model)[0], [model]);

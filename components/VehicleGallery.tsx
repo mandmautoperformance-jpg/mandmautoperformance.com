@@ -8,6 +8,9 @@ interface VehicleGalleryProps {
   category: 'luxury' | 'sports' | 'supercar' | 'exotic' | 'suv' | 'executive';
   color?: string;
   colorHex?: string;
+  /** Fleet-unique pinned hero photo; shown first so the detail page leads with
+   *  the same image (and colour) as the card. */
+  heroPhoto?: string;
 }
 
 const CATEGORY_GRADIENT: Record<string, string> = {
@@ -25,8 +28,13 @@ const CATEGORY_GRADIENT: Record<string, string> = {
  * so a broken thumbnail never appears. If no photo loads at all we show the
  * branded, colour-tinted fallback.
  */
-export const VehicleGallery: React.FC<VehicleGalleryProps> = ({ model, category, color, colorHex }) => {
-  const photos = useMemo<Photo[]>(() => galleryFor(model), [model]);
+export const VehicleGallery: React.FC<VehicleGalleryProps> = ({ model, category, color, colorHex, heroPhoto }) => {
+  const photos = useMemo<Photo[]>(() => {
+    const all = galleryFor(model);
+    if (!heroPhoto) return all;
+    const hero = all.find((p) => p.url === heroPhoto);
+    return hero ? [hero, ...all.filter((p) => p.url !== heroPhoto)] : all;
+  }, [model, heroPhoto]);
   const [active, setActive] = useState(0);
   const [failed, setFailed] = useState<Record<number, boolean>>({});
 

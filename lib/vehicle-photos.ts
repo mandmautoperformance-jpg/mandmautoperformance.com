@@ -287,12 +287,10 @@ export const PHOTO_RULES: PhotoRule[] = [
   ] },
   { match: '330', photos: [
     ext('BMW 330i G20 Black 3.jpg'),
-    ext('BMW G20 320d M Sport Dravit Grey Metallic (2).jpg'),
     ext('2020 BMW 330i M Sport (G20) front.jpg'),
   ] },
   { match: '320', photos: [
     ext('BMW G20 320d M Sport Dravit Grey Metallic (2).jpg'),
-    ext('BMW 330i G20 Black 3.jpg'),
     ext('2019 BMW 320d M Sport (G20) front.jpg'),
   ] },
   { match: '520', photos: [
@@ -370,6 +368,121 @@ export function normalize(model: string): string {
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
     .toLowerCase();
+}
+
+// ---------------------------------------------------------------------------
+// Colour detection.
+//
+// The displayed photo is a real, licensed image of a specific car in a specific
+// colour — so the colour we ADVERTISE must come from the photo, not from a
+// random palette. Wikimedia filenames almost always name the paint (e.g.
+// "Blue Bugatti Veyron", "Alpine White", "Motegi Red"), so we read it straight
+// from the filename. Keywords are ordered specific → generic; first match wins.
+// ---------------------------------------------------------------------------
+
+export interface DetectedColor {
+  name: string;
+  hex: string;
+}
+
+const COLOR_HEX: Record<string, string> = {
+  White: '#EDEDEA',
+  Black: '#0B0B0D',
+  Silver: '#C9CDD2',
+  Grey: '#6E7173',
+  Red: '#B92B27',
+  Blue: '#27508A',
+  'Navy Blue': '#1F3A6E',
+  'Light Blue': '#6FA8DC',
+  Green: '#1E7A46',
+  'British Racing Green': '#14452F',
+  Yellow: '#E8B70C',
+  Orange: '#E8730C',
+  Gold: '#C5A572',
+  Bronze: '#8C6A3F',
+  Purple: '#6C3483',
+};
+
+// [keyword, colour name]. Specific finishes precede the plain colour words so
+// e.g. "Black Sapphire" reads as Black, "Midnight Sapphire" as Blue.
+const COLOR_KEYWORDS: [string, string][] = [
+  ['british racing green', 'British Racing Green'],
+  ['black sapphire', 'Black'],
+  ['midnight sapphire', 'Blue'],
+  ['carbon black', 'Black'],
+  ['alpine white', 'White'],
+  ['mandarin navy', 'Navy Blue'],
+  ['cape york green', 'Green'],
+  ['sao paulo yellow', 'Yellow'],
+  ['bright yellow', 'Yellow'],
+  ['dolphin gray', 'Grey'],
+  ['rapid red', 'Red'],
+  ['motegi red', 'Red'],
+  ['tornado red', 'Red'],
+  ['navy', 'Navy Blue'],
+  ['light blue', 'Light Blue'],
+  ['lapiz', 'Blue'],
+  ['nogaro', 'Blue'],
+  ['tanzanite', 'Blue'],
+  ['portimao', 'Blue'],
+  ['varesine', 'Blue'],
+  ['sapphire', 'Blue'],
+  ['peridot', 'Green'],
+  ['aventurin', 'Red'],
+  ['bianco', 'White'],
+  ['daytonagrau', 'Grey'],
+  ['dravit', 'Grey'],
+  // Plain colour words (generic, lowest priority)
+  ['silver', 'Silver'],
+  ['white', 'White'],
+  ['black', 'Black'],
+  ['grey', 'Grey'],
+  ['gray', 'Grey'],
+  ['grau', 'Grey'],
+  ['green', 'Green'],
+  ['yellow', 'Yellow'],
+  ['orange', 'Orange'],
+  ['bronze', 'Bronze'],
+  ['gold', 'Gold'],
+  ['purple', 'Purple'],
+  ['viola', 'Purple'],
+  ['red', 'Red'],
+  ['blue', 'Blue'],
+  ['blau', 'Blue'],
+];
+
+/** Read the paint colour from a photo URL/filename, or null if undetectable. */
+export function detectColor(url: string): DetectedColor | null {
+  let name = '';
+  try {
+    name = decodeURIComponent(url);
+  } catch {
+    name = url;
+  }
+  const hay = name.toLowerCase();
+  for (const [kw, colour] of COLOR_KEYWORDS) {
+    if (hay.includes(kw)) {
+      return { name: colour, hex: COLOR_HEX[colour] ?? '' };
+    }
+  }
+  return null;
+}
+
+/**
+ * The exterior photo a card/gallery shows FIRST for a given vehicle. Mirrors the
+ * deterministic seeding in VehicleImage so the advertised colour always matches
+ * the picture actually on screen.
+ */
+export function primaryExteriorFor(vehicleId: string, model: string): Photo | undefined {
+  const ex = exteriorsFor(model);
+  if (!ex.length) return undefined;
+  return ex[hashId(vehicleId) % ex.length];
+}
+
+/** Detected colour for a specific vehicle, derived from its primary photo. */
+export function detectColorForVehicle(vehicleId: string, model: string): DetectedColor | null {
+  const p = primaryExteriorFor(vehicleId, model);
+  return p ? detectColor(p.url) : null;
 }
 
 /** All known photos for a model (exterior first), or [] if none match. */

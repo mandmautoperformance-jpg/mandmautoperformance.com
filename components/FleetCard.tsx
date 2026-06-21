@@ -26,6 +26,7 @@ interface FleetCardProps {
   rating?: number;
   minAge?: number;
   minLicenceYears?: number;
+  heroPhoto?: string;
 }
 
 export const FleetCard: React.FC<FleetCardProps> = ({
@@ -42,6 +43,7 @@ export const FleetCard: React.FC<FleetCardProps> = ({
   rating = 4.9,
   minAge,
   minLicenceYears,
+  heroPhoto,
 }) => {
   const [isFavorited, setIsFavorited] = useState(false);
 
@@ -58,7 +60,7 @@ export const FleetCard: React.FC<FleetCardProps> = ({
     <div className="group relative h-full bg-performance-panel border border-performance-turquoise/15 rounded-xl overflow-hidden hover:border-performance-turquoise/60 transition-all duration-300 hover:shadow-gold">
       {/* Image Container */}
       <div className="relative h-64 sm:h-72 overflow-hidden bg-gradient-to-br from-performance-grey to-performance-turquoise/10">
-        <VehicleImage vehicleId={vehicleId} model={model} category={category} colorHex={colorHex} />
+        <VehicleImage vehicleId={vehicleId} model={model} category={category} colorHex={colorHex} heroPhoto={heroPhoto} />
 
         {/* Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-performance-grey via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -112,11 +114,13 @@ export const FleetCard: React.FC<FleetCardProps> = ({
           <h3 className="font-display text-xl font-bold text-white mb-2 tracking-tight">{model}</h3>
           {color && (
             <div className="flex items-center gap-2 text-gray-300 text-sm mb-1">
-              <span
-                className="inline-block w-3.5 h-3.5 rounded-full border border-white/30 flex-shrink-0"
-                style={{ backgroundColor: colorHex }}
-                aria-hidden
-              />
+              {colorHex && (
+                <span
+                  className="inline-block w-3.5 h-3.5 rounded-full border border-white/30 flex-shrink-0"
+                  style={{ backgroundColor: colorHex }}
+                  aria-hidden
+                />
+              )}
               {color}
             </div>
           )}

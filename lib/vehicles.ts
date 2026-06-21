@@ -17,6 +17,7 @@ export type VehicleCategory = 'exotic' | 'supercar' | 'sports' | 'luxury' | 'suv
 // here; driver-eligibility imports just the VehicleCategory *type* from this file,
 // so there is no runtime import cycle.
 import { CATEGORY_REQUIREMENTS } from './driver-eligibility';
+import { exteriorsFor, detectColor, hashId } from './vehicle-photos';
 
 export const CATEGORY_LABELS: Record<VehicleCategory, string> = {
   exotic: 'Exotic',
@@ -65,6 +66,8 @@ export interface Vehicle {
   minAge: number;
   /** Minimum full-licence tenure in years (derived from category). */
   minLicenceYears: number;
+  /** Pinned, fleet-unique hero photo URL ('' when no licensed photo exists). */
+  heroPhoto: string;
 }
 
 interface BaseModel {
@@ -215,6 +218,8 @@ function makePlate(rng: () => number): string {
 function generateFleet(): Vehicle[] {
   const fleet: Vehicle[] = [];
   const usedSlugs = new Set<string>();
+  // Every car gets a DISTINCT hero photo across the whole fleet — no duplicates.
+  const usedPhotos = new Set<string>();
 
   BASE_MODELS.forEach((base, modelIdx) => {
     // Max two of any given car model — two distinct colour variants each.
@@ -232,6 +237,30 @@ function generateFleet(): Vehicle[] {
       if (usedSlugs.has(slug)) slug = `${slug}-${i + 1}`;
       usedSlugs.add(slug);
 
+      // Pin a hero photo that is unique across the ENTIRE fleet. Walk the
+      // model's exterior pool in a per-car seeded order. First pass prefers an
+      // unused photo whose filename actually names its colour (so we can
+      // advertise it accurately); second pass takes any unused photo; finally
+      // fall back to the seeded image if the pool is exhausted.
+      const exterior = exteriorsFor(base.model);
+      let heroPhoto = '';
+      if (exterior.length) {
+        const startIdx = hashId(slug) % exterior.length;
+        const ordered = exterior.map((_, k) => exterior[(startIdx + k) % exterior.length].url);
+        heroPhoto =
+          ordered.find((u) => !usedPhotos.has(u) && detectColor(u)) ||
+          ordered.find((u) => !usedPhotos.has(u)) ||
+          ordered[0];
+        usedPhotos.add(heroPhoto);
+      }
+
+      // The advertised colour MUST match the photo we actually show: read it
+      // straight from the pinned hero photo. Only fall back to a non-committal
+      // label when the filename names no colour — never assert a colour that
+      // contradicts the picture. The slug keeps its palette name so URLs stay stable.
+      const detected = heroPhoto ? detectColor(heroPhoto) : null;
+      const displayColor = detected ?? { name: 'As pictured', hex: '' };
+
       const rating = Math.round((4.5 + rng() * 0.5) * 10) / 10;
       const reviews = 6 + Math.floor(rng() * 240);
       const availability = rng() > 0.22;
@@ -243,8 +272,8 @@ function generateFleet(): Vehicle[] {
         make: base.make,
         model: base.model,
         category: base.category,
-        color: color.name,
-        colorHex: color.hex,
+        color: displayColor.name,
+        colorHex: displayColor.hex,
         plate,
         specs: base.specs,
         pricing: { daily: base.daily, hourly: base.hourly },
@@ -256,6 +285,7 @@ function generateFleet(): Vehicle[] {
         description: base.description,
         minAge: CATEGORY_REQUIREMENTS[base.category].minAge,
         minLicenceYears: CATEGORY_REQUIREMENTS[base.category].minLicenceYears,
+        heroPhoto,
       });
     }
   });

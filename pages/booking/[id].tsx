@@ -46,6 +46,7 @@ export default function VehicleBookingPage() {
               {/* Images & Details */}
               <div className="lg:col-span-2 space-y-6">
                 <VehicleGallery
+                  heroPhoto={vehicle.heroPhoto}
                   model={vehicle.model}
                   category={vehicle.category}
                   color={vehicle.color}
@@ -108,11 +109,13 @@ export default function VehicleBookingPage() {
                 <div className="bg-gradient-to-br from-performance-turquoise/20 to-performance-babyblue/10 border border-performance-turquoise/30 rounded-xl p-6">
                   <h2 className="text-2xl font-bold text-white mb-2">{vehicle.model}</h2>
                   <div className="flex items-center gap-2 mb-2">
-                    <span
-                      className="inline-block w-4 h-4 rounded-full border border-white/30"
-                      style={{ backgroundColor: vehicle.colorHex }}
-                      aria-hidden
-                    />
+                    {vehicle.colorHex && (
+                      <span
+                        className="inline-block w-4 h-4 rounded-full border border-white/30"
+                        style={{ backgroundColor: vehicle.colorHex }}
+                        aria-hidden
+                      />
+                    )}
                     <span className="text-gray-300 text-sm">{vehicle.color}</span>
                   </div>
                   <p className="text-gray-400 text-sm mb-4">{vehicle.location} · {vehicle.plate}</p>
