@@ -39,17 +39,62 @@ export const AIConcierge: React.FC<AIConciergeProps> = ({
   const [speakingId, setSpeakingId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
+  const voiceRef = useRef<SpeechSynthesisVoice | null>(null);
 
   const { conversationId, setConversationId } = useBookingStore();
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      synthRef.current = window.speechSynthesis;
+  // Pick the best available British female voice for MIA. Neural / "Natural"
+  // voices (Microsoft Sonia/Libby, Google UK English Female) sound human;
+  // the old local voices sound robotic, so we rank them last.
+  const pickVoice = useCallback((voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null => {
+    if (!voices.length) return null;
+
+    // Ranked by how warm/human + British-female each voice sounds.
+    const ranked: ((v: SpeechSynthesisVoice) => boolean)[] = [
+      // Best: Microsoft neural British females (Edge) — Sonia is sultry & natural
+      (v) => /sonia/i.test(v.name) && /Natural|Online/i.test(v.name),
+      (v) => /libby/i.test(v.name) && /Natural|Online/i.test(v.name),
+      (v) => /(maisie|olivia|ada)/i.test(v.name) && /Natural|Online/i.test(v.name),
+      // Chrome's neural British female
+      (v) => /google uk english female/i.test(v.name),
+      // Any en-GB "Natural"/"Online" female-sounding neural voice
+      (v) => v.lang === 'en-GB' && /Natural|Online/i.test(v.name),
+      // macOS / iOS British females
+      (v) => v.lang === 'en-GB' && /(kate|serena|stephanie|martha|fiona|moira)/i.test(v.name),
+      // Any en-GB voice flagged female
+      (v) => v.lang === 'en-GB' && /female/i.test(v.name),
+      // Any en-GB voice at all (British accent beats American robot)
+      (v) => v.lang === 'en-GB',
+      // Last resort: any English female
+      (v) => v.lang.startsWith('en') && /(samantha|female|google us english)/i.test(v.name),
+    ];
+
+    for (const test of ranked) {
+      const match = voices.find(test);
+      if (match) return match;
     }
-    return () => {
-      synthRef.current?.cancel();
-    };
+    return voices.find((v) => v.lang.startsWith('en')) ?? voices[0];
   }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+    const synth = window.speechSynthesis;
+    synthRef.current = synth;
+
+    // getVoices() is async in Chrome — it returns [] until 'voiceschanged'
+    // fires, so we must (re)select once the list is populated.
+    const loadVoices = () => {
+      const voices = synth.getVoices();
+      if (voices.length) voiceRef.current = pickVoice(voices);
+    };
+    loadVoices();
+    synth.addEventListener('voiceschanged', loadVoices);
+
+    return () => {
+      synth.removeEventListener('voiceschanged', loadVoices);
+      synth.cancel();
+    };
+  }, [pickVoice]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -71,32 +116,37 @@ export const AIConcierge: React.FC<AIConciergeProps> = ({
 
     synth.cancel();
 
-    // Strip markdown-style asterisks/formatting for cleaner speech
-    const clean = text.replace(/[*_`#]/g, '').replace(/\n+/g, ' ');
+    // Clean text for speech: drop markdown, soften emoji, and add gentle
+    // pauses after punctuation so she breathes instead of rattling it out.
+    const clean = text
+      .replace(/[*_`#]/g, '')
+      .replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}]/gu, '')
+      .replace(/\s+/g, ' ')
+      .replace(/([,;])\s/g, '$1  ')
+      .replace(/([.!?])\s/g, '$1   ')
+      .trim();
 
     const utter = new SpeechSynthesisUtterance(clean);
-    utter.rate = 1.05;
-    utter.pitch = 1.05;
+    // Slower + slightly lower than default = warm, unhurried, sultry rather
+    // than the clipped robotic default.
+    utter.rate = 0.88;
+    utter.pitch = 0.95;
     utter.volume = 1;
 
-    // Prefer a female English voice for MIA
-    const voices = synth.getVoices();
-    const preferred = voices.find(
-      (v) =>
-        (v.name.includes('Samantha') ||
-          v.name.includes('Karen') ||
-          v.name.includes('Serena') ||
-          v.name.toLowerCase().includes('female') ||
-          v.name.includes('Google UK English Female')) &&
-        v.lang.startsWith('en'),
-    );
-    if (preferred) utter.voice = preferred;
+    // Use the British female voice resolved at load time.
+    const voice = voiceRef.current ?? pickVoice(synth.getVoices());
+    if (voice) {
+      utter.voice = voice;
+      utter.lang = voice.lang;
+    } else {
+      utter.lang = 'en-GB';
+    }
 
     setSpeakingId(messageId);
     utter.onend = () => setSpeakingId(null);
     utter.onerror = () => setSpeakingId(null);
     synth.speak(utter);
-  }, [speakingId]);
+  }, [speakingId, pickVoice]);
 
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
