@@ -60,7 +60,7 @@ export const FleetCard: React.FC<FleetCardProps> = ({
     <div className="group relative h-full bg-performance-panel border border-performance-turquoise/15 rounded-xl overflow-hidden hover:border-performance-turquoise/60 transition-all duration-300 hover:shadow-gold">
       {/* Image Container */}
       <div className="relative h-64 sm:h-72 overflow-hidden bg-gradient-to-br from-performance-grey to-performance-turquoise/10">
-        <VehicleImage vehicleId={vehicleId} model={model} category={category} colorHex={colorHex} heroPhoto={heroPhoto} />
+        <VehicleImage vehicleId={vehicleId} model={model} category={category} colorHex={colorHex} color={color} heroPhoto={heroPhoto} />
 
         {/* Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-performance-grey via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
