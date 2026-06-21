@@ -25,6 +25,7 @@ STRIPE_SECRET_KEY
 STRIPE_WEBHOOK_SECRET
 GEMINI_API_KEY
 NEXT_PUBLIC_SITE_URL
+ADMIN_EMAILS   # comma-separated allowlist of admin login emails (gates /admin-dashboard + /api/admin/*)
 ```
 
 ## Code Rules

@@ -32,19 +32,27 @@ const AdminDashboard: React.FC = () => {
         router.push('/login');
         return;
       }
-      setAuthChecked(true);
 
+      // The /api/admin/stats endpoint is admin-gated server-side. Use its
+      // response to decide whether this user may see the control center:
+      // a 401/403 means "not an admin" → bounce them to the home page.
       try {
         const res = await fetch('/api/admin/stats', {
           headers: { Authorization: `Bearer ${session.access_token}` },
         });
+        if (res.status === 401 || res.status === 403) {
+          router.replace('/');
+          return;
+        }
         if (res.ok) {
           const data = await res.json();
           setStats(data);
         }
       } catch {
-        // Stats fetch is non-fatal
+        // Network/5xx errors are non-fatal: sensitive actions remain
+        // protected server-side, so still show the shell for a real admin.
       }
+      setAuthChecked(true);
     }
     checkAuth();
   }, [router]);

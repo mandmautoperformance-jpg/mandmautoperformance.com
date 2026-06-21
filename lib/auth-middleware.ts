@@ -57,3 +57,63 @@ export async function verifyAuth(
 
   return null;
 }
+
+/**
+ * Verifies the caller is an authenticated ADMIN. A user counts as an admin if
+ * EITHER their Supabase `app_metadata.role === 'admin'` OR their email appears
+ * in the `ADMIN_EMAILS` env var (comma-separated, case-insensitive).
+ *
+ * Deny-by-default: with no admin configured, every caller is rejected. Returns
+ * the userId on success, or null after writing a 401 (not signed in) / 403
+ * (signed in but not an admin) response.
+ */
+export async function verifyAdmin(
+  req: AuthenticatedRequest,
+  res: NextApiResponse,
+): Promise<string | null> {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    req.isAuthenticated = false;
+    res.status(401).json({ error: 'Unauthorized. Please sign in.' });
+    return null;
+  }
+
+  const token = authHeader.slice(7);
+  let user;
+  try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    );
+    const { data, error } = await supabase.auth.getUser(token);
+    if (error || !data.user) {
+      req.isAuthenticated = false;
+      res.status(401).json({ error: 'Unauthorized. Please sign in.' });
+      return null;
+    }
+    user = data.user;
+  } catch {
+    req.isAuthenticated = false;
+    res.status(401).json({ error: 'Unauthorized. Please sign in.' });
+    return null;
+  }
+
+  const allowlist = (process.env.ADMIN_EMAILS || '')
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+
+  const email = (user.email || '').toLowerCase();
+  const metaRole = (user.app_metadata as { role?: string } | undefined)?.role;
+  const isAdmin = metaRole === 'admin' || (email !== '' && allowlist.includes(email));
+
+  if (!isAdmin) {
+    req.isAuthenticated = true;
+    res.status(403).json({ error: 'Forbidden: admin access required.' });
+    return null;
+  }
+
+  req.userId = user.id;
+  req.isAuthenticated = true;
+  return user.id;
+}
