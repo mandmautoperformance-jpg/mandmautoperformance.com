@@ -6,7 +6,7 @@ import FleetCard from '@/components/FleetCard';
 import { Search, SlidersHorizontal } from 'lucide-react';
 import { VEHICLES as ALL_VEHICLES, MAKES, CATEGORY_LABELS, type VehicleCategory } from '@/lib/vehicles';
 
-const CATEGORIES: (VehicleCategory | 'all')[] = ['all', 'exotic', 'supercar', 'sports', 'luxury', 'executive'];
+const CATEGORIES: (VehicleCategory | 'all')[] = ['all', 'exotic', 'supercar', 'sports', 'luxury', 'suv', 'executive'];
 const PAGE_SIZE = 24;
 
 export default function FleetPage() {

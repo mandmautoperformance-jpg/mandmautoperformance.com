@@ -39,6 +39,12 @@ const CATEGORY_DATA: CategoryItem[] = [
     photo: WIKIMEDIA('Rolls-Royce Ghost II IAA 2021 1X7A0005.jpg'),
   },
   {
+    id: 'suv',
+    label: 'SUV',
+    tagline: 'Command the road',
+    photo: WIKIMEDIA('Lamborghini Urus red (1).jpg'),
+  },
+  {
     id: 'executive',
     label: 'Executive',
     tagline: 'Business class, elevated',
@@ -60,6 +66,7 @@ function CategoryTile({ id, label, tagline, photo, count }: TileProps) {
     supercar: 'from-red-900/50 to-performance-grey',
     sports: 'from-blue-900/50 to-performance-grey',
     luxury: 'from-amber-900/40 to-performance-grey',
+    suv: 'from-emerald-900/50 to-performance-grey',
     executive: 'from-slate-700/50 to-performance-grey',
   };
 
@@ -198,7 +205,7 @@ export const CategoryShowcase: React.FC = () => {
         </div>
 
         {/* Tiles — horizontal scroll on mobile, equal columns on desktop */}
-        <div className="flex gap-4 overflow-x-auto scrollbar-hide md:grid md:grid-cols-5">
+        <div className="flex gap-4 overflow-x-auto scrollbar-hide md:grid md:grid-cols-3 lg:grid-cols-6">
           {CATEGORY_DATA.map((cat) => (
             <CategoryTile key={cat.id} {...cat} count={counts[cat.id] ?? 0} />
           ))}

@@ -301,6 +301,38 @@ export const PHOTO_RULES: PhotoRule[] = [
     ext('2020 Ford Mustang GT500 Shelby front.jpg'),
     ext('Ford Mustang GT (S550) Rapid Red (2).jpg'),
   ] },
+  // ---- Super-SUVs ----
+  { match: 'dbx', photos: [
+    ext('Aston Martin DBX707 IMG 5818.jpg'),
+    ext('Aston Martin DBX (2020) front.jpg'),
+    ext('Aston Martin DBX707 front.jpg'),
+    ext('2023 Aston Martin DBX707 front.jpg'),
+  ] },
+  { match: 'purosangue', photos: [
+    ext('Ferrari Purosangue IMG 7588.jpg'),
+    ext('Ferrari Purosangue front.jpg'),
+    ext('2023 Ferrari Purosangue.jpg'),
+  ] },
+  { match: 'rs q8', photos: [
+    ext('Audi RS Q8 (2020) front.jpg'),
+    ext('Audi RS Q8 IMG 3819.jpg'),
+    ext('2020 Audi RS Q8 Vorsprung TFSI front.jpg'),
+  ] },
+  { match: 'bmw xm', photos: [
+    ext('BMW XM (G09) IMG 7654.jpg'),
+    ext('BMW XM (G09) front.jpg'),
+    ext('2023 BMW XM front.jpg'),
+  ] },
+  { match: 'macan', photos: [
+    ext('Porsche Macan GTS (III) IMG 4561.jpg'),
+    ext('Porsche Macan Turbo (95B) front.jpg'),
+    ext('2022 Porsche Macan GTS front.jpg'),
+  ] },
+  { match: 'gle', photos: [
+    ext('Mercedes-AMG GLE 63 S 4MATIC+ (V167) front.jpg'),
+    ext('Mercedes-Benz GLE (V167) front.jpg'),
+    ext('2020 Mercedes-AMG GLE 53 4MATIC front.jpg'),
+  ] },
   // ---- Generic Mercedes-AMG GT (LAST) ----
   { match: 'amg gt', photos: [
     ext('Mercedes-AMG GT63 S 4MATIC+ (X290) front.jpg'),

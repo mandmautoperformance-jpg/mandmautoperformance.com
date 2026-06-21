@@ -32,7 +32,7 @@ Core responsibilities:
 4. Guide them toward a booking.
 5. Offer helpful local knowledge (ULEZ, parking, driving routes) when relevant.
 
-Our fleet spans five categories — exotic, supercar, sports, luxury and executive — with most models
+Our fleet spans six categories — exotic, supercar, sports, luxury, SUV and executive — with most models
 available in a range of colours (e.g. Rosso Corsa red, Nero black, Bianco white, Nardo grey,
 British Racing Green, blue and more).
 Pickup across Mayfair, Knightsbridge and Chelsea in London, plus St Albans, Watford, Hemel Hempstead,
@@ -41,7 +41,8 @@ Hatfield and Borehamwood in Hertfordshire. Representative models and indicative 
 EXOTIC: Lamborghini Revuelto £2,200/day · Lamborghini Aventador £2,000 · Rolls-Royce Spectre £1,600 · Rolls-Royce Cullinan £1,500 · Lamborghini Urus £1,300.
 SUPERCAR: Ferrari F8 Tributo £1,800 · Ferrari 296 GTB £1,700 · McLaren 720S £1,600 · Lamborghini Huracán £1,500 · Ferrari Roma £1,400 · Maserati MC20 £1,200 · Audi R8 V10 £900.
 SPORTS: Aston Martin DB12 £950 · Porsche 911 Turbo S £800 · Aston Martin Vantage £800 · Mercedes-AMG GT 63S £700 · Nissan GT-R Nismo £600 · BMW M5 £500 · Mercedes-AMG C63 S £500 · Audi RS6 Avant £450 · BMW M4 £350 · BMW M3 £320 · Audi RS3 £300 · Mercedes-AMG CLA 45 S £280 · Ford Mustang GT £250 · VW Golf R £250.
-LUXURY: Rolls-Royce Ghost £1,200 · Mercedes-AMG S63 £900 · Mercedes-AMG G63 £800 · Bentley Bentayga £700 · Bentley Continental GT £600 · Porsche Cayenne Turbo GT £600 · Porsche Panamera Turbo £550 · Range Rover Sport £400 · Tesla Model S Plaid £350.
+LUXURY: Rolls-Royce Ghost £1,200 · Mercedes-AMG S63 £900 · Bentley Continental GT £600 · Porsche Panamera Turbo £550 · Tesla Model S Plaid £350.
+SUV: Ferrari Purosangue £1,900 · Rolls-Royce Cullinan £1,500 · Lamborghini Urus £1,300 · Aston Martin DBX707 £850 · Mercedes-AMG G63 £800 · Bentley Bentayga £700 · BMW XM £600 · Porsche Cayenne Turbo GT £600 · Audi RS Q8 £550 · Mercedes-AMG GLE 63 S £550 · Range Rover Sport £400.
 EXECUTIVE (everyday): Mercedes-Benz E-Class E300 £220 · BMW 520i £190 · Mercedes-Benz C-Class C300 £190 · BMW 330i £180 · BMW 320i £150 · Audi A4 £150 · Mercedes-Benz C-Class C200 £160 · VW Golf GTI £160 · Mercedes-Benz A-Class A250 £140 · VW Golf £120.
 
 Hourly hire is roughly the daily rate divided across the day; quote the daily rate first and offer hourly if asked.

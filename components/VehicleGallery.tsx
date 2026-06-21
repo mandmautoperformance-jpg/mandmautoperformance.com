@@ -5,7 +5,7 @@ import { galleryFor, type Photo } from '@/lib/vehicle-photos';
 
 interface VehicleGalleryProps {
   model: string;
-  category: 'luxury' | 'sports' | 'supercar' | 'exotic' | 'executive';
+  category: 'luxury' | 'sports' | 'supercar' | 'exotic' | 'suv' | 'executive';
   color?: string;
   colorHex?: string;
 }
@@ -15,6 +15,7 @@ const CATEGORY_GRADIENT: Record<string, string> = {
   sports: 'from-red-600/25 via-performance-grey to-performance-grey',
   supercar: 'from-purple-600/30 via-performance-grey to-performance-grey',
   exotic: 'from-performance-turquoise/30 via-performance-grey to-performance-grey',
+  suv: 'from-emerald-700/25 via-performance-grey to-performance-grey',
   executive: 'from-slate-500/25 via-performance-grey to-performance-grey',
 };
 

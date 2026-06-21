@@ -6,7 +6,7 @@ import VehicleImage from '@/components/VehicleImage';
 interface FleetCardProps {
   vehicleId: string;
   model: string;
-  category: 'luxury' | 'sports' | 'supercar' | 'exotic' | 'executive';
+  category: 'luxury' | 'sports' | 'supercar' | 'exotic' | 'suv' | 'executive';
   image?: string;
   color?: string;
   colorHex?: string;
@@ -46,6 +46,7 @@ export const FleetCard: React.FC<FleetCardProps> = ({
     sports: 'bg-performance-turquoise/15 text-performance-gold-light border-performance-turquoise/40',
     supercar: 'bg-performance-turquoise/20 text-performance-gold-light border-performance-turquoise/50',
     exotic: 'bg-performance-turquoise/25 text-performance-gold-light border-performance-turquoise/60',
+    suv: 'bg-performance-turquoise/20 text-performance-gold-light border-performance-turquoise/50',
     executive: 'bg-white/5 text-gray-200 border-white/20',
   };
 
