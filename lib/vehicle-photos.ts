@@ -144,10 +144,10 @@ export const PHOTO_RULES: PhotoRule[] = [
   ] },
   // ---- Aston Martin ----
   { match: 'db12', photos: [
-    ext('Aston Martin DB12 04.jpg'),
-    ext('Aston Martin DB12 Volante.jpg'),
     ext('Aston Martin DB12 03.jpg'),
+    ext('Aston Martin DB12 Volante.jpg'),
     ext('Aston Martin DB12 front 3q.jpg'),
+    ext('Aston Martin DB12 in Bright Yellow (53520054049).jpg'),
   ] },
   { match: 'vantage', photos: [
     ext('2018 Aston Martin Vantage Coupe (44400066584).jpg'),
@@ -303,35 +303,32 @@ export const PHOTO_RULES: PhotoRule[] = [
   ] },
   // ---- Super-SUVs ----
   { match: 'dbx', photos: [
-    ext('Aston Martin DBX707 IMG 5818.jpg'),
+    ext('Aston Martin DBX707 AMR23 Edition IMG 0007.jpg'),
+    ext('Aston Martin DBX707 1X7A0203.jpg'),
     ext('Aston Martin DBX (2020) front.jpg'),
-    ext('Aston Martin DBX707 front.jpg'),
-    ext('2023 Aston Martin DBX707 front.jpg'),
   ] },
   { match: 'purosangue', photos: [
-    ext('Ferrari Purosangue IMG 7588.jpg'),
-    ext('Ferrari Purosangue front.jpg'),
+    ext('Ferrari Purosangue IMG 9554.jpg'),
+    ext('Ferrari Purosangue IMG 2488.jpg'),
+    ext('Ferrari Purosangue DSC 7783.jpg'),
     ext('2023 Ferrari Purosangue.jpg'),
   ] },
   { match: 'rs q8', photos: [
-    ext('Audi RS Q8 (2020) front.jpg'),
-    ext('Audi RS Q8 IMG 3819.jpg'),
-    ext('2020 Audi RS Q8 Vorsprung TFSI front.jpg'),
+    ext('2020 Audi RS Q8 Front.jpg'),
+    ext('2020 Audi RS Q8 Front End.jpg'),
   ] },
   { match: 'bmw xm', photos: [
-    ext('BMW XM (G09) IMG 7654.jpg'),
-    ext('BMW XM (G09) front.jpg'),
-    ext('2023 BMW XM front.jpg'),
+    ext('BMW XM Label Red IAA 2023 1X7A0743.jpg'),
+    ext('2023 BMW XM.jpg'),
+    ext('BMW XM 1X7A6874.jpg'),
   ] },
   { match: 'macan', photos: [
-    ext('Porsche Macan GTS (III) IMG 4561.jpg'),
-    ext('Porsche Macan Turbo (95B) front.jpg'),
-    ext('2022 Porsche Macan GTS front.jpg'),
+    ext('Porsche Macan GTS (Facelift) – f 10052021.jpg'),
+    ext('Porsche Macan GTS (Facelift) – h 10052021.jpg'),
   ] },
   { match: 'gle', photos: [
-    ext('Mercedes-AMG GLE 63 S 4MATIC+ (V167) front.jpg'),
-    ext('Mercedes-Benz GLE (V167) front.jpg'),
-    ext('2020 Mercedes-AMG GLE 53 4MATIC front.jpg'),
+    ext('Mercedes-AMG GLE 63 S 4MATIC IMG 3427.jpg'),
+    ext('Mercedes-AMG GLE 63 S 4MATIC IMG 3430.jpg'),
   ] },
   // ---- Generic Mercedes-AMG GT (LAST) ----
   { match: 'amg gt', photos: [
