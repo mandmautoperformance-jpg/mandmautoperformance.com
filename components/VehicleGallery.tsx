@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import Image from 'next/image';
 import { Car } from 'lucide-react';
-import { galleryFor, detectColor, type Photo } from '@/lib/vehicle-photos';
+import { galleryFor, type Photo } from '@/lib/vehicle-photos';
 
 interface VehicleGalleryProps {
   model: string;
@@ -30,20 +30,11 @@ const CATEGORY_GRADIENT: Record<string, string> = {
  */
 export const VehicleGallery: React.FC<VehicleGalleryProps> = ({ model, category, color, colorHex, heroPhoto }) => {
   const photos = useMemo<Photo[]>(() => {
-    let all = galleryFor(model);
-    // Colour safety: a colour-named listing only shows exteriors of that colour
-    // (interiors are colourless and always kept), so the gallery can never
-    // contradict the advertised colour. "As pictured" listings show everything.
-    if (color && color !== 'As pictured') {
-      const filtered = all.filter(
-        (p) => p.kind !== 'exterior' || p.url === heroPhoto || detectColor(p.url)?.name === color,
-      );
-      if (filtered.some((p) => p.kind === 'exterior')) all = filtered;
-    }
+    const all = galleryFor(model);
     if (!heroPhoto) return all;
     const hero = all.find((p) => p.url === heroPhoto);
     return hero ? [hero, ...all.filter((p) => p.url !== heroPhoto)] : all;
-  }, [model, heroPhoto, color]);
+  }, [model, heroPhoto]);
   const [active, setActive] = useState(0);
   const [failed, setFailed] = useState<Record<number, boolean>>({});
 

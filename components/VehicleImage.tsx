@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import Image from 'next/image';
 import { Car } from 'lucide-react';
-import { exteriorsFor, interiorsFor, hashId, detectColor, type Photo } from '@/lib/vehicle-photos';
+import { exteriorsFor, interiorsFor, hashId, type Photo } from '@/lib/vehicle-photos';
 
 // Re-export so existing imports from this module keep working.
 export { galleryFor, exteriorsFor, interiorsFor, hashId } from '@/lib/vehicle-photos';
@@ -39,34 +39,20 @@ export const VehicleImage: React.FC<VehicleImageProps> = ({
 
   // Lead with the fleet-unique hero photo pinned at generation time, then keep
   // the rest of the model's pool as load-failure fallbacks. This guarantees the
-  // grid never shows the same image twice and the colour label always matches.
-  //
-  // Colour safety: when the car advertises a specific colour, fallbacks are
-  // restricted to photos of that SAME colour — so a failed image can never
-  // reveal a different-coloured car (e.g. a "white" listing must never show the
-  // orange photo). If nothing of that colour loads, we drop to the branded,
-  // colour-tinted placeholder instead.
+  // grid never shows the same image twice. If the hero fails, any working photo
+  // for that model is shown rather than the branded placeholder.
   const pool = useMemo<Photo[]>(() => {
     const photos = exteriorsFor(model);
     if (!photos.length) return [];
 
-    let ordered: Photo[];
     if (heroPhoto && photos.some((p) => p.url === heroPhoto)) {
       const hero = photos.find((p) => p.url === heroPhoto)!;
-      ordered = [hero, ...photos.filter((p) => p.url !== heroPhoto)];
-    } else {
-      const start = seed % photos.length;
-      ordered = photos.map((_, i) => photos[(start + i) % photos.length]);
+      return [hero, ...photos.filter((p) => p.url !== heroPhoto)];
     }
 
-    if (color && color !== 'As pictured') {
-      const sameColour = ordered.filter((p) => detectColor(p.url)?.name === color);
-      if (sameColour.length) return sameColour;
-      // Hero defines the colour; keep just it even if its filename is colourless.
-      return heroPhoto ? ordered.filter((p) => p.url === heroPhoto) : [];
-    }
-    return ordered;
-  }, [model, seed, heroPhoto, color]);
+    const start = seed % photos.length;
+    return photos.map((_, i) => photos[(start + i) % photos.length]);
+  }, [model, seed, heroPhoto]);
 
   // Interior shot (if licensed photography exists) — revealed on card hover.
   const interior = useMemo<Photo | undefined>(() => interiorsFor(model)[0], [model]);
