@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, X, Loader, AlertCircle, Volume2, VolumeX, Mic, MicOff } from 'lucide-react';
+import { Send, X, Loader, AlertCircle, Volume2, VolumeX, Mic, Square } from 'lucide-react';
 import { useBookingStore } from '@/lib/store';
 
 interface Message {
@@ -18,34 +18,76 @@ interface AIConciergeProps {
   userId?: string;
 }
 
-// Browser SpeechRecognition type shim
-interface ISpeechRecognition extends EventTarget {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  maxAlternatives: number;
-  start(): void;
-  stop(): void;
-  abort(): void;
-  onstart: ((ev: Event) => void) | null;
-  onaudiostart: ((ev: Event) => void) | null;
-  onspeechstart: ((ev: Event) => void) | null;
-  onend: ((ev: Event) => void) | null;
-  onerror: ((ev: SpeechRecognitionErrorEvent) => void) | null;
-  onresult: ((ev: SpeechRecognitionEvent) => void) | null;
-}
-interface SpeechRecognitionEvent extends Event {
-  results: SpeechRecognitionResultList;
-}
-interface SpeechRecognitionErrorEvent extends Event {
-  error: string;
-  message?: string;
-}
 declare global {
   interface Window {
-    SpeechRecognition?: new () => ISpeechRecognition;
-    webkitSpeechRecognition?: new () => ISpeechRecognition;
+    webkitAudioContext?: typeof AudioContext;
   }
+}
+
+// ── Audio helpers (module scope) ──────────────────────────────────────────────
+
+/** Downsample a Float32 PCM buffer to a lower sample rate (linear average). */
+function downsample(buffer: Float32Array, inRate: number, outRate: number): Float32Array {
+  if (outRate >= inRate) return buffer;
+  const ratio = inRate / outRate;
+  const newLen = Math.round(buffer.length / ratio);
+  const result = new Float32Array(newLen);
+  let offsetResult = 0;
+  let offsetBuffer = 0;
+  while (offsetResult < newLen) {
+    const nextOffset = Math.round((offsetResult + 1) * ratio);
+    let accum = 0;
+    let count = 0;
+    for (let i = offsetBuffer; i < nextOffset && i < buffer.length; i++) {
+      accum += buffer[i];
+      count++;
+    }
+    result[offsetResult] = count ? accum / count : 0;
+    offsetResult++;
+    offsetBuffer = nextOffset;
+  }
+  return result;
+}
+
+/** Encode mono Float32 PCM as a 16-bit WAV Blob (a format Gemini accepts). */
+function encodeWav(samples: Float32Array, sampleRate: number): Blob {
+  const buffer = new ArrayBuffer(44 + samples.length * 2);
+  const view = new DataView(buffer);
+  const writeStr = (offset: number, str: string) => {
+    for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+  };
+  writeStr(0, 'RIFF');
+  view.setUint32(4, 36 + samples.length * 2, true);
+  writeStr(8, 'WAVE');
+  writeStr(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true); // PCM
+  view.setUint16(22, 1, true); // mono
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  writeStr(36, 'data');
+  view.setUint32(40, samples.length * 2, true);
+  let offset = 44;
+  for (let i = 0; i < samples.length; i++) {
+    const s = Math.max(-1, Math.min(1, samples[i]));
+    view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+    offset += 2;
+  }
+  return new Blob([view], { type: 'audio/wav' });
+}
+
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      resolve(result.split(',')[1] ?? ''); // strip "data:...;base64,"
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
 }
 
 export const AIConcierge: React.FC<AIConciergeProps> = ({ isOpen, onClose, userId }) => {
@@ -54,7 +96,7 @@ export const AIConcierge: React.FC<AIConciergeProps> = ({ isOpen, onClose, userI
       id: '1',
       role: 'assistant',
       content:
-        "Welcome to M&M Auto Performance. I'm MIA — your personal concierge for the world's finest hire fleet. Whether you're looking to book, check availability, or find out more about our cars, I'm here. Tap the mic or type below.",
+        "Welcome to M&M Auto Performance. I'm MIA — your personal concierge for the world's finest hire fleet. Whether you're looking to book, check availability, or find out more about our cars, I'm here. Tap the mic and just talk to me, or type below.",
       timestamp: new Date(),
     },
   ]);
@@ -63,18 +105,25 @@ export const AIConcierge: React.FC<AIConciergeProps> = ({ isOpen, onClose, userI
   const [error, setError] = useState<string | null>(null);
   const [autoSpeak, setAutoSpeak] = useState(false);
   const [speakingId, setSpeakingId] = useState<string | null>(null);
-  const [isListening, setIsListening] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
   const voiceRef = useRef<SpeechSynthesisVoice | null>(null);
-  const recognitionRef = useRef<ISpeechRecognition | null>(null);
-  const transcriptRef = useRef('');
-  const recogErrorRef = useRef(false);
+
+  // Recording refs
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const maxTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const recordingActiveRef = useRef(false);
 
   const { conversationId, setConversationId } = useBookingStore();
 
-  // ── Voice selection ────────────────────────────────────────────────────────
+  // ── Voice (TTS) selection ──────────────────────────────────────────────────
   const pickVoice = useCallback((voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null => {
     if (!voices.length) return null;
     const ranked: ((v: SpeechSynthesisVoice) => boolean)[] = [
@@ -111,12 +160,22 @@ export const AIConcierge: React.FC<AIConciergeProps> = ({ isOpen, onClose, userI
     };
   }, [pickVoice]);
 
-  // ── Scroll ─────────────────────────────────────────────────────────────────
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // ── Speak ──────────────────────────────────────────────────────────────────
+  // Clean up any in-flight recording resources on unmount.
+  useEffect(() => {
+    return () => {
+      recordingActiveRef.current = false;
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      if (maxTimerRef.current) clearTimeout(maxTimerRef.current);
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      audioCtxRef.current?.close().catch(() => {});
+    };
+  }, []);
+
+  // ── Speak (TTS) ─────────────────────────────────────────────────────────────
   const speak = useCallback(
     (text: string, messageId: string) => {
       const synth = synthRef.current;
@@ -139,8 +198,12 @@ export const AIConcierge: React.FC<AIConciergeProps> = ({ isOpen, onClose, userI
       utter.pitch = 0.95;
       utter.volume = 1;
       const voice = voiceRef.current ?? pickVoice(synth.getVoices());
-      if (voice) { utter.voice = voice; utter.lang = voice.lang; }
-      else utter.lang = 'en-GB';
+      if (voice) {
+        utter.voice = voice;
+        utter.lang = voice.lang;
+      } else {
+        utter.lang = 'en-GB';
+      }
       setSpeakingId(messageId);
       utter.onend = () => setSpeakingId(null);
       utter.onerror = () => setSpeakingId(null);
@@ -149,7 +212,7 @@ export const AIConcierge: React.FC<AIConciergeProps> = ({ isOpen, onClose, userI
     [speakingId, pickVoice],
   );
 
-  // ── Send message (accepts explicit text from voice input) ──────────────────
+  // ── Send a message (optionally with explicit text from the mic) ─────────────
   const handleSendMessage = useCallback(
     async (explicitText?: string) => {
       const userInputValue = (explicitText ?? inputValue).trim();
@@ -223,10 +286,19 @@ export const AIConcierge: React.FC<AIConciergeProps> = ({ isOpen, onClose, userI
               if (!line) continue;
               try {
                 const data = JSON.parse(line.slice(6));
-                if (data.type === 'chunk') { fullResponse += data.content; updateAssistant(fullResponse, true); }
-                else if (data.type === 'complete') { if (data.fullResponse) fullResponse = data.fullResponse; isReading = false; }
-                else if (data.type === 'error') { streamError = data.error || 'Failed to get AI response'; isReading = false; }
-              } catch { /* partial frame */ }
+                if (data.type === 'chunk') {
+                  fullResponse += data.content;
+                  updateAssistant(fullResponse, true);
+                } else if (data.type === 'complete') {
+                  if (data.fullResponse) fullResponse = data.fullResponse;
+                  isReading = false;
+                } else if (data.type === 'error') {
+                  streamError = data.error || 'Failed to get AI response';
+                  isReading = false;
+                }
+              } catch {
+                /* partial frame */
+              }
             }
           }
         }
@@ -246,122 +318,185 @@ export const AIConcierge: React.FC<AIConciergeProps> = ({ isOpen, onClose, userI
     [inputValue, messages, conversationId, setConversationId, userId, autoSpeak, speak],
   );
 
-  // ── Voice input ────────────────────────────────────────────────────────────
-  const beginRecognition = useCallback(() => {
-    const SR = window.SpeechRecognition ?? window.webkitSpeechRecognition;
-    if (!SR) {
-      setError('Voice input is not supported in this browser. Try Chrome, Edge, or Safari.');
+  // ── Mic: record → encode WAV → transcribe via Gemini ────────────────────────
+  const finishRecording = useCallback(async () => {
+    const recorder = mediaRecorderRef.current;
+    if (!recorder) return;
+
+    const recordedType = recorder.mimeType || 'audio/webm';
+    const blob = new Blob(chunksRef.current, { type: recordedType });
+    chunksRef.current = [];
+
+    // Too small to contain speech.
+    if (blob.size < 1600) {
+      setIsTranscribing(false);
+      setError("I didn't catch that — tap the mic and speak clearly.");
       return;
     }
 
-    // Don't let MIA talk over the customer while she's listening.
-    synthRef.current?.cancel();
-    setSpeakingId(null);
-
-    transcriptRef.current = '';
-    recogErrorRef.current = false;
-
-    const recognition = new SR();
-    recognitionRef.current = recognition;
-    recognition.continuous = false;
-    recognition.interimResults = true;
-    recognition.maxAlternatives = 1;
-    recognition.lang = 'en-GB';
-
-    recognition.onstart = () => {
-      recogErrorRef.current = false;
-      setError(null);
-      setIsListening(true);
-    };
-
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
-      let interim = '';
-      let final = '';
-      for (let i = 0; i < event.results.length; i++) {
-        const result = event.results[i];
-        if (result.isFinal) final += result[0].transcript;
-        else interim += result[0].transcript;
-      }
-      transcriptRef.current = (final || interim).trim();
-      setInputValue(transcriptRef.current);
-    };
-
-    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-      recogErrorRef.current = true;
-      setIsListening(false);
-      switch (event.error) {
-        case 'no-speech':
-          setError("I didn't catch that — tap the mic and speak after the prompt.");
-          break;
-        case 'not-allowed':
-        case 'service-not-allowed':
-          setError('Microphone access is blocked. Tap the 🔒 in your address bar, allow the microphone, then try again.');
-          break;
-        case 'audio-capture':
-          setError('No microphone was found. Please check your device and try again.');
-          break;
-        case 'network':
-          setError('Voice needs an internet connection. Please check your signal and try again.');
-          break;
-        case 'aborted':
-          setError(null); // user cancelled — no scary message
-          break;
-        default:
-          setError('Voice input hit a snag. Please try again, or type your message.');
-      }
-    };
-
-    recognition.onend = () => {
-      setIsListening(false);
-      if (recogErrorRef.current) return;
-      const text = transcriptRef.current.trim();
-      if (text) {
-        setInputValue('');
-        handleSendMessage(text);
-      }
-    };
-
+    setIsTranscribing(true);
     try {
-      recognition.start();
+      // Decode the recorded audio and re-encode to 16kHz mono WAV so Gemini
+      // always receives a format it accepts, regardless of the browser.
+      const arrayBuffer = await blob.arrayBuffer();
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      let sendBlob = blob;
+      let sendType = recordedType;
+      if (Ctx) {
+        try {
+          const decodeCtx = new Ctx();
+          const audioBuffer = await decodeCtx.decodeAudioData(arrayBuffer.slice(0));
+          const channel = audioBuffer.getChannelData(0);
+          const down = downsample(channel, audioBuffer.sampleRate, 16000);
+          sendBlob = encodeWav(down, 16000);
+          sendType = 'audio/wav';
+          await decodeCtx.close().catch(() => {});
+        } catch {
+          // Decoding failed — fall back to sending the raw recording.
+          sendBlob = blob;
+          sendType = recordedType;
+        }
+      }
+
+      const base64 = await blobToBase64(sendBlob);
+      const res = await fetch('/api/chat/transcribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ audioBase64: base64, mimeType: sendType }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Could not transcribe audio. Please try again.');
+        return;
+      }
+      const text = (data.text || '').trim();
+      if (!text) {
+        setError("I didn't catch that — tap the mic and speak clearly.");
+        return;
+      }
+      // Got the words — send straight to MIA.
+      handleSendMessage(text);
     } catch {
-      // start() throws InvalidStateError if called while already active — ignore.
+      setError('Voice input failed. Please try again, or type your message.');
+    } finally {
+      setIsTranscribing(false);
     }
   }, [handleSendMessage]);
 
-  const toggleListening = useCallback(() => {
-    if (isListening) {
-      recognitionRef.current?.stop();
+  const stopRecording = useCallback(() => {
+    recordingActiveRef.current = false;
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    if (maxTimerRef.current) {
+      clearTimeout(maxTimerRef.current);
+      maxTimerRef.current = null;
+    }
+    audioCtxRef.current?.close().catch(() => {});
+    audioCtxRef.current = null;
+    const recorder = mediaRecorderRef.current;
+    if (recorder && recorder.state !== 'inactive') recorder.stop();
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+    setIsRecording(false);
+  }, []);
+
+  const startRecording = useCallback(async () => {
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+      setError('Voice input is not supported in this browser. Please type your message.');
       return;
     }
 
-    const SR = window.SpeechRecognition ?? window.webkitSpeechRecognition;
-    if (!SR) {
-      setError('Voice input is not supported in this browser. Try Chrome, Edge, or Safari.');
-      return;
-    }
-
+    // Don't let MIA talk over the customer.
+    synthRef.current?.cancel();
+    setSpeakingId(null);
     setError(null);
 
-    // Pre-flight the mic permission so the prompt is clean and any denial is
-    // reported clearly — rather than surfacing later as a vague recognition error.
-    if (navigator.mediaDevices?.getUserMedia) {
-      navigator.mediaDevices
-        .getUserMedia({ audio: true })
-        .then((stream) => {
-          // We only needed the permission grant; release the stream so the
-          // recognizer can claim the mic itself.
-          stream.getTracks().forEach((t) => t.stop());
-          beginRecognition();
-        })
-        .catch(() => {
-          setError('Microphone access is blocked. Tap the 🔒 in your address bar, allow the microphone, then try again.');
-        });
-    } else {
-      beginRecognition();
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      setError('Microphone access is blocked. Tap the 🔒 in your address bar, allow the microphone, then try again.');
+      return;
     }
-  }, [isListening, beginRecognition]);
+
+    streamRef.current = stream;
+    chunksRef.current = [];
+
+    // Pick a MIME type the browser can actually record.
+    const candidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg'];
+    const mimeType = candidates.find((t) => MediaRecorder.isTypeSupported(t)) || '';
+    const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+    mediaRecorderRef.current = recorder;
+
+    recorder.ondataavailable = (e) => {
+      if (e.data.size > 0) chunksRef.current.push(e.data);
+    };
+    recorder.onstop = () => {
+      finishRecording();
+    };
+
+    recorder.start();
+    recordingActiveRef.current = true;
+    setIsRecording(true);
+
+    // Hard cap so a forgotten session can't record forever.
+    maxTimerRef.current = setTimeout(() => {
+      if (recordingActiveRef.current) stopRecording();
+    }, 20000);
+
+    // Silence auto-stop: watch the mic level and stop ~1.6s after speech ends.
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (Ctx) {
+        const audioCtx = new Ctx();
+        audioCtxRef.current = audioCtx;
+        const source = audioCtx.createMediaStreamSource(stream);
+        const analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 512;
+        source.connect(analyser);
+        const data = new Uint8Array(analyser.frequencyBinCount);
+        let spoke = false;
+        let lastLoud = Date.now();
+
+        const tick = () => {
+          if (!recordingActiveRef.current) return;
+          analyser.getByteTimeDomainData(data);
+          let sum = 0;
+          for (let i = 0; i < data.length; i++) {
+            const d = data[i] - 128;
+            sum += d * d;
+          }
+          const rms = Math.sqrt(sum / data.length);
+          const now = Date.now();
+          if (rms > 6) {
+            spoke = true;
+            lastLoud = now;
+          }
+          // Only auto-stop once they've actually said something.
+          if (spoke && now - lastLoud > 1600) {
+            stopRecording();
+            return;
+          }
+          rafRef.current = requestAnimationFrame(tick);
+        };
+        rafRef.current = requestAnimationFrame(tick);
+      }
+    } catch {
+      // Silence detection is a nice-to-have; manual stop / max timer still work.
+    }
+  }, [finishRecording, stopRecording]);
+
+  const toggleMic = useCallback(() => {
+    if (isTranscribing) return;
+    if (isRecording) stopRecording();
+    else startRecording();
+  }, [isRecording, isTranscribing, startRecording, stopRecording]);
 
   if (!isOpen) return null;
+
+  const micBusy = isTranscribing || isLoading;
 
   return (
     <div className="fixed bottom-6 right-6 z-50 w-96 h-[600px] bg-performance-grey border border-performance-turquoise/30 rounded-2xl shadow-2xl shadow-performance-turquoise/30 overflow-hidden flex flex-col">
@@ -376,7 +511,10 @@ export const AIConcierge: React.FC<AIConciergeProps> = ({ isOpen, onClose, userI
         </div>
         <div className="flex items-center gap-1">
           <button
-            onClick={() => { if (autoSpeak) synthRef.current?.cancel(); setAutoSpeak((v) => !v); }}
+            onClick={() => {
+              if (autoSpeak) synthRef.current?.cancel();
+              setAutoSpeak((v) => !v);
+            }}
             title={autoSpeak ? 'Auto-read on — click to mute' : 'Auto-read MIA responses'}
             className={`p-2 rounded-lg transition-all ${
               autoSpeak
@@ -386,7 +524,10 @@ export const AIConcierge: React.FC<AIConciergeProps> = ({ isOpen, onClose, userI
           >
             {autoSpeak ? <Volume2 size={18} /> : <VolumeX size={18} />}
           </button>
-          <button onClick={onClose} className="p-2 hover:bg-performance-turquoise/20 rounded-lg transition-colors">
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-performance-turquoise/20 rounded-lg transition-colors"
+          >
             <X size={20} className="text-gray-400" />
           </button>
         </div>
@@ -400,19 +541,26 @@ export const AIConcierge: React.FC<AIConciergeProps> = ({ isOpen, onClose, userI
         </div>
       )}
 
-      {/* Listening indicator */}
-      {isListening && (
+      {/* Recording / transcribing indicator */}
+      {(isRecording || isTranscribing) && (
         <div className="bg-performance-turquoise/10 border-b border-performance-turquoise/30 px-4 py-2 flex items-center gap-3">
-          <span className="flex gap-0.5 items-end h-4">
-            <span className="w-0.5 bg-performance-turquoise rounded-full animate-bounce h-2" style={{ animationDelay: '0ms' }} />
-            <span className="w-0.5 bg-performance-turquoise rounded-full animate-bounce h-4" style={{ animationDelay: '100ms' }} />
-            <span className="w-0.5 bg-performance-turquoise rounded-full animate-bounce h-3" style={{ animationDelay: '200ms' }} />
-            <span className="w-0.5 bg-performance-turquoise rounded-full animate-bounce h-4" style={{ animationDelay: '300ms' }} />
-            <span className="w-0.5 bg-performance-turquoise rounded-full animate-bounce h-2" style={{ animationDelay: '400ms' }} />
-          </span>
-          <p className="text-sm text-performance-turquoise font-medium">
-            {inputValue ? `"${inputValue}"` : 'Listening…'}
-          </p>
+          {isRecording ? (
+            <>
+              <span className="flex gap-0.5 items-end h-4">
+                <span className="w-0.5 bg-performance-turquoise rounded-full animate-bounce h-2" style={{ animationDelay: '0ms' }} />
+                <span className="w-0.5 bg-performance-turquoise rounded-full animate-bounce h-4" style={{ animationDelay: '100ms' }} />
+                <span className="w-0.5 bg-performance-turquoise rounded-full animate-bounce h-3" style={{ animationDelay: '200ms' }} />
+                <span className="w-0.5 bg-performance-turquoise rounded-full animate-bounce h-4" style={{ animationDelay: '300ms' }} />
+                <span className="w-0.5 bg-performance-turquoise rounded-full animate-bounce h-2" style={{ animationDelay: '400ms' }} />
+              </span>
+              <p className="text-sm text-performance-turquoise font-medium">Listening… tap the mic when you&apos;re done</p>
+            </>
+          ) : (
+            <>
+              <Loader size={15} className="animate-spin text-performance-turquoise" />
+              <p className="text-sm text-performance-turquoise font-medium">Transcribing…</p>
+            </>
+          )}
         </div>
       )}
 
@@ -421,11 +569,13 @@ export const AIConcierge: React.FC<AIConciergeProps> = ({ isOpen, onClose, userI
         {messages.map((message) =>
           message.isTyping && !message.content ? null : (
             <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-xs rounded-lg ${
-                message.role === 'user'
-                  ? 'bg-performance-turquoise text-performance-grey px-4 py-2'
-                  : 'bg-performance-babyblue/20 text-gray-100 border border-performance-babyblue/30 px-4 py-2'
-              }`}>
+              <div
+                className={`max-w-xs rounded-lg ${
+                  message.role === 'user'
+                    ? 'bg-performance-turquoise text-performance-grey px-4 py-2'
+                    : 'bg-performance-babyblue/20 text-gray-100 border border-performance-babyblue/30 px-4 py-2'
+                }`}
+              >
                 <p className="text-sm">{message.content}</p>
                 <div className={`flex items-center gap-2 mt-1 ${message.role === 'user' ? 'justify-end' : 'justify-between'}`}>
                   <p className={`text-xs ${message.role === 'user' ? 'text-performance-grey/70' : 'text-gray-400'}`}>
@@ -484,16 +634,16 @@ export const AIConcierge: React.FC<AIConciergeProps> = ({ isOpen, onClose, userI
       <div className="border-t border-performance-turquoise/20 px-4 py-3 flex gap-2 items-center">
         {/* Mic button */}
         <button
-          onClick={toggleListening}
-          disabled={isLoading}
-          title={isListening ? 'Stop listening' : 'Speak to MIA'}
+          onClick={toggleMic}
+          disabled={micBusy}
+          title={isRecording ? 'Stop and send' : 'Speak to MIA'}
           className={`p-2 rounded-lg transition-all flex-shrink-0 ${
-            isListening
-              ? 'bg-performance-turquoise text-performance-grey ring-2 ring-performance-turquoise/50 animate-pulse'
+            isRecording
+              ? 'bg-red-500 text-white ring-2 ring-red-400/50 animate-pulse'
               : 'bg-performance-turquoise/10 border border-performance-turquoise/30 text-performance-turquoise hover:bg-performance-turquoise/20'
           } disabled:opacity-50 disabled:cursor-not-allowed`}
         >
-          {isListening ? <MicOff size={18} /> : <Mic size={18} />}
+          {isTranscribing ? <Loader size={18} className="animate-spin" /> : isRecording ? <Square size={18} /> : <Mic size={18} />}
         </button>
 
         <input
@@ -501,14 +651,14 @@ export const AIConcierge: React.FC<AIConciergeProps> = ({ isOpen, onClose, userI
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && !isLoading && handleSendMessage()}
-          placeholder={isListening ? 'Listening…' : 'Ask MIA anything…'}
-          disabled={isListening}
+          placeholder={isRecording ? 'Listening…' : isTranscribing ? 'Transcribing…' : 'Ask MIA anything…'}
+          disabled={isRecording || isTranscribing}
           className="flex-1 px-4 py-2 bg-performance-turquoise/10 border border-performance-turquoise/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-performance-turquoise focus:ring-2 focus:ring-performance-turquoise/20 disabled:opacity-60"
         />
 
         <button
           onClick={() => handleSendMessage()}
-          disabled={isLoading || !inputValue.trim() || isListening}
+          disabled={isLoading || !inputValue.trim() || isRecording || isTranscribing}
           className="p-2 bg-performance-turquoise hover:bg-performance-turquoise/90 text-performance-grey rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
         >
           <Send size={20} />

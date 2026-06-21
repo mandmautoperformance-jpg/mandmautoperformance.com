@@ -131,6 +131,42 @@ export async function getTokenCount(text: string): Promise<number> {
   }
 }
 
+/**
+ * Transcribe a short audio clip (e.g. a customer speaking to MIA) using
+ * Gemini's multimodal audio support. Accepts base64-encoded audio plus its
+ * MIME type and returns the spoken words as plain text. Works regardless of
+ * the visitor's browser, unlike the Web Speech API.
+ */
+export async function transcribeAudio(base64Audio: string, mimeType: string): Promise<string> {
+  if (!process.env.GEMINI_API_KEY && !process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
+    throw new Error('Transcription is not configured: missing GEMINI_API_KEY.');
+  }
+
+  let lastError: unknown;
+  for (const modelName of FALLBACK_MODELS) {
+    const model = genAI.getGenerativeModel({ model: modelName });
+    try {
+      const result = await model.generateContent([
+        {
+          text:
+            'Transcribe the speech in this audio clip of a customer talking to a luxury car hire concierge. ' +
+            'Return ONLY the exact words spoken, as plain text — no quotation marks, no labels, no commentary. ' +
+            'If there is no intelligible speech, return an empty string.',
+        },
+        { inlineData: { mimeType, data: base64Audio } },
+      ]);
+      return result.response.text().trim();
+    } catch (error) {
+      lastError = error;
+      console.error(`Gemini transcription error (model ${modelName}):`, error);
+      if (!isModelUnavailable(error)) break;
+    }
+  }
+
+  const detail = lastError instanceof Error ? lastError.message : 'unknown error';
+  throw new Error(`Transcription failed: ${detail}`);
+}
+
 // Vehicle recommendation based on user context
 export async function suggestVehicle(userMessage: string, budget?: number): Promise<string> {
   const model = genAI.getGenerativeModel({ model: MODEL_NAME });
