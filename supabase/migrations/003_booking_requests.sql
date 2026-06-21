@@ -20,9 +20,24 @@ create table if not exists public.booking_requests (
   notes           text,
   status          text not null default 'new'
                     check (status in ('new','contacted','confirmed','completed','cancelled')),
+  -- Deposit / payment (Stripe Checkout)
+  deposit_pence            integer,
+  payment_status           text not null default 'unpaid'
+                             check (payment_status in ('unpaid','pending','paid','refunded')),
+  stripe_session_id        text,
+  stripe_payment_intent_id text,
+  paid_at                  timestamptz,
   created_at      timestamptz not null default now(),
   updated_at      timestamptz not null default now()
 );
+
+-- If the table already exists from an earlier run, make sure the payment
+-- columns are present too (safe to re-run).
+alter table public.booking_requests add column if not exists deposit_pence            integer;
+alter table public.booking_requests add column if not exists payment_status           text not null default 'unpaid';
+alter table public.booking_requests add column if not exists stripe_session_id        text;
+alter table public.booking_requests add column if not exists stripe_payment_intent_id text;
+alter table public.booking_requests add column if not exists paid_at                  timestamptz;
 
 create index if not exists booking_requests_status_idx  on public.booking_requests (status);
 create index if not exists booking_requests_created_idx on public.booking_requests (created_at desc);

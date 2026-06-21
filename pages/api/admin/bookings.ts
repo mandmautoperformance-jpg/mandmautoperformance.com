@@ -59,6 +59,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const requests = (data || []).map((r) => ({
       ...r,
       estimate_gbp: Math.round((r.estimate_pence || 0) / 100),
+      deposit_gbp: r.deposit_pence != null ? Math.round(r.deposit_pence / 100) : null,
     }));
     return res.status(200).json({ requests, tableReady: true });
   }

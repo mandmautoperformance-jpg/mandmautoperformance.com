@@ -48,6 +48,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
     );
 
+    // Reservation deposit paid via Stripe Checkout → mark the lead paid/confirmed.
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object as Stripe.Checkout.Session;
+      const requestId = session.metadata?.requestId;
+      if (requestId && session.metadata?.kind === 'reservation_deposit') {
+        const paymentIntentId =
+          typeof session.payment_intent === 'string'
+            ? session.payment_intent
+            : session.payment_intent?.id ?? null;
+        const { error } = await supabase
+          .from('booking_requests')
+          .update({
+            payment_status: 'paid',
+            status: 'confirmed',
+            stripe_payment_intent_id: paymentIntentId,
+            paid_at: new Date().toISOString(),
+          })
+          .eq('id', requestId);
+        if (error) console.error('Failed to mark reservation paid:', error.message);
+      }
+    }
+
     if (event.type === 'payment_intent.succeeded') {
       const paymentIntent = event.data.object as Stripe.PaymentIntent;
       const bookingId = paymentIntent.metadata?.bookingId;

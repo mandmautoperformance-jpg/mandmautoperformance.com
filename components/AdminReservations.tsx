@@ -15,6 +15,8 @@ interface ReservationRequest {
   customer_phone: string;
   notes: string | null;
   status: string;
+  payment_status?: string | null;
+  deposit_gbp?: number | null;
   created_at: string;
 }
 
@@ -26,6 +28,13 @@ const STATUS_STYLES: Record<string, string> = {
   confirmed: 'bg-electric-turquoise/15 text-electric-turquoise border-electric-turquoise/40',
   completed: 'bg-green-500/15 text-green-400 border-green-500/40',
   cancelled: 'bg-red-500/15 text-red-400 border-red-500/40',
+};
+
+const PAYMENT_STYLES: Record<string, string> = {
+  unpaid: 'bg-gray-500/15 text-gray-300 border-gray-500/40',
+  pending: 'bg-yellow-500/15 text-yellow-300 border-yellow-500/40',
+  paid: 'bg-green-500/15 text-green-400 border-green-500/40',
+  refunded: 'bg-red-500/15 text-red-400 border-red-500/40',
 };
 
 function fmtDate(d: string): string {
@@ -107,6 +116,47 @@ const AdminReservations: React.FC = () => {
     setSavingId(null);
   };
 
+  const createPaymentLink = async (r: ReservationRequest) => {
+    const suggested = Math.max(100, Math.round((r.estimate_gbp || 0) * 0.2));
+    const input = window.prompt(
+      `Deposit amount (£) to charge ${r.customer_name} for the ${r.model}:`,
+      String(suggested),
+    );
+    if (input == null) return;
+    const depositGbp = Number(input);
+    if (!Number.isFinite(depositGbp) || depositGbp < 1) {
+      setError('Enter a valid deposit amount (£1 or more).');
+      return;
+    }
+    setSavingId(r.id);
+    setError(null);
+    try {
+      const token = await getToken();
+      const res = await fetch('/api/admin/create-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ id: r.id, depositGbp }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Failed to create payment link.');
+      } else {
+        setRequests((rs) =>
+          rs.map((x) => (x.id === r.id ? { ...x, payment_status: 'pending', deposit_gbp: depositGbp } : x)),
+        );
+        try {
+          await navigator.clipboard.writeText(data.url);
+        } catch {
+          /* clipboard may be blocked; the prompt below still shows the link */
+        }
+        window.prompt('Payment link created & copied — send this to the customer:', data.url);
+      }
+    } catch {
+      setError('Network error creating payment link.');
+    }
+    setSavingId(null);
+  };
+
   const visible = filter === 'all' ? requests : requests.filter((r) => r.status === filter);
   const counts = STATUSES.reduce<Record<string, number>>((acc, s) => {
     acc[s] = requests.filter((r) => r.status === s).length;
@@ -179,6 +229,7 @@ const AdminReservations: React.FC = () => {
                 <th className="px-4 py-3 font-semibold">Est.</th>
                 <th className="px-4 py-3 font-semibold">Received</th>
                 <th className="px-4 py-3 font-semibold">Status</th>
+                <th className="px-4 py-3 font-semibold">Payment</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-700/50">
@@ -211,6 +262,35 @@ const AdminReservations: React.FC = () => {
                         <option key={s} value={s} className="bg-gunmetal text-white">{s}</option>
                       ))}
                     </select>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    {(r.payment_status === 'paid' || r.payment_status === 'pending') ? (
+                      <div className="space-y-1">
+                        <span className={`inline-block px-2 py-1 rounded-md text-xs font-bold capitalize border ${PAYMENT_STYLES[r.payment_status] ?? PAYMENT_STYLES.unpaid}`}>
+                          {r.payment_status}
+                        </span>
+                        {r.deposit_gbp != null && (
+                          <div className="text-gray-400 text-xs">£{r.deposit_gbp.toLocaleString()} deposit</div>
+                        )}
+                        {r.payment_status === 'pending' && (
+                          <button
+                            onClick={() => createPaymentLink(r)}
+                            disabled={savingId === r.id}
+                            className="block text-electric-turquoise hover:underline text-xs"
+                          >
+                            New link
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => createPaymentLink(r)}
+                        disabled={savingId === r.id}
+                        className="px-3 py-1.5 rounded-md text-xs font-semibold bg-electric-turquoise/10 border border-electric-turquoise/40 text-electric-turquoise hover:bg-electric-turquoise/20 transition disabled:opacity-50"
+                      >
+                        Create deposit link
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
