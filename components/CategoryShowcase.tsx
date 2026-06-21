@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { VEHICLES, FLEET_SIZE, type VehicleCategory } from '@/lib/vehicles';
 
 const WIKIMEDIA = (file: string) =>
-  `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(file)}?width=1200`;
+  `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(file)}?width=2000`;
 
 interface CategoryItem {
   id: VehicleCategory;
@@ -93,9 +93,10 @@ function CategoryTile({ id, label, tagline, photo, count }: TileProps) {
               src={photo}
               alt={label}
               fill
+              quality={90}
               className="object-cover"
               onError={() => setImgFailed(true)}
-              sizes="(max-width: 768px) 256px, 20vw"
+              sizes="(max-width: 768px) 90vw, 40vw"
               priority={false}
             />
           </div>

@@ -50,6 +50,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               height={44}
               className="rounded-full"
               priority
+              unoptimized
             />
             <span className="text-white font-bold text-lg hidden sm:inline tracking-wide">
               M&amp;M Auto Performance
