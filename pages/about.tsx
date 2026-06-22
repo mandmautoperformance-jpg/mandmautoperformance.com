@@ -6,9 +6,9 @@ import Navbar from '@/components/Navbar';
 import { Shield, Zap, Award, MapPin } from 'lucide-react';
 import { FLEET_SIZE } from '@/lib/vehicles';
 
-// CSS background served directly by the browser — bypasses next/image remotePatterns
-const GWAGON_HERO =
-  'https://commons.wikimedia.org/wiki/Special:FilePath/Mercedes-AMG%20G%2063%20(W464)%20front.jpg?width=1920';
+// Branded G-Wagon hero, served locally from public/ — fetched directly by the
+// browser as a plain CSS background, so it always displays.
+const GWAGON_HERO = '/gwagon-london-banner.webp';
 
 // Wikimedia URL — already covered by remotePatterns in next.config.ts
 const URUS_IMG =
@@ -46,7 +46,7 @@ export default function AboutPage() {
             height: '100vh',
             backgroundImage: `url("${GWAGON_HERO}")`,
             backgroundSize: 'cover',
-            backgroundPosition: 'center 40%',
+            backgroundPosition: 'center center',
             backgroundRepeat: 'no-repeat',
             position: 'relative',
           }}
