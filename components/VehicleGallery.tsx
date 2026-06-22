@@ -31,9 +31,20 @@ const CATEGORY_GRADIENT: Record<string, string> = {
 export const VehicleGallery: React.FC<VehicleGalleryProps> = ({ model, category, color, colorHex, heroPhoto }) => {
   const photos = useMemo<Photo[]>(() => {
     const all = galleryFor(model);
-    if (!heroPhoto) return all;
-    const hero = all.find((p) => p.url === heroPhoto);
-    return hero ? [hero, ...all.filter((p) => p.url !== heroPhoto)] : all;
+    const interiors = all.filter((p) => p.kind === 'interior');
+    const exteriors = all.filter((p) => p.kind === 'exterior');
+    // Lead with the pinned hero (an exterior), then surface an interior shot
+    // right after it so it's visible without scrolling, then the remaining
+    // exteriors and any other interiors.
+    const orderedExt =
+      heroPhoto && exteriors.some((p) => p.url === heroPhoto)
+        ? [exteriors.find((p) => p.url === heroPhoto)!, ...exteriors.filter((p) => p.url !== heroPhoto)]
+        : exteriors;
+    if (!orderedExt.length) return all;
+    if (!interiors.length) return orderedExt;
+    const [hero, ...restExt] = orderedExt;
+    const [firstInt, ...restInt] = interiors;
+    return [hero, firstInt, ...restExt, ...restInt];
   }, [model, heroPhoto]);
   const [active, setActive] = useState(0);
   const [failed, setFailed] = useState<Record<number, boolean>>({});
