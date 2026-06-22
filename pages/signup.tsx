@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { Eye, EyeOff, Zap, AlertCircle, CheckCircle } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseBrowser } from '@/lib/supabase-browser';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -25,10 +25,7 @@ export default function SignupPage() {
     setError(null);
 
     try {
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      );
+      const supabase = getSupabaseBrowser();
       const { error: authError } = await supabase.auth.signUp({
         email,
         password,

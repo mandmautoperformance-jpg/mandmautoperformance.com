@@ -5,7 +5,7 @@ import Link from 'next/link';
 import AdminAPIConfiguration from '@/components/AdminAPIConfiguration';
 import LeadScraperAndMarketing from '@/components/LeadScraperAndMarketing';
 import AdminReservations from '@/components/AdminReservations';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseBrowser } from '@/lib/supabase-browser';
 
 interface AdminStats {
   users: number;
@@ -25,10 +25,7 @@ const AdminDashboard: React.FC = () => {
 
   useEffect(() => {
     async function checkAuth() {
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      );
+      const supabase = getSupabaseBrowser();
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         router.push('/login');

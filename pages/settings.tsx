@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Head from 'next/head';
 import Navbar from '@/components/Navbar';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseBrowser } from '@/lib/supabase-browser';
 import { Bell, Lock, User, BadgeCheck, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { CATEGORY_REQUIREMENTS, ageFromDob, licenceYearsHeld } from '@/lib/driver-eligibility';
 import { CATEGORY_LABELS, type VehicleCategory } from '@/lib/vehicles';
@@ -17,9 +17,7 @@ export default function SettingsPage() {
 
   // Real account profile, loaded from the signed-in Supabase user.
   const supabase = useMemo(() => {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    return url && key ? createClient(url, key) : null;
+    try { return getSupabaseBrowser(); } catch { return null; }
   }, []);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -110,10 +108,7 @@ export default function SettingsPage() {
       return;
     }
     setPasswordStatus('loading');
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    );
+    const supabase = getSupabaseBrowser();
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     if (error) {
       setPasswordError(error.message);

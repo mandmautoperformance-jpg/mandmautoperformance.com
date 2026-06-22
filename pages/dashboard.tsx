@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import Navbar from '@/components/Navbar';
 import { Car, Calendar, Star, Award, TrendingUp, Clock, ChevronRight, Zap } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseBrowser } from '@/lib/supabase-browser';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -14,10 +14,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function load() {
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      );
+      const supabase = getSupabaseBrowser();
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.push('/login'); return; }
       setUser(session.user);
