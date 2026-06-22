@@ -1,18 +1,14 @@
 import React from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
-import Image from 'next/image';
 import Navbar from '@/components/Navbar';
 import { Shield, Zap, Award, MapPin } from 'lucide-react';
 import { FLEET_SIZE } from '@/lib/vehicles';
+import GoldSuvScene from '@/components/GoldSuvScene';
 
 // Branded G-Wagon hero, served locally from public/ — fetched directly by the
 // browser as a plain CSS background, so it always displays.
 const GWAGON_HERO = '/gwagon-london-banner.webp';
-
-// Wikimedia URL — already covered by remotePatterns in next.config.ts
-const URUS_IMG =
-  'https://commons.wikimedia.org/wiki/Special:FilePath/Lamborghini%20Urus%20red%20(1).jpg?width=600';
 
 export default function AboutPage() {
   return (
@@ -23,17 +19,6 @@ export default function AboutPage() {
           name="description"
           content="M&M Auto Performance — the UK's premier AI-powered luxury and supercar hire platform, serving Hertfordshire and London."
         />
-        <style>{`
-          @keyframes urus-cruise {
-            0%   { transform: translateX(-360px); opacity: 0; }
-            7%   { opacity: 1; }
-            86%  { opacity: 1; }
-            100% { transform: translateX(110vw);  opacity: 0; }
-          }
-          .urus-cruising {
-            animation: urus-cruise 10s linear infinite;
-          }
-        `}</style>
       </Head>
 
       <main className="min-h-screen bg-performance-grey text-white">
@@ -192,10 +177,9 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* ── Ready to Drive — with animated Urus ── */}
+        {/* ── Ready to Drive — gold SUV night scene ── */}
         <section className="border-t border-performance-turquoise/10">
-          {/* CTA copy */}
-          <div className="px-4 sm:px-6 lg:px-8 pt-20 pb-16 text-center">
+          <div className="px-4 sm:px-6 lg:px-8 pt-20 pb-10 text-center">
             <div className="max-w-2xl mx-auto">
               <h2 className="text-4xl font-bold text-white mb-4">Ready to Drive?</h2>
               <p className="text-gray-400 mb-8">
@@ -217,51 +201,8 @@ export default function AboutPage() {
               </div>
             </div>
           </div>
-
-          {/* Road strip with driving Urus */}
-          <div
-            className="relative overflow-hidden"
-            style={{ height: '180px' }}
-            aria-hidden="true"
-          >
-            {/* Tarmac */}
-            <div className="absolute inset-0" style={{ background: '#0d0d0f' }} />
-            {/* Blend from section above */}
-            <div
-              className="absolute top-0 left-0 right-0"
-              style={{
-                height: '64px',
-                background: 'linear-gradient(to bottom, #121316, transparent)',
-              }}
-            />
-            {/* Yellow centre-line dashes */}
-            <div
-              className="absolute left-0 right-0"
-              style={{
-                top: '50%',
-                height: '2px',
-                opacity: 0.35,
-                zIndex: 1,
-                background:
-                  'repeating-linear-gradient(90deg,#f59e0b 0,#f59e0b 48px,transparent 48px,transparent 96px)',
-              }}
-            />
-            {/* Lamborghini Urus driving left → right */}
-            <div
-              className="urus-cruising absolute bottom-0 left-0"
-              style={{ zIndex: 2 }}
-            >
-              <div style={{ filter: 'drop-shadow(0 6px 18px rgba(0,0,0,0.9))' }}>
-                <Image
-                  src={URUS_IMG}
-                  alt=""
-                  width={300}
-                  height={168}
-                  className="object-contain"
-                />
-              </div>
-            </div>
-          </div>
+          {/* Cinematic gold SUV driving scene */}
+          <GoldSuvScene />
         </section>
 
         <footer className="border-t border-performance-turquoise/20 px-4 sm:px-6 lg:px-8 py-8">
