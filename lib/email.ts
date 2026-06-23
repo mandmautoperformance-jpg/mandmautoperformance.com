@@ -177,6 +177,23 @@ export function reservationVerifyEmail(d: { name: string; model: string; verifyU
   );
 }
 
+/** Sent to the admin when a new user uploads both their ID documents for review. */
+export function idUploadNotificationEmail(d: { name: string; email: string }): string {
+  const details = `<table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+    ${row('Name', escapeHtml(d.name))}
+    ${row('Email', `<a href="mailto:${escapeHtml(d.email)}" style="color:${BRAND};">${escapeHtml(d.email)}</a>`)}
+    ${row('Status', 'Both documents uploaded — pending review')}
+  </table>`;
+  return layout(
+    'New ID verification needed',
+    `<p style="margin:0 0 14px 0;">A new member has uploaded their driving licence and photo ID. Please review and verify their account.</p>
+     ${details}
+     <p style="margin:18px 0 0 0;">
+       <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://mandmautoperformance.com'}/admin-dashboard" style="background:${BRAND};color:#121316;text-decoration:none;font-weight:bold;padding:12px 22px;border-radius:8px;display:inline-block;">Review in Admin Dashboard</a>
+     </p>`,
+  );
+}
+
 export interface ContactEmailData {
   name: string;
   email: string;

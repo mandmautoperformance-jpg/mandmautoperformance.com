@@ -3,7 +3,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import Navbar from '@/components/Navbar';
-import { Car, Calendar, Star, Award, TrendingUp, Clock, ChevronRight, Zap } from 'lucide-react';
+import { Car, Calendar, Star, Award, TrendingUp, Clock, ChevronRight, Zap, ShieldAlert } from 'lucide-react';
 import { getSupabaseBrowser } from '@/lib/supabase-browser';
 
 export default function DashboardPage() {
@@ -68,12 +68,29 @@ export default function DashboardPage() {
         <section className="px-4 sm:px-6 lg:px-8 py-12">
           <div className="max-w-7xl mx-auto">
 
+            {/* ID verification banner — shown until documents are uploaded */}
+            {user && !user.user_metadata?.id_uploaded && (
+              <div className="mb-8 flex items-start gap-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-5">
+                <ShieldAlert size={22} className="text-yellow-400 flex-shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-white text-sm">Verify your identity to unlock bookings</p>
+                  <p className="text-gray-400 text-xs mt-0.5">Upload your driving licence and photo ID. Our team reviews within 24 hours.</p>
+                </div>
+                <Link
+                  href="/account/verify-id"
+                  className="flex-shrink-0 px-4 py-2 bg-yellow-500/20 border border-yellow-500/40 text-yellow-300 text-xs font-bold rounded-lg hover:bg-yellow-500/30 transition-all"
+                >
+                  Upload now
+                </Link>
+              </div>
+            )}
+
             {/* Welcome */}
             <div className="mb-10">
               <h1 className="text-4xl font-bold text-white mb-2">
                 Welcome back, <span className="text-performance-turquoise">{firstName}</span> 👋
               </h1>
-              <p className="text-gray-400">Your M&M performance dashboard</p>
+              <p className="text-gray-400">Your M&amp;M performance dashboard</p>
             </div>
 
             {/* Stat Cards */}
