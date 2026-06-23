@@ -50,14 +50,15 @@ jobs:
       - name: Deploy to Vercel
         env:
           TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          GEMINI_API_KEY: ${{ inputs.gemini_api_key }}
-          NEXT_PUBLIC_SUPABASE_URL: ${{ inputs.supabase_url }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ inputs.supabase_anon_key }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ inputs.supabase_service_role_key }}
-          NEXT_PUBLIC_SITE_URL: ${{ inputs.site_url }}
-          RESEND_API_KEY: ${{ inputs.resend_api_key }}
-          MAIL_FROM: ${{ inputs.mail_from }}
-          ADMIN_NOTIFY_EMAIL: ${{ inputs.admin_notify_email }}
+          # Each key: GitHub Secret takes priority, manual input is the fallback.
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || inputs.gemini_api_key }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || inputs.supabase_url }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || inputs.supabase_anon_key }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || inputs.supabase_service_role_key }}
+          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL || inputs.site_url }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY || inputs.resend_api_key }}
+          MAIL_FROM: ${{ secrets.MAIL_FROM || inputs.mail_from }}
+          ADMIN_NOTIFY_EMAIL: ${{ secrets.ADMIN_NOTIFY_EMAIL || inputs.admin_notify_email }}
         run: |
           if [ -z "$TOKEN" ]; then
             echo "ERROR: VERCEL_TOKEN secret is not set."
@@ -73,8 +74,9 @@ jobs:
 
           npm install -g vercel@latest
 
-          # Only pass env vars that were explicitly supplied as inputs.
-          # Keys already saved in the Vercel dashboard are picked up automatically.
+          # Inject every key that has a value — whether from secrets or inputs.
+          # Keys already saved in the Vercel dashboard are picked up automatically
+          # by Vercel itself; this covers everything stored on the GitHub side.
           ENV_ARGS=()
           add_env() {
             local name="$1"; local val="$2"
