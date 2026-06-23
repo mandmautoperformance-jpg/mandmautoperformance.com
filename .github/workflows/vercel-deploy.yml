@@ -35,6 +35,14 @@ on:
         description: 'ADMIN_NOTIFY_EMAIL (optional — where booking notifications go; defaults to mandmautoperformance@gmail.com)'
         required: false
         type: string
+      supabase_access_token:
+        description: 'SUPABASE_ACCESS_TOKEN (sbp_… personal access token — runner auto-fetches anon + service_role keys)'
+        required: false
+        type: string
+      supabase_ref:
+        description: 'Supabase project ref (e.g. ratyazffxlppzurfokxp) — required when using the access token'
+        required: false
+        type: string
 
 jobs:
   deploy:
@@ -59,6 +67,8 @@ jobs:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY || inputs.resend_api_key }}
           MAIL_FROM: ${{ secrets.MAIL_FROM || inputs.mail_from }}
           ADMIN_NOTIFY_EMAIL: ${{ secrets.ADMIN_NOTIFY_EMAIL || inputs.admin_notify_email }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN || inputs.supabase_access_token }}
+          SUPABASE_REF: ${{ secrets.SUPABASE_REF || inputs.supabase_ref }}
         run: |
           if [ -z "$TOKEN" ]; then
             echo "ERROR: VERCEL_TOKEN secret is not set."
@@ -67,6 +77,38 @@ jobs:
           fi
 
           echo "::add-mask::$TOKEN"
+          [ -n "$SUPABASE_ACCESS_TOKEN" ] && echo "::add-mask::$SUPABASE_ACCESS_TOKEN"
+
+          # If a Supabase personal access token is supplied, fetch the project's
+          # anon + service_role keys (and URL) straight from the Management API.
+          # The GitHub runner has open internet, so this works even when keys were
+          # never copied by hand. Values already provided above take priority.
+          if [ -n "$SUPABASE_ACCESS_TOKEN" ] && [ -n "$SUPABASE_REF" ]; then
+            echo "Resolving Supabase keys for project $SUPABASE_REF via Management API…"
+            KEYS_JSON=$(curl -sS \
+              -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+              "https://api.supabase.com/v1/projects/$SUPABASE_REF/api-keys?reveal=true")
+            FETCHED_ANON=$(echo "$KEYS_JSON" | jq -r '.[] | select(.name=="anon") | .api_key' 2>/dev/null)
+            FETCHED_SERVICE=$(echo "$KEYS_JSON" | jq -r '.[] | select(.name=="service_role") | .api_key' 2>/dev/null)
+
+            if [ -n "$FETCHED_ANON" ] && [ "$FETCHED_ANON" != "null" ]; then
+              echo "::add-mask::$FETCHED_ANON"
+              [ -z "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ] && NEXT_PUBLIC_SUPABASE_ANON_KEY="$FETCHED_ANON"
+              echo "✓ anon key resolved"
+            else
+              echo "⚠ Could not resolve anon key — response: $(echo "$KEYS_JSON" | head -c 200)"
+            fi
+            if [ -n "$FETCHED_SERVICE" ] && [ "$FETCHED_SERVICE" != "null" ]; then
+              echo "::add-mask::$FETCHED_SERVICE"
+              [ -z "$SUPABASE_SERVICE_ROLE_KEY" ] && SUPABASE_SERVICE_ROLE_KEY="$FETCHED_SERVICE"
+              echo "✓ service_role key resolved"
+            else
+              echo "⚠ Could not resolve service_role key"
+            fi
+            # Derive the project URL from the ref if not explicitly provided.
+            [ -z "$NEXT_PUBLIC_SUPABASE_URL" ] && NEXT_PUBLIC_SUPABASE_URL="https://$SUPABASE_REF.supabase.co"
+          fi
+
           [ -n "$GEMINI_API_KEY" ] && echo "::add-mask::$GEMINI_API_KEY"
           [ -n "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ] && echo "::add-mask::$NEXT_PUBLIC_SUPABASE_ANON_KEY"
           [ -n "$SUPABASE_SERVICE_ROLE_KEY" ] && echo "::add-mask::$SUPABASE_SERVICE_ROLE_KEY"
