@@ -47,8 +47,8 @@ export default function AboutPage() {
             }}
           />
           {/* Hero copy — anchored to the bottom, same pattern as CinematicHero */}
-          <div className="absolute inset-0 flex flex-col items-center justify-end text-center pb-6 px-6">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-performance-turquoise/10 border border-performance-turquoise/30 rounded-full mb-4">
+          <div className="absolute inset-0 flex flex-col items-center justify-end text-center pb-3 px-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-performance-turquoise/10 border border-performance-turquoise/30 rounded-full mb-3">
               <Zap size={14} className="text-performance-turquoise" />
               <span className="text-sm font-medium text-performance-turquoise">
                 Premium AI Car Hire — Hertfordshire &amp; London
