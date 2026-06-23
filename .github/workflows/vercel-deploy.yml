@@ -23,6 +23,18 @@ on:
         description: 'NEXT_PUBLIC_SITE_URL (optional)'
         required: false
         type: string
+      resend_api_key:
+        description: 'RESEND_API_KEY (optional — enables booking/contact email notifications)'
+        required: false
+        type: string
+      mail_from:
+        description: 'MAIL_FROM (optional — verified sender, e.g. "M&M Auto Performance <bookings@mandmautoperformance.com>")'
+        required: false
+        type: string
+      admin_notify_email:
+        description: 'ADMIN_NOTIFY_EMAIL (optional — where booking notifications go; defaults to mandmautoperformance@gmail.com)'
+        required: false
+        type: string
 
 jobs:
   deploy:
@@ -43,6 +55,9 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ inputs.supabase_anon_key }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ inputs.supabase_service_role_key }}
           NEXT_PUBLIC_SITE_URL: ${{ inputs.site_url }}
+          RESEND_API_KEY: ${{ inputs.resend_api_key }}
+          MAIL_FROM: ${{ inputs.mail_from }}
+          ADMIN_NOTIFY_EMAIL: ${{ inputs.admin_notify_email }}
         run: |
           if [ -z "$TOKEN" ]; then
             echo "ERROR: VERCEL_TOKEN secret is not set."
@@ -54,6 +69,7 @@ jobs:
           [ -n "$GEMINI_API_KEY" ] && echo "::add-mask::$GEMINI_API_KEY"
           [ -n "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ] && echo "::add-mask::$NEXT_PUBLIC_SUPABASE_ANON_KEY"
           [ -n "$SUPABASE_SERVICE_ROLE_KEY" ] && echo "::add-mask::$SUPABASE_SERVICE_ROLE_KEY"
+          [ -n "$RESEND_API_KEY" ] && echo "::add-mask::$RESEND_API_KEY"
 
           npm install -g vercel@latest
 
@@ -71,6 +87,9 @@ jobs:
           add_env NEXT_PUBLIC_SUPABASE_ANON_KEY "$NEXT_PUBLIC_SUPABASE_ANON_KEY"
           add_env SUPABASE_SERVICE_ROLE_KEY "$SUPABASE_SERVICE_ROLE_KEY"
           add_env NEXT_PUBLIC_SITE_URL "$NEXT_PUBLIC_SITE_URL"
+          add_env RESEND_API_KEY "$RESEND_API_KEY"
+          add_env MAIL_FROM "$MAIL_FROM"
+          add_env ADMIN_NOTIFY_EMAIL "$ADMIN_NOTIFY_EMAIL"
 
           echo "Deploying to production..."
           OUTPUT=$(vercel deploy --prod --yes --token="$TOKEN" "${ENV_ARGS[@]}" 2>&1)
