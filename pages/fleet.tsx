@@ -9,6 +9,10 @@ import { VEHICLES as ALL_VEHICLES, MAKES, CATEGORY_LABELS, type VehicleCategory 
 const CATEGORIES: (VehicleCategory | 'all')[] = ['all', 'exotic', 'supercar', 'sports', 'luxury', 'suv', 'executive'];
 const PAGE_SIZE = 24;
 
+// Branded gold-fleet hero, served locally from public/ — fetched directly by the
+// browser as a plain CSS background, so it always displays.
+const FLEET_HERO = '/gold-fleet-london.jpg';
+
 export default function FleetPage() {
   const router = useRouter();
   const [search, setSearch] = useState('');
@@ -61,14 +65,52 @@ export default function FleetPage() {
       <main className="min-h-screen bg-performance-grey text-white">
         <Navbar isLoggedIn={false} userRole="guest" currentPage="fleet" />
 
+        {/* ── Cinematic Gold Fleet Hero ── */}
+        <section
+          style={{
+            width: '100%',
+            height: '100vh',
+            backgroundImage: `url("${FLEET_HERO}")`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center center',
+            backgroundRepeat: 'no-repeat',
+            position: 'relative',
+          }}
+        >
+          {/* Dark overlay */}
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)' }} />
+          {/* Bottom fade into page background */}
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'linear-gradient(to top, #121316 0%, transparent 45%)',
+            }}
+          />
+          {/* Hero copy — anchored to the bottom, same pattern as the About hero */}
+          <div className="absolute inset-0 flex flex-col items-center justify-end text-center pb-12 px-6">
+            <p className="text-performance-turquoise text-[10px] font-bold tracking-[0.45em] uppercase mb-5">
+              London &amp; Hertfordshire
+            </p>
+            <h1 className="font-display text-5xl sm:text-6xl lg:text-[5.5rem] font-bold text-white mb-6 leading-[1.05] tracking-tight drop-shadow-[0_2px_20px_rgba(0,0,0,0.7)]">
+              The{' '}
+              <span className="bg-gradient-to-r from-performance-turquoise to-performance-babyblue bg-clip-text text-transparent">
+                Gold Standard
+              </span>{' '}
+              Fleet
+            </h1>
+            <p className="text-white/70 text-base sm:text-lg max-w-xl mx-auto leading-relaxed">
+              {ALL_VEHICLES.length} individually curated supercars, luxury saloons and prestige SUVs —
+              ready to drive across London &amp; Hertfordshire.
+            </p>
+          </div>
+        </section>
+
         {/* Header */}
-        <section className="px-4 sm:px-6 lg:px-8 pt-20 pb-12">
+        <section className="px-4 sm:px-6 lg:px-8 pt-20 pb-12 border-t border-performance-turquoise/10">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-10">
-              <p className="text-performance-turquoise text-[10px] font-bold tracking-[0.45em] uppercase mb-3">
-                London &amp; Hertfordshire
-              </p>
-              <h1 className="font-display text-5xl sm:text-6xl font-bold text-white mb-4">The Collection</h1>
+              <h2 className="font-display text-4xl sm:text-5xl font-bold text-white mb-4">The Collection</h2>
               <p className="text-gray-400 text-lg max-w-2xl mx-auto">
                 {ALL_VEHICLES.length} individually curated vehicles — supercars, luxury saloons, prestige SUVs &amp; more
               </p>
