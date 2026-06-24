@@ -104,7 +104,7 @@ jobs:
               external_email_enabled: true,
               smtp_admin_email: $email,
               smtp_host: "smtp.resend.com",
-              smtp_port: 465,
+              smtp_port: "465",
               smtp_user: "resend",
               smtp_pass: $pass,
               smtp_sender_name: "M&M Auto Performance",
