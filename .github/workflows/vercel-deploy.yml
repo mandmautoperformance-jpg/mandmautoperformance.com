@@ -55,6 +55,14 @@ on:
         description: 'EMAIL_TEST_TOKEN — only needed if the self-test endpoint is token-gated'
         required: false
         type: string
+      configure_supabase:
+        description: 'Route Supabase auth emails through Resend SMTP + apply pending DB migrations (true/false)'
+        required: false
+        type: string
+      smtp_sender_email:
+        description: 'SMTP sender (verified Resend sender). Default onboarding@resend.dev works immediately.'
+        required: false
+        type: string
 
 jobs:
   deploy:
@@ -66,6 +74,67 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+
+      # Route Supabase Auth emails (confirmation, password reset) through the
+      # Resend SMTP server instead of Supabase's shared mailer, and apply the
+      # account-ID-verification migration. Both go through the Management API —
+      # no dashboard clicking. Idempotent; runs only when configure_supabase=true.
+      - name: Configure Supabase (SMTP + migrations)
+        if: ${{ inputs.configure_supabase == 'true' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN || inputs.supabase_access_token }}
+          SUPABASE_REF: ${{ secrets.SUPABASE_REF || inputs.supabase_ref || 'ratyazffxlppzurfokxp' }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY || inputs.resend_api_key }}
+          SENDER_EMAIL: ${{ inputs.smtp_sender_email }}
+        run: |
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
+            echo "ERROR: no SUPABASE_ACCESS_TOKEN (secret or input)."; exit 1
+          fi
+          if [ -z "$RESEND_API_KEY" ]; then
+            echo "ERROR: no RESEND_API_KEY (secret or input) — needed as the SMTP password."; exit 1
+          fi
+          echo "::add-mask::$SUPABASE_ACCESS_TOKEN"
+          echo "::add-mask::$RESEND_API_KEY"
+          SENDER_EMAIL="${SENDER_EMAIL:-onboarding@resend.dev}"
+
+          echo "→ Pointing Supabase Auth SMTP at smtp.resend.com (sender: $SENDER_EMAIL)…"
+          SMTP_PAYLOAD=$(jq -n \
+            --arg pass "$RESEND_API_KEY" --arg email "$SENDER_EMAIL" \
+            '{
+              external_email_enabled: true,
+              smtp_admin_email: $email,
+              smtp_host: "smtp.resend.com",
+              smtp_port: 465,
+              smtp_user: "resend",
+              smtp_pass: $pass,
+              smtp_sender_name: "M&M Auto Performance",
+              smtp_max_frequency: 5
+            }')
+          SMTP_RESP=$(curl -sS -w "\nHTTP_STATUS:%{http_code}" -X PATCH \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" -d "$SMTP_PAYLOAD" \
+            "https://api.supabase.com/v1/projects/$SUPABASE_REF/config/auth")
+          SMTP_CODE=$(echo "$SMTP_RESP" | grep -oE 'HTTP_STATUS:[0-9]+' | cut -d: -f2)
+          if [ "$SMTP_CODE" = "200" ]; then
+            echo "✓ Custom SMTP set — auth emails now come from Resend."
+          else
+            echo "✗ SMTP config failed (HTTP $SMTP_CODE):"
+            echo "$SMTP_RESP" | sed 's/HTTP_STATUS:[0-9]*//' | head -c 600; exit 1
+          fi
+
+          echo "→ Applying migration 005 (user_id_uploads + storage bucket)…"
+          MIG_PAYLOAD=$(jq -Rs '{query: .}' < supabase/migrations/005_account_id_verification.sql)
+          MIG_RESP=$(curl -sS -w "\nHTTP_STATUS:%{http_code}" -X POST \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" -d "$MIG_PAYLOAD" \
+            "https://api.supabase.com/v1/projects/$SUPABASE_REF/database/query")
+          MIG_CODE=$(echo "$MIG_RESP" | grep -oE 'HTTP_STATUS:[0-9]+' | cut -d: -f2)
+          if [ "$MIG_CODE" = "200" ] || [ "$MIG_CODE" = "201" ]; then
+            echo "✓ Migration applied — ID upload flow has its table."
+          else
+            echo "✗ Migration failed (HTTP $MIG_CODE):"
+            echo "$MIG_RESP" | sed 's/HTTP_STATUS:[0-9]*//' | head -c 600; exit 1
+          fi
 
       # Optional: register a sending domain with Resend and print the SPF/DKIM
       # DNS records to add. Runs only when resend_domain is supplied.
