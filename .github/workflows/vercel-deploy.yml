@@ -47,6 +47,14 @@ on:
         description: 'Register this sending domain with Resend and print its DNS records (e.g. mandmautoperformance.com)'
         required: false
         type: string
+      run_email_test:
+        description: 'After deploy, send a branded test email to the business inbox and print the result (true/false)'
+        required: false
+        type: string
+      email_test_token:
+        description: 'EMAIL_TEST_TOKEN — only needed if the self-test endpoint is token-gated'
+        required: false
+        type: string
 
 jobs:
   deploy:
@@ -187,3 +195,27 @@ jobs:
           echo "LIVE URL: ${URL:-see output above}"
           echo "Aliased:  https://mandmautoperformance.com"
           echo "========================================="
+
+      # After deploy, prove the email pipeline end-to-end by calling the
+      # self-test endpoint on the live site. Sends one branded test email to the
+      # business inbox and prints exactly what Resend reported.
+      - name: Email self-test
+        if: ${{ inputs.run_email_test == 'true' }}
+        env:
+          EMAIL_TEST_TOKEN: ${{ secrets.EMAIL_TEST_TOKEN || inputs.email_test_token }}
+        run: |
+          # Give the new deploy a moment to become the live alias.
+          sleep 20
+          TOKEN_Q=""
+          [ -n "$EMAIL_TEST_TOKEN" ] && TOKEN_Q="?token=$EMAIL_TEST_TOKEN"
+          echo "Calling https://mandmautoperformance.com/api/email-selftest …"
+          RESP=$(curl -sS -w "\nHTTP_STATUS:%{http_code}" \
+            "https://mandmautoperformance.com/api/email-selftest${TOKEN_Q}" || true)
+          echo ""
+          echo "========================================="
+          echo "EMAIL SELF-TEST RESULT:"
+          echo "$RESP"
+          echo "========================================="
+          echo "$RESP" | grep -q '"sent":true' \
+            && echo "✓ Email sent — check mandmautoperformance@gmail.com" \
+            || echo "✗ Email NOT sent — see reason above (likely RESEND_API_KEY missing in Vercel)"
