@@ -119,7 +119,10 @@ jobs:
           MAIL_FROM: ${{ secrets.MAIL_FROM || inputs.mail_from }}
           ADMIN_NOTIFY_EMAIL: ${{ secrets.ADMIN_NOTIFY_EMAIL || inputs.admin_notify_email }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN || inputs.supabase_access_token }}
-          SUPABASE_REF: ${{ secrets.SUPABASE_REF || inputs.supabase_ref }}
+          # Project ref is public (it's in the project URL), so it has a safe
+          # built-in fallback — this guarantees the Supabase key auto-fetch runs
+          # on every deploy even when no secret/input is supplied.
+          SUPABASE_REF: ${{ secrets.SUPABASE_REF || inputs.supabase_ref || 'ratyazffxlppzurfokxp' }}
         run: |
           if [ -z "$TOKEN" ]; then
             echo "ERROR: VERCEL_TOKEN secret is not set."
