@@ -46,7 +46,7 @@ export default function AuthCallback() {
     });
 
     return () => subscription.unsubscribe();
-  }, [router.isReady, router.query.code]);
+  }, [router]);
 
   return (
     <>
