@@ -95,6 +95,27 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
+      # Report which secrets are actually present in the vault (names only,
+      # never values) so we can diagnose missing keys without guessing.
+      - name: Vault check
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          chk() { if [ -n "${!1}" ]; then echo "  ✓ $1 present"; else echo "  ✗ $1 MISSING"; fi; }
+          echo "===== VAULT SECRETS (names only) ====="
+          chk GEMINI_API_KEY
+          chk STRIPE_SECRET_KEY
+          chk STRIPE_WEBHOOK_SECRET
+          chk RESEND_API_KEY
+          chk SUPABASE_ACCESS_TOKEN
+          chk VERCEL_TOKEN
+          echo "======================================"
+
       # Route Supabase Auth emails (confirmation, password reset) through the
       # Resend SMTP server instead of Supabase's shared mailer, and apply the
       # account-ID-verification migration. Both go through the Management API —
@@ -167,7 +188,9 @@ jobs:
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY || inputs.stripe_secret_key }}
         run: |
           if [ -z "$STRIPE_SECRET_KEY" ]; then
-            echo "ERROR: no STRIPE_SECRET_KEY (vault secret or input)."; exit 1
+            echo "⚠ Skipping Stripe webhook — STRIPE_SECRET_KEY is not in the vault."
+            echo "  Add it at the repo's Actions secrets, then re-run with configure_stripe=true."
+            exit 0
           fi
           echo "::add-mask::$STRIPE_SECRET_KEY"
           URL="https://mandmautoperformance.com/api/payments/webhook"
