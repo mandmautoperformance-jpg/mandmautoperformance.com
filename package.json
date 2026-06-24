@@ -9,7 +9,6 @@
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
-    "deploy": "bash DEPLOY_NOW.sh",
     "deploy:prod": "vercel --prod"
   },
   "dependencies": {
