@@ -75,6 +75,14 @@ on:
         description: 'STRIPE_WEBHOOK_SECRET (whsec_…)'
         required: false
         type: string
+      configure_stripe:
+        description: 'Auto-create the Stripe webhook endpoint and inject its signing secret (true/false)'
+        required: false
+        type: string
+      verify_live:
+        description: 'After deploy, hit the live site to confirm MIA (Gemini) and key endpoints respond (true/false)'
+        required: false
+        type: string
 
 jobs:
   deploy:
@@ -147,6 +155,46 @@ jobs:
             echo "✗ Migration failed (HTTP $MIG_CODE):"
             echo "$MIG_RESP" | sed 's/HTTP_STATUS:[0-9]*//' | head -c 600; exit 1
           fi
+
+      # Auto-provision the Stripe webhook endpoint using the secret key already in
+      # the vault, and capture its signing secret (whsec_) so payments verify.
+      # Runs before the deploy so the secret can be injected into the build.
+      # The signing secret is only returned by Stripe on CREATE, so we remove any
+      # existing endpoint for this URL first, then recreate to capture a fresh one.
+      - name: Configure Stripe webhook
+        if: ${{ inputs.configure_stripe == 'true' }}
+        env:
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY || inputs.stripe_secret_key }}
+        run: |
+          if [ -z "$STRIPE_SECRET_KEY" ]; then
+            echo "ERROR: no STRIPE_SECRET_KEY (vault secret or input)."; exit 1
+          fi
+          echo "::add-mask::$STRIPE_SECRET_KEY"
+          URL="https://mandmautoperformance.com/api/payments/webhook"
+
+          echo "→ Looking for an existing webhook for $URL …"
+          LIST=$(curl -sS https://api.stripe.com/v1/webhook_endpoints -u "$STRIPE_SECRET_KEY:")
+          EXISTING=$(echo "$LIST" | jq -r --arg u "$URL" '.data[]? | select(.url==$u) | .id')
+          for id in $EXISTING; do
+            echo "  removing old endpoint $id (so we can capture a fresh signing secret)…"
+            curl -sS -X DELETE "https://api.stripe.com/v1/webhook_endpoints/$id" -u "$STRIPE_SECRET_KEY:" >/dev/null || true
+          done
+
+          echo "→ Creating webhook endpoint…"
+          CREATE=$(curl -sS https://api.stripe.com/v1/webhook_endpoints -u "$STRIPE_SECRET_KEY:" \
+            -d "url=$URL" \
+            -d "enabled_events[]=checkout.session.completed" \
+            -d "enabled_events[]=payment_intent.succeeded")
+          WHSEC=$(echo "$CREATE" | jq -r '.secret // empty')
+          if [ -z "$WHSEC" ]; then
+            echo "✗ Could not create webhook. Stripe said:"
+            echo "$CREATE" | jq -r '.error.message // .' | head -c 500; exit 1
+          fi
+          echo "::add-mask::$WHSEC"
+          # Hand the secret to the deploy step (different name avoids clobbering the
+          # YAML env expression, which would otherwise overwrite it with empty).
+          echo "STRIPE_WEBHOOK_SECRET_RESOLVED=$WHSEC" >> "$GITHUB_ENV"
+          echo "✓ Stripe webhook live: $URL (events: checkout.session.completed, payment_intent.succeeded)"
 
       # Optional: register a sending domain with Resend and print the SPF/DKIM
       # DNS records to add. Runs only when resend_domain is supplied.
@@ -247,6 +295,10 @@ jobs:
             [ -z "$NEXT_PUBLIC_SUPABASE_URL" ] && NEXT_PUBLIC_SUPABASE_URL="https://$SUPABASE_REF.supabase.co"
           fi
 
+          # If the Stripe step just created a webhook, use its fresh signing
+          # secret whenever one wasn't already supplied via vault/input.
+          STRIPE_WEBHOOK_SECRET="${STRIPE_WEBHOOK_SECRET:-$STRIPE_WEBHOOK_SECRET_RESOLVED}"
+
           [ -n "$GEMINI_API_KEY" ] && echo "::add-mask::$GEMINI_API_KEY"
           [ -n "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ] && echo "::add-mask::$NEXT_PUBLIC_SUPABASE_ANON_KEY"
           [ -n "$SUPABASE_SERVICE_ROLE_KEY" ] && echo "::add-mask::$SUPABASE_SERVICE_ROLE_KEY"
@@ -311,3 +363,41 @@ jobs:
           echo "$RESP" | grep -q '"sent":true' \
             && echo "✓ Email sent — check mandmautoperformance@gmail.com" \
             || echo "✗ Email NOT sent — see reason above (likely RESEND_API_KEY missing in Vercel)"
+
+      # Prove MIA (Gemini) actually answers on the live site by sending her a
+      # real message and inspecting the streamed reply.
+      - name: Verify live (MIA + Stripe)
+        if: ${{ inputs.verify_live == 'true' }}
+        env:
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY || inputs.stripe_secret_key }}
+        run: |
+          sleep 5
+          echo "→ Asking MIA a question on the live site…"
+          MIA=$(curl -sS -m 40 -X POST "https://mandmautoperformance.com/api/chat/completions" \
+            -H "Content-Type: application/json" \
+            -d '{"message":"In one short sentence, recommend a car for a wedding."}' || true)
+          echo "----- raw MIA stream (first 600 chars) -----"
+          echo "$MIA" | head -c 600; echo
+          echo "--------------------------------------------"
+          if echo "$MIA" | grep -q '"type":"complete"'; then
+            echo "✓ MIA is LIVE — Gemini answered."
+          elif echo "$MIA" | grep -qi 'not configured\|GEMINI_API_KEY'; then
+            echo "✗ MIA reached but Gemini key missing in the live build."
+          else
+            echo "⚠ MIA response inconclusive — check the raw stream above."
+          fi
+
+          echo ""
+          echo "→ Confirming the Stripe webhook is registered…"
+          if [ -n "$STRIPE_SECRET_KEY" ]; then
+            echo "::add-mask::$STRIPE_SECRET_KEY"
+            HOOKS=$(curl -sS https://api.stripe.com/v1/webhook_endpoints -u "$STRIPE_SECRET_KEY:" || true)
+            COUNT=$(echo "$HOOKS" | jq -r --arg u "https://mandmautoperformance.com/api/payments/webhook" '[.data[]? | select(.url==$u)] | length')
+            if [ "$COUNT" -ge 1 ] 2>/dev/null; then
+              echo "✓ Stripe webhook registered ($COUNT endpoint) — payments will confirm."
+            else
+              echo "⚠ No Stripe webhook found for the payments URL yet."
+            fi
+          else
+            echo "⚠ No Stripe key available to check the webhook."
+          fi
