@@ -5,6 +5,7 @@ import Link from 'next/link';
 import AdminAPIConfiguration from '@/components/AdminAPIConfiguration';
 import LeadScraperAndMarketing from '@/components/LeadScraperAndMarketing';
 import AdminReservations from '@/components/AdminReservations';
+import AdminIDDocuments from '@/components/AdminIDDocuments';
 import { getSupabaseBrowser } from '@/lib/supabase-browser';
 
 interface AdminStats {
@@ -18,7 +19,7 @@ interface AdminStats {
 const AdminDashboard: React.FC = () => {
   const router = useRouter();
   const [activeSection, setActiveSection] = useState<
-    'overview' | 'reservations' | 'api-config' | 'marketing' | 'analytics'
+    'overview' | 'reservations' | 'id-documents' | 'api-config' | 'marketing' | 'analytics'
   >('overview');
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
@@ -67,6 +68,7 @@ const AdminDashboard: React.FC = () => {
   const sections = [
     { id: 'overview', label: 'Overview', icon: '📊' },
     { id: 'reservations', label: 'Reservations', icon: '📋' },
+    { id: 'id-documents', label: 'ID Documents', icon: '🪪' },
     { id: 'api-config', label: 'API Configuration', icon: '🔧' },
     { id: 'marketing', label: 'Growth & Marketing', icon: '🎯' },
     { id: 'analytics', label: 'Analytics', icon: '📈' },
@@ -133,6 +135,13 @@ const AdminDashboard: React.FC = () => {
                       <span>Reservation Requests</span>
                       <span className="text-electric-turquoise">→</span>
                     </button>
+                    <button
+                      onClick={() => setActiveSection('id-documents')}
+                      className="flex items-center justify-between w-full px-4 py-3 rounded-lg bg-electric-turquoise/10 border border-electric-turquoise/30 text-white hover:bg-electric-turquoise/20 transition-all"
+                    >
+                      <span>ID Document Review</span>
+                      <span className="text-electric-turquoise">→</span>
+                    </button>
                     <ActionButton label="View Analytics" href="/analytics" />
                     <ActionButton label="Manage Fleet" href="/fleet" />
                     <ActionButton label="User Settings" href="/settings" />
@@ -153,6 +162,7 @@ const AdminDashboard: React.FC = () => {
           )}
 
           {activeSection === 'reservations' && <AdminReservations />}
+          {activeSection === 'id-documents' && <AdminIDDocuments />}
           {activeSection === 'api-config' && <AdminAPIConfiguration />}
           {activeSection === 'marketing' && <LeadScraperAndMarketing />}
           {activeSection === 'analytics' && (
@@ -175,13 +185,13 @@ const StatCard: React.FC<{ title: string; value: string; trend: string }> = ({ t
 );
 
 const ActionButton: React.FC<{ label: string; href: string }> = ({ label, href }) => (
-  <a
+  <Link
     href={href}
     className="flex items-center justify-between w-full px-4 py-3 rounded-lg bg-electric-turquoise/10 border border-electric-turquoise/30 text-white hover:bg-electric-turquoise/20 transition-all"
   >
     <span>{label}</span>
     <span className="text-electric-turquoise">→</span>
-  </a>
+  </Link>
 );
 
 const StatusLine: React.FC<{ label: string; status: string; color: string }> = ({ label, status, color }) => (
