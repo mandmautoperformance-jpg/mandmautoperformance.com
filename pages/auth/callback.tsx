@@ -4,9 +4,10 @@ import { useRouter } from 'next/router';
 import { getSupabaseBrowser } from '@/lib/supabase-browser';
 
 /**
- * Handles the redirect after email confirmation.
+ * Handles all Supabase auth email redirects:
+ * - Email confirmation (SIGNED_IN / USER_UPDATED): new users → /account/verify-id, existing → /dashboard
+ * - Password recovery (PASSWORD_RECOVERY): → /reset-password
  * Supports both implicit flow (hash-based) and PKCE flow (code in query).
- * New users → /account/verify-id. Already-verified users → /dashboard.
  */
 export default function AuthCallback() {
   const router = useRouter();
@@ -16,7 +17,7 @@ export default function AuthCallback() {
 
     const supabase = getSupabaseBrowser();
 
-    const redirect = (idUploaded: boolean) => {
+    const redirectAfterConfirm = (idUploaded: boolean) => {
       router.replace(idUploaded ? '/dashboard' : '/account/verify-id');
     };
 
@@ -24,16 +25,21 @@ export default function AuthCallback() {
     const code = router.query.code as string | undefined;
     if (code) {
       supabase.auth.exchangeCodeForSession(code).then(({ data }) => {
-        redirect(Boolean(data.session?.user?.user_metadata?.id_uploaded));
+        redirectAfterConfirm(Boolean(data.session?.user?.user_metadata?.id_uploaded));
       });
       return;
     }
 
     // Implicit flow: Supabase auto-processes the hash, listen for the state change
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        subscription.unsubscribe();
+        router.replace('/reset-password');
+        return;
+      }
       if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
         subscription.unsubscribe();
-        redirect(Boolean(session?.user?.user_metadata?.id_uploaded));
+        redirectAfterConfirm(Boolean(session?.user?.user_metadata?.id_uploaded));
       }
     });
 
@@ -41,7 +47,7 @@ export default function AuthCallback() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         subscription.unsubscribe();
-        redirect(Boolean(session.user?.user_metadata?.id_uploaded));
+        redirectAfterConfirm(Boolean(session.user?.user_metadata?.id_uploaded));
       }
     });
 
