@@ -63,6 +63,18 @@ on:
         description: 'SMTP sender (verified Resend sender). Default onboarding@resend.dev works immediately.'
         required: false
         type: string
+      admin_emails:
+        description: 'ADMIN_EMAILS — comma-separated allowlist that unlocks /admin-dashboard + /api/admin/*'
+        required: false
+        type: string
+      stripe_secret_key:
+        description: 'STRIPE_SECRET_KEY (sk_test_… or sk_live_…)'
+        required: false
+        type: string
+      stripe_webhook_secret:
+        description: 'STRIPE_WEBHOOK_SECRET (whsec_…)'
+        required: false
+        type: string
 
 jobs:
   deploy:
@@ -187,6 +199,9 @@ jobs:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY || inputs.resend_api_key }}
           MAIL_FROM: ${{ secrets.MAIL_FROM || inputs.mail_from }}
           ADMIN_NOTIFY_EMAIL: ${{ secrets.ADMIN_NOTIFY_EMAIL || inputs.admin_notify_email }}
+          ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS || inputs.admin_emails }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY || inputs.stripe_secret_key }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET || inputs.stripe_webhook_secret }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN || inputs.supabase_access_token }}
           # Project ref is public (it's in the project URL), so it has a safe
           # built-in fallback — this guarantees the Supabase key auto-fetch runs
@@ -236,6 +251,8 @@ jobs:
           [ -n "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ] && echo "::add-mask::$NEXT_PUBLIC_SUPABASE_ANON_KEY"
           [ -n "$SUPABASE_SERVICE_ROLE_KEY" ] && echo "::add-mask::$SUPABASE_SERVICE_ROLE_KEY"
           [ -n "$RESEND_API_KEY" ] && echo "::add-mask::$RESEND_API_KEY"
+          [ -n "$STRIPE_SECRET_KEY" ] && echo "::add-mask::$STRIPE_SECRET_KEY"
+          [ -n "$STRIPE_WEBHOOK_SECRET" ] && echo "::add-mask::$STRIPE_WEBHOOK_SECRET"
 
           npm install -g vercel@latest
 
@@ -257,6 +274,9 @@ jobs:
           add_env RESEND_API_KEY "$RESEND_API_KEY"
           add_env MAIL_FROM "$MAIL_FROM"
           add_env ADMIN_NOTIFY_EMAIL "$ADMIN_NOTIFY_EMAIL"
+          add_env ADMIN_EMAILS "$ADMIN_EMAILS"
+          add_env STRIPE_SECRET_KEY "$STRIPE_SECRET_KEY"
+          add_env STRIPE_WEBHOOK_SECRET "$STRIPE_WEBHOOK_SECRET"
 
           echo "Deploying to production..."
           OUTPUT=$(vercel deploy --prod --yes --token="$TOKEN" "${ENV_ARGS[@]}" 2>&1)
