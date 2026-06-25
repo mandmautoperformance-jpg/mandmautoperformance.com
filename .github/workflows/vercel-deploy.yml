@@ -255,7 +255,12 @@ jobs:
           echo "DOMAIN: $DOMAIN   STATUS: $STATUS"
           echo "Add EACH record below at your DNS host:"
           echo "========================================="
-          echo "$DETAIL" | jq -r '.records[] | "----\nTYPE:     \(.type)\nNAME:     \(.name)\nVALUE:    \(.value)\nPRIORITY: \(.priority // "-")\nTTL:      \(.ttl // "Auto")"'
+          echo "$DETAIL" | jq -r '.records[] | "----\nTYPE:     \(.type)\nNAME:     \(.name)\nVALUE:    \(.value)\nPRIORITY: \(.priority // "-")\nTTL:      \(.ttl // "Auto")\nRECORD STATUS: \(.status // "?")"'
+          echo "========================================="
+          # Compact per-record verdict so a small log tail reveals which record
+          # (DKIM / SPF / MX) is still missing from DNS.
+          echo "RESEND_DOMAIN_STATUS=$STATUS"
+          echo "$DETAIL" | jq -r '.records[] | "RESEND_RECORD \(.type) \(.name) -> \(.status // "?")"'
           echo "========================================="
 
       - name: Deploy to Vercel
