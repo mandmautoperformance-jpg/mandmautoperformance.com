@@ -47,6 +47,10 @@ on:
         description: 'Register this sending domain with Resend and print its DNS records (e.g. mandmautoperformance.com)'
         required: false
         type: string
+      configure_vercel_dns:
+        description: 'Write the Resend DKIM/SPF/MX records into Vercel DNS automatically (true/false). Use when the domain runs on Vercel nameservers.'
+        required: false
+        type: string
       run_email_test:
         description: 'After deploy, send a branded test email to the business inbox and print the result (true/false)'
         required: false
@@ -261,6 +265,71 @@ jobs:
           # (DKIM / SPF / MX) is still missing from DNS.
           echo "RESEND_DOMAIN_STATUS=$STATUS"
           echo "$DETAIL" | jq -r '.records[] | "RESEND_RECORD \(.type) \(.name) -> \(.status // "?")"'
+          echo "========================================="
+
+      # When the domain runs on Vercel nameservers, records added at the
+      # registrar (IONOS etc.) never take effect — Vercel is authoritative.
+      # This writes the exact Resend DKIM/SPF/MX records straight into Vercel
+      # DNS via the API, idempotently (skips any that already exist).
+      - name: Configure Vercel DNS
+        if: ${{ inputs.configure_vercel_dns == 'true' && inputs.resend_domain != '' }}
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY || inputs.resend_api_key }}
+          DOMAIN: ${{ inputs.resend_domain }}
+        run: |
+          [ -z "$VERCEL_TOKEN" ] && { echo "ERROR: VERCEL_TOKEN missing."; exit 1; }
+          [ -z "$RESEND_API_KEY" ] && { echo "ERROR: RESEND_API_KEY missing."; exit 1; }
+          echo "::add-mask::$VERCEL_TOKEN"; echo "::add-mask::$RESEND_API_KEY"
+          rapi() { curl -sS -H "Authorization: Bearer $RESEND_API_KEY" -H "Content-Type: application/json" "$@"; }
+          vapi() { curl -sS -H "Authorization: Bearer $VERCEL_TOKEN" -H "Content-Type: application/json" "$@"; }
+
+          # Resolve the account scope (personal or team) that actually owns the
+          # domain by probing each scope's DNS records endpoint.
+          SCOPE=""
+          if vapi "https://api.vercel.com/v4/domains/$DOMAIN/records?limit=1" | jq -e '.records' >/dev/null 2>&1; then
+            SCOPE=""
+          else
+            for tid in $(vapi "https://api.vercel.com/v2/teams?limit=100" | jq -r '.teams[]?.id'); do
+              if vapi "https://api.vercel.com/v4/domains/$DOMAIN/records?limit=1&teamId=$tid" | jq -e '.records' >/dev/null 2>&1; then
+                SCOPE="&teamId=$tid"; SCOPE_POST="?teamId=$tid"; break
+              fi
+            done
+          fi
+          [ -n "$SCOPE" ] && Q="$SCOPE_POST" || Q=""
+          echo "Vercel scope resolved: ${SCOPE:-personal}"
+
+          # Pull the exact records Resend wants.
+          DOMAIN_ID=$(rapi "https://api.resend.com/domains" | jq -r --arg d "$DOMAIN" '.data[]? | select(.name==$d) | .id' | head -1)
+          DETAIL=$(rapi "https://api.resend.com/domains/$DOMAIN_ID")
+          EXISTING=$(vapi "https://api.vercel.com/v4/domains/$DOMAIN/records?limit=100${SCOPE}")
+
+          echo "$DETAIL" | jq -c '.records[]' | while read -r rec; do
+            RTYPE=$(echo "$rec" | jq -r '.type')
+            # Vercel "name" is the host relative to the domain. Resend gives the
+            # subdomain label already (e.g. "resend._domainkey" / "send").
+            RNAME=$(echo "$rec" | jq -r '.name')
+            RVALUE=$(echo "$rec" | jq -r '.value')
+            RPRIO=$(echo "$rec" | jq -r '.priority // empty')
+
+            # Skip if an equivalent record already exists.
+            if echo "$EXISTING" | jq -e --arg n "$RNAME" --arg t "$RTYPE" '.records[]? | select(.name==$n and .type==$t)' >/dev/null 2>&1; then
+              echo "VERCEL_DNS skip $RTYPE $RNAME (already present)"
+              continue
+            fi
+
+            if [ "$RTYPE" = "MX" ]; then
+              BODY=$(jq -n --arg n "$RNAME" --arg v "$RVALUE" --argjson p "${RPRIO:-10}" '{type:"MX",name:$n,value:$v,ttl:60,mxPriority:$p}')
+            else
+              BODY=$(jq -n --arg n "$RNAME" --arg t "$RTYPE" --arg v "$RVALUE" '{type:$t,name:$n,value:$v,ttl:60}')
+            fi
+            RESP=$(vapi -X POST "https://api.vercel.com/v2/domains/$DOMAIN/records${Q}" -d "$BODY")
+            if echo "$RESP" | jq -e '.uid // .created' >/dev/null 2>&1; then
+              echo "VERCEL_DNS added $RTYPE $RNAME"
+            else
+              echo "VERCEL_DNS FAILED $RTYPE $RNAME -> $(echo "$RESP" | head -c 300)"
+            fi
+          done
           echo "========================================="
 
       - name: Deploy to Vercel
