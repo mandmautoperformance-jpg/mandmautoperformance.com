@@ -540,7 +540,21 @@ jobs:
         env:
           DOMAIN: ${{ inputs.resend_domain }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY || inputs.resend_api_key }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN || inputs.supabase_access_token }}
+          SUPABASE_REF: ${{ secrets.SUPABASE_REF || inputs.supabase_ref || 'ratyazffxlppzurfokxp' }}
         run: |
+          # FORENSICS: read the LIVE Supabase auth config so we know exactly what
+          # is sending confirmation emails right now (sender, host, confirm flag).
+          if [ -n "$SUPABASE_ACCESS_TOKEN" ]; then
+            echo "::add-mask::$SUPABASE_ACCESS_TOKEN"
+            AUTH=$(curl -sS -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" "https://api.supabase.com/v1/projects/$SUPABASE_REF/config/auth")
+            echo "SUPA_smtp_host=$(echo "$AUTH" | jq -r '.smtp_host // "(none)"')"
+            echo "SUPA_smtp_admin_email=$(echo "$AUTH" | jq -r '.smtp_admin_email // "(none)"')"
+            echo "SUPA_smtp_sender_name=$(echo "$AUTH" | jq -r '.smtp_sender_name // "(none)"')"
+            echo "SUPA_external_email_enabled=$(echo "$AUTH" | jq -r '.external_email_enabled // "?"')"
+            echo "SUPA_mailer_autoconfirm=$(echo "$AUTH" | jq -r '.mailer_autoconfirm // "?"')"
+            echo "SUPA_rate_limit_email_sent=$(echo "$AUTH" | jq -r '.rate_limit_email_sent // "?"')"
+          fi
           if [ -n "$RESEND_API_KEY" ]; then
             echo "::add-mask::$RESEND_API_KEY"
             RID=$(curl -sS -H "Authorization: Bearer $RESEND_API_KEY" "https://api.resend.com/domains" | jq -r --arg d "$DOMAIN" '.data[]? | select(.name==$d) | .id' | head -1)
