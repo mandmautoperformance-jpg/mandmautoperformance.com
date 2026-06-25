@@ -548,7 +548,17 @@ jobs:
             DETAIL=$(curl -sS -H "Authorization: Bearer $RESEND_API_KEY" "https://api.resend.com/domains/$RID")
             echo "RESEND_FINAL_STATUS=$(echo "$DETAIL" | jq -r '.status')"
             echo "RESEND_VERIFY_RESP=$(echo "$VRESP" | head -c 300)"
+            echo "RESEND_DOMAIN_ID=$RID  REGION=$(echo "$DETAIL" | jq -r '.region // "?"')"
             echo "$DETAIL" | jq -r '.records[]? | "RESEND_REC \(.record // .type) name=\(.name) status=\(.status // "?")"'
+            # FORENSICS: duplicate-entry + region drift detection
+            FULL=$(curl -sS -H "Authorization: Bearer $RESEND_API_KEY" "https://api.resend.com/domains")
+            echo "$FULL" | jq -r '.data[]? | "DOMAIN_ENTRY name=\(.name) id=\(.id) region=\(.region // "?") status=\(.status // "?")"'
+            echo "MATCHING_ENTRIES=$(echo "$FULL" | jq -r --arg d "$DOMAIN" '[.data[]? | select(.name==$d)] | length')"
+            # FORENSICS: byte-compare expected DKIM value vs published TXT
+            EXP=$(echo "$DETAIL" | jq -r '.records[]? | select(.type=="TXT" and (.name|test("_domainkey"))) | .value' | head -1 | tr -d ' ')
+            PUB=$(command dig +short TXT "resend._domainkey.$DOMAIN" @8.8.8.8 2>/dev/null | tr -d '"' | tr -d '\n' | tr -d ' ')
+            echo "DKIM_EXPECTED_LEN=${#EXP} DKIM_PUBLISHED_LEN=${#PUB}"
+            if [ -n "$PUB" ] && [ "$EXP" = "$PUB" ]; then echo "DKIM_MATCH=EXACT"; else echo "DKIM_MATCH=DIFFERENT"; echo "EXP_HEAD=$(printf '%s' "$EXP"|head -c 60)"; echo "PUB_HEAD=$(printf '%s' "$PUB"|head -c 60)"; fi
           fi
           dig() { command dig "$@"; }
           chk() {
