@@ -429,3 +429,33 @@ jobs:
           else
             echo "⚠ No Stripe key available to check the webhook."
           fi
+
+      # Authoritative public-DNS check for the Resend sending domain. Runs on
+      # the GitHub runner (open internet) so it sees exactly what the world sees.
+      # Printed LAST so a tiny log tail reveals whether IONOS has published the
+      # DKIM / SPF / MX records yet — distinguishing "still propagating" from
+      # "record saved wrong". Non-fatal.
+      - name: DNS resolve check
+        if: ${{ inputs.resend_domain != '' }}
+        env:
+          DOMAIN: ${{ inputs.resend_domain }}
+        run: |
+          dig() { command dig "$@"; }
+          chk() {
+            local type="$1"; local host="$2"; local want="$3"
+            local got
+            got=$(command dig +short "$type" "$host" @8.8.8.8 2>/dev/null | tr -d '"' | tr '\n' ' ')
+            if [ -z "$got" ]; then
+              echo "DNS_RESULT $type $host -> EMPTY (not published yet)"
+            elif [ -n "$want" ] && echo "$got" | grep -qiF "$want"; then
+              echo "DNS_RESULT $type $host -> OK ($got)"
+            else
+              echo "DNS_RESULT $type $host -> PRESENT ($got)"
+            fi
+          }
+          echo "========================================="
+          echo "PUBLIC DNS CHECK for $DOMAIN (via 8.8.8.8)"
+          chk TXT "resend._domainkey.$DOMAIN" "p="
+          chk TXT "send.$DOMAIN" "v=spf1"
+          chk MX  "send.$DOMAIN" "amazonses"
+          echo "========================================="
