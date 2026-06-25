@@ -239,6 +239,17 @@ jobs:
 
           echo "Looking for existing domain $DOMAIN…"
           LIST=$(api "https://api.resend.com/domains")
+
+          # ---- FORENSICS: every domain entry, to catch duplicates / region drift ----
+          echo "=== ALL RESEND DOMAIN ENTRIES (duplicate + region check) ==="
+          echo "$LIST" | jq -r '.data[]? | "DOMAIN_ENTRY name=\(.name) id=\(.id) region=\(.region // "?") status=\(.status // "?") created=\(.created_at // "?")"'
+          MATCH_COUNT=$(echo "$LIST" | jq -r --arg d "$DOMAIN" '[.data[]? | select(.name==$d)] | length')
+          echo "MATCHING_ENTRIES_FOR_${DOMAIN}=$MATCH_COUNT"
+          if [ "$MATCH_COUNT" -gt 1 ] 2>/dev/null; then
+            echo "⚠ DUPLICATE: more than one Resend entry for $DOMAIN — verifying one while DNS may match another."
+          fi
+          echo "==========================================================="
+
           DOMAIN_ID=$(echo "$LIST" | jq -r --arg d "$DOMAIN" '.data[]? | select(.name==$d) | .id' | head -1)
 
           if [ -z "$DOMAIN_ID" ] || [ "$DOMAIN_ID" = "null" ]; then
@@ -251,9 +262,29 @@ jobs:
           fi
 
           # Ask Resend to (re)verify, then print current records + status.
-          api -X POST "https://api.resend.com/domains/$DOMAIN_ID/verify" >/dev/null || true
+          VRESP=$(api -X POST "https://api.resend.com/domains/$DOMAIN_ID/verify")
+          echo "VERIFY_RESP=$(echo "$VRESP" | head -c 300)"
           DETAIL=$(api "https://api.resend.com/domains/$DOMAIN_ID")
           STATUS=$(echo "$DETAIL" | jq -r '.status')
+          echo "DOMAIN_ID=$DOMAIN_ID"
+          echo "REGION=$(echo "$DETAIL" | jq -r '.region // "?"')"
+
+          # ---- FORENSICS: compare the EXACT DKIM value Resend expects vs what is
+          # actually published in DNS (byte-for-byte). A mismatch = perpetual pending.
+          EXP_DKIM=$(echo "$DETAIL" | jq -r '.records[]? | select(.type=="TXT" and (.name|test("_domainkey"))) | .value' | head -1)
+          DKIM_HOST=$(echo "$DETAIL" | jq -r '.records[]? | select(.type=="TXT" and (.name|test("_domainkey"))) | .name' | head -1)
+          PUB_DKIM=$(command dig +short TXT "${DKIM_HOST}.${DOMAIN}" @8.8.8.8 2>/dev/null | tr -d '"' | tr -d '\n' | tr -d ' ')
+          EXP_DKIM_NS=$(printf '%s' "$EXP_DKIM" | tr -d ' ')
+          echo "---- DKIM byte-compare ----"
+          echo "DKIM_EXPECTED_LEN=${#EXP_DKIM_NS}  DKIM_PUBLISHED_LEN=${#PUB_DKIM}"
+          if [ -n "$PUB_DKIM" ] && [ "$EXP_DKIM_NS" = "$PUB_DKIM" ]; then
+            echo "DKIM_MATCH=EXACT ✓ (published value equals what Resend expects)"
+          else
+            echo "DKIM_MATCH=DIFFERENT ✗"
+            echo "DKIM_EXPECTED_HEAD=$(printf '%s' "$EXP_DKIM_NS" | head -c 80)"
+            echo "DKIM_PUBLISHED_HEAD=$(printf '%s' "$PUB_DKIM" | head -c 80)"
+          fi
+          echo "---------------------------"
           echo ""
           echo "========================================="
           echo "DOMAIN: $DOMAIN   STATUS: $STATUS"
