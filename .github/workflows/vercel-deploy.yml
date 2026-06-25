@@ -153,12 +153,16 @@ jobs:
             # (unlike Resend's onboarding@resend.dev test sender, which only
             # reaches the account owner). Clears custom SMTP + lifts the 2/hr cap.
             echo "→ Reverting Supabase Auth to the BUILT-IN mailer (delivers to everyone)…"
+            # Null out the custom-SMTP fields so GoTrue falls back to the built-in
+            # mailer. Do NOT send smtp_admin_email/sender as "" — the API runs an
+            # email-format validator on them and rejects empty strings (HTTP 400).
             SMTP_PAYLOAD=$(jq -n '{
               external_email_enabled: true,
-              smtp_host: "",
-              smtp_user: "",
-              smtp_pass: "",
-              smtp_admin_email: "",
+              smtp_host: null,
+              smtp_user: null,
+              smtp_pass: null,
+              smtp_admin_email: null,
+              smtp_sender_name: null,
               rate_limit_email_sent: 30
             }')
           else
