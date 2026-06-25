@@ -513,9 +513,11 @@ jobs:
           if [ -n "$RESEND_API_KEY" ]; then
             echo "::add-mask::$RESEND_API_KEY"
             RID=$(curl -sS -H "Authorization: Bearer $RESEND_API_KEY" "https://api.resend.com/domains" | jq -r --arg d "$DOMAIN" '.data[]? | select(.name==$d) | .id' | head -1)
-            curl -sS -X POST -H "Authorization: Bearer $RESEND_API_KEY" "https://api.resend.com/domains/$RID/verify" >/dev/null || true
-            RSTATUS=$(curl -sS -H "Authorization: Bearer $RESEND_API_KEY" "https://api.resend.com/domains/$RID" | jq -r '.status')
-            echo "RESEND_FINAL_STATUS=$RSTATUS"
+            VRESP=$(curl -sS -X POST -H "Authorization: Bearer $RESEND_API_KEY" "https://api.resend.com/domains/$RID/verify" || true)
+            DETAIL=$(curl -sS -H "Authorization: Bearer $RESEND_API_KEY" "https://api.resend.com/domains/$RID")
+            echo "RESEND_FINAL_STATUS=$(echo "$DETAIL" | jq -r '.status')"
+            echo "RESEND_VERIFY_RESP=$(echo "$VRESP" | head -c 300)"
+            echo "$DETAIL" | jq -r '.records[]? | "RESEND_REC \(.record // .type) name=\(.name) status=\(.status // "?")"'
           fi
           dig() { command dig "$@"; }
           chk() {
