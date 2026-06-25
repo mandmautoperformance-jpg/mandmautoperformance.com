@@ -455,7 +455,13 @@ jobs:
           }
           echo "========================================="
           echo "PUBLIC DNS CHECK for $DOMAIN (via 8.8.8.8)"
+          echo "NS_RESULT $(command dig +short NS "$DOMAIN" @8.8.8.8 2>/dev/null | tr '\n' ' ')"
+          echo "--- expected (correct host names) ---"
           chk TXT "resend._domainkey.$DOMAIN" "p="
           chk TXT "send.$DOMAIN" "v=spf1"
           chk MX  "send.$DOMAIN" "amazonses"
+          echo "--- double-domain trap (IONOS auto-append) ---"
+          chk TXT "resend._domainkey.$DOMAIN.$DOMAIN" "p="
+          chk TXT "send.$DOMAIN.$DOMAIN" "v=spf1"
+          chk MX  "send.$DOMAIN.$DOMAIN" "amazonses"
           echo "========================================="
