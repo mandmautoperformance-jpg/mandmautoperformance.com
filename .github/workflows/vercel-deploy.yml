@@ -253,6 +253,39 @@ jobs:
             echo "$CONTACT_RESP" | sed 's/HTTP_STATUS:[0-9]*//' | head -c 600; exit 1
           fi
 
+          # War Room deal pipeline. Idempotent — safe to run every deploy.
+          echo "→ Ensuring war_room_deals table + RLS exist…"
+          WR_SQL='create table if not exists public.war_room_deals (
+            id                     uuid primary key default gen_random_uuid(),
+            asset_class            text not null check (asset_class in ('"'"'land'"'"', '"'"'car'"'"')),
+            title                  text not null,
+            location               text,
+            asking_price_pence     bigint,
+            target_buy_pence       bigint,
+            resale_pence           bigint,
+            projected_profit_pence bigint,
+            stage                  text not null default '"'"'sourced'"'"' check (stage in ('"'"'sourced'"'"', '"'"'offer_sent'"'"', '"'"'negotiating'"'"', '"'"'buyer_matched'"'"', '"'"'closed'"'"', '"'"'passed'"'"')),
+            analysis               jsonb not null default '"'"'{}'"'"'::jsonb,
+            created_at             timestamptz not null default now(),
+            updated_at             timestamptz not null default now()
+          );
+          alter table public.war_room_deals enable row level security;
+          drop policy if exists "service role manages war room deals" on public.war_room_deals;
+          create policy "service role manages war room deals"
+            on public.war_room_deals for all using (auth.role() = '"'"'service_role'"'"');'
+          WR_PAYLOAD=$(jq -n --arg q "$WR_SQL" '{query: $q}')
+          WR_RESP=$(curl -sS -w "\nHTTP_STATUS:%{http_code}" -X POST \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" -d "$WR_PAYLOAD" \
+            "https://api.supabase.com/v1/projects/$SUPABASE_REF/database/query")
+          WR_CODE=$(echo "$WR_RESP" | grep -oE 'HTTP_STATUS:[0-9]+' | cut -d: -f2)
+          if [ "$WR_CODE" = "200" ] || [ "$WR_CODE" = "201" ]; then
+            echo "✓ war_room_deals table ready — the War Room pipeline can save."
+          else
+            echo "✗ war_room_deals ensure failed (HTTP $WR_CODE):"
+            echo "$WR_RESP" | sed 's/HTTP_STATUS:[0-9]*//' | head -c 600; exit 1
+          fi
+
       # Definitive proof: fire a REAL signup at the live Supabase auth API using a
       # non-owner test address. With the broken onboarding@resend.dev sender this
       # returns HTTP 500 "Error sending confirmation email"; once email delivers
