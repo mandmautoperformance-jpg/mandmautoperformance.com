@@ -219,6 +219,40 @@ jobs:
             echo "$MIG_RESP" | sed 's/HTTP_STATUS:[0-9]*//' | head -c 600; exit 1
           fi
 
+          # Ensure the contact form has its table. The initial-schema migration
+          # (which is the only place contact_messages is defined) may never have
+          # been applied to this project, so the public /contact form 500s on
+          # insert. This block is fully idempotent — safe to run every deploy.
+          echo "→ Ensuring contact_messages table + RLS exist…"
+          CONTACT_SQL='create table if not exists public.contact_messages (
+            id         uuid primary key default gen_random_uuid(),
+            name       text not null,
+            email      text not null,
+            subject    text not null,
+            message    text not null,
+            status     text not null default '"'"'unread'"'"' check (status in ('"'"'unread'"'"', '"'"'read'"'"', '"'"'replied'"'"')),
+            created_at timestamptz not null default now()
+          );
+          alter table public.contact_messages enable row level security;
+          drop policy if exists "service role manages contact messages" on public.contact_messages;
+          create policy "service role manages contact messages"
+            on public.contact_messages for all using (auth.role() = '"'"'service_role'"'"');
+          drop policy if exists "anyone can submit contact form" on public.contact_messages;
+          create policy "anyone can submit contact form"
+            on public.contact_messages for insert with check (true);'
+          CONTACT_PAYLOAD=$(jq -n --arg q "$CONTACT_SQL" '{query: $q}')
+          CONTACT_RESP=$(curl -sS -w "\nHTTP_STATUS:%{http_code}" -X POST \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" -d "$CONTACT_PAYLOAD" \
+            "https://api.supabase.com/v1/projects/$SUPABASE_REF/database/query")
+          CONTACT_CODE=$(echo "$CONTACT_RESP" | grep -oE 'HTTP_STATUS:[0-9]+' | cut -d: -f2)
+          if [ "$CONTACT_CODE" = "200" ] || [ "$CONTACT_CODE" = "201" ]; then
+            echo "✓ contact_messages table ready — the contact form can save."
+          else
+            echo "✗ contact_messages ensure failed (HTTP $CONTACT_CODE):"
+            echo "$CONTACT_RESP" | sed 's/HTTP_STATUS:[0-9]*//' | head -c 600; exit 1
+          fi
+
       # Definitive proof: fire a REAL signup at the live Supabase auth API using a
       # non-owner test address. With the broken onboarding@resend.dev sender this
       # returns HTTP 500 "Error sending confirmation email"; once email delivers
