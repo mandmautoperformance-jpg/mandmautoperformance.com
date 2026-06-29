@@ -19,7 +19,12 @@ const FALLBACK_MODELS = [MODEL_NAME, 'gemini-2.5-flash', 'gemini-2.5-flash-lite'
   (m, i, arr) => arr.indexOf(m) === i,
 );
 
-export type AssetClass = 'land' | 'car';
+export type AssetClass = 'land' | 'car' | 'stock' | 'gold';
+
+/** Flip assets are sourced & negotiated; market assets are bought at price. */
+export const FLIP_CLASSES: AssetClass[] = ['land', 'car'];
+export const MARKET_CLASSES: AssetClass[] = ['stock', 'gold'];
+export const isFlipClass = (a: AssetClass): boolean => FLIP_CLASSES.includes(a);
 
 export interface DealInput {
   assetClass: AssetClass;
@@ -146,4 +151,112 @@ export async function analyzeDeal(input: DealInput): Promise<DealAnalysis> {
 
   const detail = lastError instanceof Error ? lastError.message : 'unknown error';
   throw new Error(`Deal analysis failed: ${detail}`);
+}
+
+// ---------------------------------------------------------------------------
+// Market assets (stocks, gold) — a different shape: you buy at market, so the
+// engine reasons about entry/target/stop, thesis and catalysts rather than
+// negotiation. NOT financial advice; the model has no live price feed.
+// ---------------------------------------------------------------------------
+
+export interface MarketAnalysis {
+  assetSummary: string;
+  currentPriceGbp: number;
+  entryPriceGbp: number;
+  targetPriceGbp: number;
+  stopLossGbp: number;
+  upsidePct: number;
+  downsidePct: number;
+  recommendation: string; // Accumulate | Buy | Hold | Reduce | Avoid
+  timeHorizon: string;
+  confidence: number; // 0-100
+  thesis: string;
+  catalysts: string[];
+  risks: string[];
+  nextActions: string[];
+}
+
+const MARKET_SYSTEM = `You are the M&M War Room Markets Desk — a disciplined, numerate UK-based markets analyst
+covering equities and gold. You give a clear, structured read: a thesis, entry/target/stop levels, the
+upside vs downside, catalysts and risks, and one decisive call (Accumulate / Buy / Hold / Reduce / Avoid).
+You are NOT a licensed adviser and you say so; this is research/education, not financial advice. You have
+NO live price feed and a knowledge cutoff, so you rely on the current price the user supplies. When the
+price is missing or the picture is uncertain, LOWER the confidence and state what to verify. All money is
+in GBP (£). Position levels must be internally consistent (entry near/below current, stop below entry,
+target above entry for a long).`;
+
+function buildMarketPrompt(input: DealInput): string {
+  const price = input.askingPriceGbp
+    ? `£${input.askingPriceGbp.toLocaleString()}`
+    : 'NOT SUPPLIED (estimate, but lower confidence and flag it)';
+  const what = input.assetClass === 'gold' ? 'gold position' : 'stock / equity';
+  return `Analyse this ${what} as an investment.
+
+INSTRUMENT: ${input.title}
+TICKER / MARKET: ${input.location || 'not stated'}
+CURRENT PRICE (user-supplied): ${price}
+NOTES PROVIDED: ${input.details || 'none'}
+
+Return STRICT JSON (no markdown) matching exactly this shape:
+{
+  "assetSummary": "1-2 sentence plain read on what this is and the setup",
+  "currentPriceGbp": number,           // echo the supplied price, or your best estimate
+  "entryPriceGbp": number,             // sensible entry level
+  "targetPriceGbp": number,            // realistic price target
+  "stopLossGbp": number,               // protective stop
+  "upsidePct": number,                 // % from entry to target
+  "downsidePct": number,               // % from entry to stop
+  "recommendation": "Accumulate|Buy|Hold|Reduce|Avoid",
+  "timeHorizon": "e.g. 6-12 months",
+  "confidence": number,                // 0-100 given the info supplied
+  "thesis": "2-4 sentences: why this could work",
+  "catalysts": ["specific catalyst", "..."],
+  "risks": ["specific risk", "..."],
+  "nextActions": ["concrete next step (e.g. verify latest price/earnings date)", "..."]
+}
+Only output the JSON object.`;
+}
+
+export async function analyzeMarket(input: DealInput): Promise<MarketAnalysis> {
+  if (!process.env.GEMINI_API_KEY && !process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
+    throw new Error('Markets Desk is not configured: missing GEMINI_API_KEY.');
+  }
+
+  let lastError: unknown;
+  for (const modelName of FALLBACK_MODELS) {
+    const model = genAI.getGenerativeModel({
+      model: modelName,
+      systemInstruction: MARKET_SYSTEM,
+      generationConfig: { responseMimeType: 'application/json', temperature: 0.5 },
+    });
+    try {
+      const result = await model.generateContent(buildMarketPrompt(input));
+      let text = result.response.text().trim();
+      text = text.replace(/^```(?:json)?/i, '').replace(/```$/i, '').trim();
+      const raw = JSON.parse(text);
+      return {
+        assetSummary: String(raw.assetSummary || '').slice(0, 600),
+        currentPriceGbp: num(raw.currentPriceGbp, input.askingPriceGbp || 0),
+        entryPriceGbp: num(raw.entryPriceGbp),
+        targetPriceGbp: num(raw.targetPriceGbp),
+        stopLossGbp: num(raw.stopLossGbp),
+        upsidePct: num(raw.upsidePct),
+        downsidePct: num(raw.downsidePct),
+        recommendation: String(raw.recommendation || 'Hold').slice(0, 40),
+        timeHorizon: String(raw.timeHorizon || '').slice(0, 80),
+        confidence: clamp(num(raw.confidence), 0, 100),
+        thesis: String(raw.thesis || '').slice(0, 1200),
+        catalysts: strArray(raw.catalysts),
+        risks: strArray(raw.risks),
+        nextActions: strArray(raw.nextActions),
+      };
+    } catch (error) {
+      lastError = error;
+      console.error(`Markets Desk error (model ${modelName}):`, error);
+      if (!isModelUnavailable(error)) break;
+    }
+  }
+
+  const detail = lastError instanceof Error ? lastError.message : 'unknown error';
+  throw new Error(`Market analysis failed: ${detail}`);
 }

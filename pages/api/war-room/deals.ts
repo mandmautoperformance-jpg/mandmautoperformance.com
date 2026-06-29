@@ -11,6 +11,7 @@ import { getSupabaseServer } from '@/lib/supabase-server';
  * Money is stored in pence (bigint) to match the rest of the schema.
  */
 
+// Flip stages + market stages. "passed" applies to both.
 const STAGES = [
   'sourced',
   'offer_sent',
@@ -18,7 +19,14 @@ const STAGES = [
   'buyer_matched',
   'closed',
   'passed',
+  'watching',
+  'entered',
+  'holding',
+  'exited',
 ];
+
+const VALID_CLASSES = ['land', 'car', 'stock', 'gold'];
+const isFlip = (c: string) => c === 'land' || c === 'car';
 
 const toPence = (gbp: unknown): number | null => {
   const n = typeof gbp === 'string' ? parseFloat(gbp.replace(/[^0-9.]/g, '')) : Number(gbp);
@@ -50,22 +58,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'POST') {
     const b = req.body as any;
-    if (b.assetClass !== 'land' && b.assetClass !== 'car') {
-      return res.status(400).json({ error: 'assetClass must be "land" or "car"' });
+    if (!VALID_CLASSES.includes(b.assetClass)) {
+      return res.status(400).json({ error: 'assetClass must be land, car, stock or gold' });
     }
     if (!b.title || !`${b.title}`.trim()) {
       return res.status(400).json({ error: 'title is required' });
     }
     const analysis = b.analysis || {};
+    const flip = isFlip(b.assetClass);
+    // Map both shapes onto the shared money columns; market assets carry no
+    // single "profit" figure (no position size) so that stays null.
     const row = {
       asset_class: b.assetClass,
       title: `${b.title}`.trim().slice(0, 300),
       location: b.location ? `${b.location}`.trim().slice(0, 200) : null,
-      asking_price_pence: toPence(b.askingPriceGbp),
-      target_buy_pence: toPence(analysis.targetBuyPriceGbp),
-      resale_pence: toPence(analysis.projectedResalePriceGbp),
-      projected_profit_pence: toPence(analysis.projectedProfitGbp),
-      stage: 'sourced',
+      asking_price_pence: toPence(flip ? b.askingPriceGbp : (b.askingPriceGbp ?? analysis.currentPriceGbp)),
+      target_buy_pence: toPence(flip ? analysis.targetBuyPriceGbp : analysis.entryPriceGbp),
+      resale_pence: toPence(flip ? analysis.projectedResalePriceGbp : analysis.targetPriceGbp),
+      projected_profit_pence: flip ? toPence(analysis.projectedProfitGbp) : null,
+      stage: flip ? 'sourced' : 'watching',
       analysis,
     };
     const { data, error } = await supabase

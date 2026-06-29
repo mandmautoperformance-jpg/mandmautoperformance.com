@@ -257,18 +257,22 @@ jobs:
           echo "→ Ensuring war_room_deals table + RLS exist…"
           WR_SQL='create table if not exists public.war_room_deals (
             id                     uuid primary key default gen_random_uuid(),
-            asset_class            text not null check (asset_class in ('"'"'land'"'"', '"'"'car'"'"')),
+            asset_class            text not null,
             title                  text not null,
             location               text,
             asking_price_pence     bigint,
             target_buy_pence       bigint,
             resale_pence           bigint,
             projected_profit_pence bigint,
-            stage                  text not null default '"'"'sourced'"'"' check (stage in ('"'"'sourced'"'"', '"'"'offer_sent'"'"', '"'"'negotiating'"'"', '"'"'buyer_matched'"'"', '"'"'closed'"'"', '"'"'passed'"'"')),
+            stage                  text not null default '"'"'sourced'"'"',
             analysis               jsonb not null default '"'"'{}'"'"'::jsonb,
             created_at             timestamptz not null default now(),
             updated_at             timestamptz not null default now()
           );
+          alter table public.war_room_deals drop constraint if exists war_room_deals_asset_class_check;
+          alter table public.war_room_deals add constraint war_room_deals_asset_class_check check (asset_class in ('"'"'land'"'"', '"'"'car'"'"', '"'"'stock'"'"', '"'"'gold'"'"'));
+          alter table public.war_room_deals drop constraint if exists war_room_deals_stage_check;
+          alter table public.war_room_deals add constraint war_room_deals_stage_check check (stage in ('"'"'sourced'"'"', '"'"'offer_sent'"'"', '"'"'negotiating'"'"', '"'"'buyer_matched'"'"', '"'"'closed'"'"', '"'"'passed'"'"', '"'"'watching'"'"', '"'"'entered'"'"', '"'"'holding'"'"', '"'"'exited'"'"'));
           alter table public.war_room_deals enable row level security;
           drop policy if exists "service role manages war room deals" on public.war_room_deals;
           create policy "service role manages war room deals"
