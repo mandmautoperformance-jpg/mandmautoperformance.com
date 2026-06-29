@@ -664,6 +664,23 @@ jobs:
             && echo "✓ Email sent — check mandmautoperformance@gmail.com" \
             || echo "✗ Email NOT sent — see reason above (likely RESEND_API_KEY missing in Vercel)"
 
+          # Fire a REAL contact-form submission end-to-end: this exercises the
+          # DB save (contact_messages) AND the owner-notification email exactly
+          # as a customer would, then reports the live API's response.
+          echo ""
+          echo "→ Submitting a live test enquiry to /api/contact …"
+          CRESP=$(curl -sS -w "\nHTTP_STATUS:%{http_code}" -X POST \
+            "https://mandmautoperformance.com/api/contact" \
+            -H "Content-Type: application/json" \
+            -d '{"name":"M&M Self-Test","email":"selftest@mandmautoperformance.com","subject":"support","message":"Automated end-to-end test of the contact form. I need a new tyre."}' || true)
+          echo "========================================="
+          echo "CONTACT FORM TEST RESULT:"
+          echo "$CRESP"
+          echo "========================================="
+          echo "$CRESP" | grep -q '"success":true' \
+            && echo "✓ Contact form accepted the enquiry (saved + emailed)." \
+            || echo "✗ Contact form returned an error — see above."
+
       # Prove MIA (Gemini) actually answers on the live site by sending her a
       # real message and inspecting the streamed reply.
       - name: Verify live (MIA + Stripe)
