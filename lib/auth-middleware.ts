@@ -117,3 +117,65 @@ export async function verifyAdmin(
   req.isAuthenticated = true;
   return user.id;
 }
+
+/**
+ * The single owner login that may access the private "War Room". Configurable
+ * via WAR_ROOM_OWNER_EMAIL; falls back to the known owner so the gate works
+ * even before that env var is set. Always compared case-insensitively.
+ */
+export function getOwnerEmail(): string {
+  return (process.env.WAR_ROOM_OWNER_EMAIL || 'mahdikermanii@outlook.com')
+    .trim()
+    .toLowerCase();
+}
+
+/**
+ * Verifies the caller is THE owner — a much stricter gate than verifyAdmin:
+ * the signed-in user's email must exactly match getOwnerEmail(). Other admins
+ * are intentionally rejected, so the War Room is visible to one account only.
+ *
+ * Returns the userId on success, or null after writing a 401 (not signed in)
+ * / 403 (signed in but not the owner) response.
+ */
+export async function verifyOwner(
+  req: AuthenticatedRequest,
+  res: NextApiResponse,
+): Promise<string | null> {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    req.isAuthenticated = false;
+    res.status(401).json({ error: 'Unauthorized. Please sign in.' });
+    return null;
+  }
+
+  const token = authHeader.slice(7);
+  let user;
+  try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    );
+    const { data, error } = await supabase.auth.getUser(token);
+    if (error || !data.user) {
+      req.isAuthenticated = false;
+      res.status(401).json({ error: 'Unauthorized. Please sign in.' });
+      return null;
+    }
+    user = data.user;
+  } catch {
+    req.isAuthenticated = false;
+    res.status(401).json({ error: 'Unauthorized. Please sign in.' });
+    return null;
+  }
+
+  const email = (user.email || '').toLowerCase();
+  if (email === '' || email !== getOwnerEmail()) {
+    req.isAuthenticated = true;
+    res.status(403).json({ error: 'Forbidden: owner access only.' });
+    return null;
+  }
+
+  req.userId = user.id;
+  req.isAuthenticated = true;
+  return user.id;
+}
