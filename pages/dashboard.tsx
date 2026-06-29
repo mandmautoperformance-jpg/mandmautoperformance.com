@@ -11,6 +11,7 @@ export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isOwner, setIsOwner] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -18,6 +19,17 @@ export default function DashboardPage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.push('/login'); return; }
       setUser(session.user);
+
+      // Owner-only: reveal the War Room entry only when the server confirms
+      // this account is the owner. Failures simply keep it hidden.
+      try {
+        const res = await fetch('/api/war-room/status', {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        if (res.ok) setIsOwner(true);
+      } catch {
+        // keep hidden
+      }
 
       const { data } = await supabase
         .from('bookings')
@@ -83,6 +95,23 @@ export default function DashboardPage() {
                   Upload now
                 </Link>
               </div>
+            )}
+
+            {/* Owner-only War Room entry — invisible to every other account */}
+            {isOwner && (
+              <Link
+                href="/war-room"
+                className="mb-8 flex items-center gap-4 bg-gradient-to-r from-performance-turquoise/20 to-performance-babyblue/10 border border-performance-turquoise/40 rounded-xl p-5 hover:border-performance-turquoise/70 transition-all group"
+              >
+                <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-performance-turquoise/15 border border-performance-turquoise/30 flex items-center justify-center text-xl">
+                  🛡️
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-white text-sm">Enter the War Room</p>
+                  <p className="text-gray-400 text-xs mt-0.5">Your private owner-only control space.</p>
+                </div>
+                <ChevronRight size={20} className="text-performance-turquoise group-hover:translate-x-1 transition-transform" />
+              </Link>
             )}
 
             {/* Welcome */}
