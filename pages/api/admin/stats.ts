@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { verifyAuth } from '@/lib/auth-middleware';
+import { verifyAdmin } from '@/lib/auth-middleware';
 import { createClient } from '@supabase/supabase-js';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -7,7 +7,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const userId = await verifyAuth(req as any, res, true);
+  const userId = await verifyAdmin(req as any, res);
   if (!userId) return;
 
   const supabase = createClient(
@@ -39,6 +39,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const activeCount = activeBookings?.length || 0;
 
+    // New reservation leads awaiting follow-up. Guarded: if the
+    // booking_requests table hasn't been migrated yet, treat as 0 rather than
+    // failing the whole stats response.
+    let newRequests = 0;
+    const requestsCount = await supabase
+      .from('booking_requests')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'new');
+    if (!requestsCount.error) newRequests = requestsCount.count || 0;
+
     // Fleet utilization
     const { data: vehicles } = await supabase.from('vehicles').select('*');
     const totalVehicles = vehicles?.length || 0;
@@ -61,6 +71,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       users: totalUsers,
       revenue: totalRevenue.toFixed(2),
       activeBookings: activeCount,
+      newRequests,
       fleetUtilization: totalVehicles > 0 ? Math.round((activeCount / totalVehicles) * 100) : 0,
       apis,
       oauth,

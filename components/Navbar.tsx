@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { Menu, X, User, LogOut } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
@@ -42,11 +43,17 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 bg-gradient-to-br from-performance-turquoise to-performance-babyblue rounded-lg flex items-center justify-center">
-              <span className="text-performance-grey font-bold text-lg">M</span>
-            </div>
-            <span className="text-white font-bold text-lg hidden sm:inline">
-              M&M Auto
+            <Image
+              src="/logo.svg"
+              alt="M&M Auto Performance UK"
+              width={44}
+              height={44}
+              className="rounded-full"
+              priority
+              unoptimized
+            />
+            <span className="text-white font-bold text-lg hidden sm:inline tracking-wide">
+              M&amp;M Auto Performance
             </span>
           </Link>
 

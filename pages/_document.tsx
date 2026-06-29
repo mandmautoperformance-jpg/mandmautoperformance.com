@@ -10,7 +10,11 @@ export default function Document() {
         <meta property="og:title" content="M&M Auto Performance | Premium AI Car Hire" />
         <meta property="og:description" content="Premium luxury and supercar hire powered by MIA - your Motor Intelligence Assistant. Serving Hertfordshire and London." />
         <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="M&M Auto Performance" />
         <meta property="og:url" content="https://mandmautoperformance.com" />
+        <meta property="og:image" content="https://mandmautoperformance.com/luxury-london-banner.webp" />
+        <meta property="og:image:alt" content="Rolls-Royce at Big Ben — M&M Auto Performance luxury car hire" />
+        <meta name="twitter:image" content="https://mandmautoperformance.com/luxury-london-banner.webp" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="M&M Auto Performance" />
         <meta name="twitter:description" content="Premium AI-powered luxury car hire in Hertfordshire & London" />
@@ -26,7 +30,7 @@ export default function Document() {
               "name": "M&M Auto Performance",
               "description": "Premium AI-powered luxury and supercar hire in Hertfordshire and London",
               "url": "https://mandmautoperformance.com",
-              "telephone": "+44-1727-000000",
+              "email": "mandmautoperformance@gmail.com",
               "address": {
                 "@type": "PostalAddress",
                 "addressLocality": "St Albans",

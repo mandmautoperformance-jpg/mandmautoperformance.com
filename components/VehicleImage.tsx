@@ -1,103 +1,124 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import Image from 'next/image';
 import { Car } from 'lucide-react';
+import { exteriorsFor, interiorsFor, hashId, type Photo } from '@/lib/vehicle-photos';
 
-/**
- * Real fleet photography.
- *
- * Each entry below is a freely-licensed photo of the EXACT model, served via
- * Wikimedia Commons' `Special:FilePath` endpoint (resolves a file by name and
- * returns a sized thumbnail via `?width=`). We match on a distinctive token in
- * the model name so it works across every page regardless of how the vehicle
- * id is set. If a photo ever fails to load we fall back to the branded card
- * below — so we NEVER show a stock photo of the wrong car.
- *
- * To use a real photo of one of YOUR OWN cars instead, drop the file in
- * `public/fleet/` (e.g. public/fleet/lambo-huracan.jpg) and point the matching
- * entry at `/fleet/lambo-huracan.jpg`.
- */
-const WIKIMEDIA = (file: string, width = 1200) =>
-  `https://commons.wikimedia.org/wiki/Special:FilePath/${file}?width=${width}`;
-
-interface PhotoRule {
-  /** lower-cased token that must appear in the model name */
-  match: string;
-  url: string;
-}
-
-const PHOTO_RULES: PhotoRule[] = [
-  { match: 'huracan', url: WIKIMEDIA('Orange_Lamborghini_Huracan_Performante.jpg') },
-  { match: 'revuelto', url: WIKIMEDIA('2023_Lamborghini_Revuelto.jpg') },
-  { match: 'f8', url: WIKIMEDIA('Vue_trois_quarts_avant_F8_tributo.jpg') },
-  { match: '911', url: WIKIMEDIA('Porsche_911_Turbo_S_Heckansicht.JPG') },
-  { match: 'bentley', url: WIKIMEDIA('Bentley_Continental_GT_Monaco_IMG_1208.jpg') },
-  { match: 'ghost', url: WIKIMEDIA('Rolls-Royce_Ghost_II_IAA_2021_1X7A0005.jpg') },
-  { match: 'db12', url: WIKIMEDIA('Aston_Martin_DB12_04.jpg') },
-  { match: 'plaid', url: WIKIMEDIA('2023_Tesla_Model_S_Plaid.jpg') },
-  { match: 'range rover', url: WIKIMEDIA('2023_Range_Rover_Sport_2.jpg') },
-  {
-    match: 'amg',
-    url: WIKIMEDIA(
-      'Osaka_Motor_Show_2019_%28272%29_-_Mercedes-AMG_GT_63_S_4MATIC%2B_%28X290%29.jpg',
-    ),
-  },
-];
-
-function photoFor(model: string): string | undefined {
-  // Strip diacritics (e.g. "Huracán" -> "huracan") so token matching is reliable.
-  const m = model
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase();
-  return PHOTO_RULES.find((rule) => m.includes(rule.match))?.url;
-}
+// Re-export so existing imports from this module keep working.
+export { galleryFor, exteriorsFor, interiorsFor, hashId } from '@/lib/vehicle-photos';
+export type { Photo, PhotoKind } from '@/lib/vehicle-photos';
 
 const CATEGORY_GRADIENT: Record<string, string> = {
   luxury: 'from-blue-600/30 via-performance-grey to-performance-grey',
   sports: 'from-red-600/25 via-performance-grey to-performance-grey',
   supercar: 'from-purple-600/30 via-performance-grey to-performance-grey',
   exotic: 'from-performance-turquoise/30 via-performance-grey to-performance-grey',
+  suv: 'from-emerald-700/25 via-performance-grey to-performance-grey',
+  executive: 'from-slate-500/25 via-performance-grey to-performance-grey',
 };
 
 interface VehicleImageProps {
   vehicleId: string;
   model: string;
-  category: 'luxury' | 'sports' | 'supercar' | 'exotic';
+  category: 'luxury' | 'sports' | 'supercar' | 'exotic' | 'suv' | 'executive';
+  colorHex?: string;
+  /** The advertised colour label, used to keep fallbacks colour-consistent. */
+  color?: string;
+  /** Fleet-unique pinned hero photo; shown first so no two cards match. */
+  heroPhoto?: string;
 }
 
-export const VehicleImage: React.FC<VehicleImageProps> = ({ model, category }) => {
-  const photo = photoFor(model);
-  const [failed, setFailed] = useState(false);
+export const VehicleImage: React.FC<VehicleImageProps> = ({
+  vehicleId,
+  model,
+  category,
+  colorHex,
+  color,
+  heroPhoto,
+}) => {
+  const seed = useMemo(() => hashId(vehicleId), [vehicleId]);
 
-  if (photo && !failed) {
+  // Lead with the fleet-unique hero photo pinned at generation time, then keep
+  // the rest of the model's pool as load-failure fallbacks. This guarantees the
+  // grid never shows the same image twice. If the hero fails, any working photo
+  // for that model is shown rather than the branded placeholder.
+  const pool = useMemo<Photo[]>(() => {
+    const photos = exteriorsFor(model);
+    if (!photos.length) return [];
+
+    if (heroPhoto && photos.some((p) => p.url === heroPhoto)) {
+      const hero = photos.find((p) => p.url === heroPhoto)!;
+      return [hero, ...photos.filter((p) => p.url !== heroPhoto)];
+    }
+
+    const start = seed % photos.length;
+    return photos.map((_, i) => photos[(start + i) % photos.length]);
+  }, [model, seed, heroPhoto]);
+
+  // Interior shot (if licensed photography exists) — revealed on card hover.
+  const interior = useMemo<Photo | undefined>(() => interiorsFor(model)[0], [model]);
+
+  const [attempt, setAttempt] = useState(0);
+  const [interiorFailed, setInteriorFailed] = useState(false);
+  const current = pool[attempt];
+
+  if (current) {
+    // Wide crop variation so cards never feel like the same framing.
+    const objX = 30 + ((seed >> 3) % 41); // 30%..70%
+    const objY = 35 + ((seed >> 8) % 31); // 35%..65%
+    const showInterior = interior && !interiorFailed;
     return (
-      <Image
-        src={photo}
-        alt={model}
-        fill
-        onError={() => setFailed(true)}
-        className="object-cover group-hover:scale-110 transition-transform duration-500"
-        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-      />
+      <>
+        <Image
+          key={current.url}
+          src={current.url}
+          alt={model}
+          fill
+          onError={() => setAttempt((a) => a + 1)}
+          className={`object-cover transition-all duration-500 ${
+            showInterior ? 'group-hover:opacity-0' : 'group-hover:scale-110'
+          }`}
+          style={{ objectPosition: `${objX}% ${objY}%` }}
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+        />
+        {showInterior && (
+          <>
+            {/* Interior crossfade layer */}
+            <Image
+              key={interior!.url}
+              src={interior!.url}
+              alt={`${model} interior`}
+              fill
+              onError={() => setInteriorFailed(true)}
+              className="object-cover opacity-0 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+            />
+            {/* "Interior" hint pill, appears on hover */}
+            <span className="absolute top-4 left-1/2 -translate-x-1/2 z-20 px-2.5 py-0.5 rounded-full bg-performance-grey/85 backdrop-blur-sm border border-performance-turquoise/40 text-performance-turquoise text-[9px] font-bold tracking-[0.2em] uppercase opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+              Interior
+            </span>
+          </>
+        )}
+      </>
     );
   }
 
-  // Premium branded fallback — intentional, on-brand, and never mismatched.
+  // Premium branded fallback — tinted with the car's actual colour.
   return (
     <div
       className={`absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br ${
         CATEGORY_GRADIENT[category] ?? CATEGORY_GRADIENT.luxury
       }`}
     >
-      <Car
-        size={64}
-        strokeWidth={1}
-        className="text-performance-turquoise/70 mb-3 group-hover:scale-110 transition-transform duration-500"
-      />
-      <span className="text-white/90 font-bold text-lg tracking-wide text-center px-6">
-        {model}
-      </span>
-      <span className="mt-2 text-[10px] uppercase tracking-[0.25em] text-performance-turquoise/70">
+      {colorHex && (
+        <div
+          aria-hidden
+          className="absolute inset-0 opacity-40"
+          style={{ background: `radial-gradient(circle at 50% 35%, ${colorHex}66, transparent 70%)` }}
+        />
+      )}
+      <Car size={64} strokeWidth={1} className="relative text-performance-turquoise/70 mb-3 group-hover:scale-110 transition-transform duration-500" />
+      <span className="relative text-white/90 font-bold text-lg tracking-wide text-center px-6">{model}</span>
+      <span className="relative mt-2 text-[10px] uppercase tracking-[0.25em] text-performance-turquoise/70">
         M&amp;M Auto Performance
       </span>
     </div>

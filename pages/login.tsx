@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { Eye, EyeOff, Zap, AlertCircle } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseBrowser } from '@/lib/supabase-browser';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -19,10 +20,7 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      );
+      const supabase = getSupabaseBrowser();
       const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
       if (authError) throw authError;
       router.push('/dashboard');
@@ -50,13 +48,11 @@ export default function LoginPage() {
           {/* Logo */}
           <div className="text-center mb-8">
             <Link href="/" className="inline-flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-gradient-to-br from-performance-turquoise to-performance-babyblue rounded-xl flex items-center justify-center">
-                <span className="text-performance-grey font-bold text-xl">M</span>
-              </div>
-              <span className="text-white font-bold text-xl">M&M Auto Performance</span>
+              <Image src="/logo.svg" alt="M&M Auto Performance" width={44} height={44} unoptimized className="rounded-full" />
+              <span className="text-white font-bold text-xl">M&amp;M Auto Performance</span>
             </Link>
-            <h1 className="text-3xl font-bold text-white">Welcome back</h1>
-            <p className="text-gray-400 mt-2">Sign in to your account</p>
+            <h1 className="font-display text-3xl font-bold text-white">Welcome back</h1>
+            <p className="text-gray-400 mt-2">Sign in to continue your journey</p>
           </div>
 
           {/* Card */}

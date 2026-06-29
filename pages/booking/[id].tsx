@@ -1,72 +1,18 @@
-import React, { useState } from 'react';
+import React from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import Image from 'next/image';
 import Navbar from '@/components/Navbar';
 import BookingWidget from '@/components/BookingWidget';
-import { ChevronLeft, Star, MapPin, Zap, Shield, Clock } from 'lucide-react';
-
-const VEHICLES: Record<string, any> = {
-  'lambo-huracan': {
-    model: 'Lamborghini Huracán',
-    category: 'Supercar',
-    image: 'https://images.unsplash.com/photo-1552820728-8ac41f1ce891?w=1200&h=800&fit=crop',
-    specs: { horsepower: 657, acceleration: '2.9s 0-60mph', topSpeed: '217 mph', transmission: 'Automatic' },
-    pricing: { daily: 1500, hourly: 200, weekend: 4000 },
-    features: ['GPS Navigation', 'Premium Sound System', 'Full Leather Interior', 'Climate Control', 'Keyless Entry', 'Backup Camera'],
-    description: 'Experience pure Italian performance. The Huracán is raw, visceral, and unforgettable.',
-    rating: 4.9,
-    reviews: 127,
-    availability: 'Available from tomorrow',
-    location: 'Mayfair, London',
-  },
-  'ferrari-f8': {
-    model: 'Ferrari F8 Tributo',
-    category: 'Supercar',
-    image: 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=1200&h=800&fit=crop',
-    specs: { horsepower: 710, acceleration: '2.9s 0-60mph', topSpeed: '211 mph', transmission: 'Automatic' },
-    pricing: { daily: 1800, hourly: 250, weekend: 4800 },
-    features: ['Carbon Fiber Trim', 'Sport Package', 'Burmester Audio', 'Daytona Seats', 'F1-Style Shifter', 'Launch Control'],
-    description: 'The pinnacle of Ferrari engineering. Every detail designed for performance.',
-    rating: 5.0,
-    reviews: 89,
-    availability: 'Available this weekend',
-    location: 'St Albans, Herts',
-  },
-  'porsche-911': {
-    model: 'Porsche 911 Turbo S',
-    category: 'Sports Car',
-    image: 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?w=1200&h=800&fit=crop',
-    specs: { horsepower: 640, acceleration: '2.7s 0-60mph', topSpeed: '211 mph', transmission: 'Automatic' },
-    pricing: { daily: 800, hourly: 120, weekend: 2200 },
-    features: ['Night Vision', 'Adaptive Suspension', 'Premium Leather', 'Paddle Shifters', 'Heated Seats', 'Apple CarPlay'],
-    description: 'Iconic performance. Precision engineering. The 911 Turbo S is pure Porsche.',
-    rating: 4.8,
-    reviews: 234,
-    availability: 'Available today',
-    location: 'Watford, Herts',
-  },
-  'bentley-continental': {
-    model: 'Bentley Continental GT',
-    category: 'Luxury',
-    image: 'https://images.unsplash.com/photo-1563720223185-11003d516935?w=1200&h=800&fit=crop',
-    specs: { horsepower: 626, acceleration: '3.6s 0-60mph', topSpeed: '198 mph', transmission: 'Automatic' },
-    pricing: { daily: 600, hourly: 100, weekend: 1600 },
-    features: ['Full Leather Interiors', 'Heated/Cooled Seats', 'WiFi Connectivity', 'Premium Bar', 'Panoramic Roof', 'Navigation Plus'],
-    description: 'British luxury meets German engineering. Effortless power and elegance.',
-    rating: 4.7,
-    reviews: 156,
-    availability: 'Currently booked',
-    location: 'Mayfair, London',
-  },
-};
+import VehicleGallery from '@/components/VehicleGallery';
+import { getVehicle, weekendPrice } from '@/lib/vehicles';
+import { getCategoryRequirement, requirementLabel } from '@/lib/driver-eligibility';
+import { ChevronLeft, Star, Zap, Shield, Clock, ShieldCheck } from 'lucide-react';
 
 export default function VehicleBookingPage() {
   const router = useRouter();
   const { id } = router.query;
-  const vehicle = id ? VEHICLES[id as string] : null;
-  const [selectedImage, setSelectedImage] = useState(0);
+  const vehicle = getVehicle(id as string | undefined);
 
   if (!vehicle) {
     return (
@@ -99,22 +45,20 @@ export default function VehicleBookingPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
               {/* Images & Details */}
               <div className="lg:col-span-2 space-y-6">
-                <div className="rounded-xl overflow-hidden">
-                  <Image
-                    src={vehicle.image}
-                    alt={vehicle.model}
-                    width={800}
-                    height={600}
-                    className="w-full h-96 object-cover"
-                  />
-                </div>
+                <VehicleGallery
+                  heroPhoto={vehicle.heroPhoto}
+                  model={vehicle.model}
+                  category={vehicle.category}
+                  color={vehicle.color}
+                  colorHex={vehicle.colorHex}
+                />
 
                 {/* Specs Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {[
                     { label: 'Horsepower', value: vehicle.specs.horsepower + ' HP' },
                     { label: '0–60 mph', value: vehicle.specs.acceleration },
-                    { label: 'Top Speed', value: vehicle.specs.topSpeed },
+                    { label: 'Top Speed', value: `${vehicle.specs.topSpeed} mph` },
                     { label: 'Transmission', value: vehicle.specs.transmission },
                   ].map((spec, i) => (
                     <div key={i} className="bg-performance-grey border border-performance-turquoise/20 rounded-lg p-4 text-center">
@@ -163,8 +107,18 @@ export default function VehicleBookingPage() {
               <div className="space-y-6">
                 {/* Price Card */}
                 <div className="bg-gradient-to-br from-performance-turquoise/20 to-performance-babyblue/10 border border-performance-turquoise/30 rounded-xl p-6">
-                  <h2 className="text-2xl font-bold text-white mb-4">{vehicle.model}</h2>
-                  <p className="text-gray-400 text-sm mb-4">{vehicle.location}</p>
+                  <h2 className="text-2xl font-bold text-white mb-2">{vehicle.model}</h2>
+                  <div className="flex items-center gap-2 mb-2">
+                    {vehicle.colorHex && (
+                      <span
+                        className="inline-block w-4 h-4 rounded-full border border-white/30"
+                        style={{ backgroundColor: vehicle.colorHex }}
+                        aria-hidden
+                      />
+                    )}
+                    <span className="text-gray-300 text-sm">{vehicle.color}</span>
+                  </div>
+                  <p className="text-gray-400 text-sm mb-4">{vehicle.location} · {vehicle.plate}</p>
 
                   <div className="space-y-3 mb-6 pb-6 border-b border-performance-turquoise/20">
                     <div className="flex justify-between">
@@ -177,15 +131,22 @@ export default function VehicleBookingPage() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-300">Weekend (3 days)</span>
-                      <span className="text-white font-bold">£{vehicle.pricing.weekend}</span>
+                      <span className="text-white font-bold">£{weekendPrice(vehicle.pricing.daily)}</span>
                     </div>
                   </div>
 
-                  <p className="text-sm text-performance-turquoise font-semibold mb-4">✓ {vehicle.availability}</p>
+                  <p className="text-sm text-performance-turquoise font-semibold mb-4">
+                    {vehicle.availability ? '✓ Available to reserve now' : 'Currently on hire — request dates'}
+                  </p>
+
+                  <div className="flex items-start gap-2 text-xs text-gray-300 bg-performance-grey/40 border border-performance-turquoise/20 rounded-lg px-3 py-2">
+                    <ShieldCheck size={15} className="text-performance-turquoise flex-shrink-0 mt-0.5" />
+                    <span>{requirementLabel(getCategoryRequirement(vehicle.category))}. Instant DVLA-grade licence check at booking.</span>
+                  </div>
                 </div>
 
                 {/* Booking Widget */}
-                <BookingWidget mode="detailed" />
+                <BookingWidget mode="detailed" vehicle={vehicle} />
 
                 {/* Guarantees */}
                 <div className="bg-performance-grey border border-performance-turquoise/20 rounded-xl p-5 space-y-3">

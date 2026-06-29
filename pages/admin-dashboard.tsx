@@ -4,47 +4,55 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import AdminAPIConfiguration from '@/components/AdminAPIConfiguration';
 import LeadScraperAndMarketing from '@/components/LeadScraperAndMarketing';
-import { createClient } from '@supabase/supabase-js';
+import AdminReservations from '@/components/AdminReservations';
+import AdminIDDocuments from '@/components/AdminIDDocuments';
+import { getSupabaseBrowser } from '@/lib/supabase-browser';
 
 interface AdminStats {
   users: number;
   revenue: string;
   activeBookings: number;
   fleetUtilization: number;
+  newRequests?: number;
 }
 
 const AdminDashboard: React.FC = () => {
   const router = useRouter();
   const [activeSection, setActiveSection] = useState<
-    'overview' | 'api-config' | 'marketing' | 'analytics'
+    'overview' | 'reservations' | 'id-documents' | 'api-config' | 'marketing' | 'analytics'
   >('overview');
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
     async function checkAuth() {
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      );
+      const supabase = getSupabaseBrowser();
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         router.push('/login');
         return;
       }
-      setAuthChecked(true);
 
+      // The /api/admin/stats endpoint is admin-gated server-side. Use its
+      // response to decide whether this user may see the control center:
+      // a 401/403 means "not an admin" → bounce them to the home page.
       try {
         const res = await fetch('/api/admin/stats', {
           headers: { Authorization: `Bearer ${session.access_token}` },
         });
+        if (res.status === 401 || res.status === 403) {
+          router.replace('/');
+          return;
+        }
         if (res.ok) {
           const data = await res.json();
           setStats(data);
         }
       } catch {
-        // Stats fetch is non-fatal
+        // Network/5xx errors are non-fatal: sensitive actions remain
+        // protected server-side, so still show the shell for a real admin.
       }
+      setAuthChecked(true);
     }
     checkAuth();
   }, [router]);
@@ -58,10 +66,12 @@ const AdminDashboard: React.FC = () => {
   }
 
   const sections = [
-    { id: 'overview', label: '📊 Overview', icon: '📊' },
-    { id: 'api-config', label: '🔧 API Configuration', icon: '🔧' },
-    { id: 'marketing', label: '🎯 Growth & Marketing', icon: '🎯' },
-    { id: 'analytics', label: '📈 Analytics', icon: '📈' },
+    { id: 'overview', label: 'Overview', icon: '📊' },
+    { id: 'reservations', label: 'Reservations', icon: '📋' },
+    { id: 'id-documents', label: 'ID Documents', icon: '🪪' },
+    { id: 'api-config', label: 'API Configuration', icon: '🔧' },
+    { id: 'marketing', label: 'Growth & Marketing', icon: '🎯' },
+    { id: 'analytics', label: 'Analytics', icon: '📈' },
   ];
 
   return (
@@ -106,8 +116,9 @@ const AdminDashboard: React.FC = () => {
         <div className="max-w-7xl mx-auto px-6 py-12">
           {activeSection === 'overview' && (
             <div className="space-y-6">
-              <div className="grid md:grid-cols-4 gap-4 mb-8">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
                 <StatCard title="Active Users" value={stats ? String(stats.users) : '—'} trend="from Supabase" />
+                <StatCard title="New Requests" value={stats?.newRequests != null ? String(stats.newRequests) : '—'} trend="awaiting follow-up" />
                 <StatCard title="Active Bookings" value={stats ? String(stats.activeBookings) : '—'} trend="confirmed + active" />
                 <StatCard title="Revenue" value={stats ? `£${stats.revenue}` : '—'} trend="completed bookings" />
                 <StatCard title="Fleet Utilisation" value={stats ? `${stats.fleetUtilization}%` : '—'} trend="vehicles active" />
@@ -117,7 +128,20 @@ const AdminDashboard: React.FC = () => {
                 <div className="rounded-xl bg-gradient-to-br from-gunmetal to-dark-gunmetal border border-electric-turquoise/30 p-6">
                   <h3 className="text-xl font-bold text-white mb-4">🚀 Quick Actions</h3>
                   <div className="space-y-3">
-                    <ActionButton label="Setup Wizard" href="/setup" />
+                    <button
+                      onClick={() => setActiveSection('reservations')}
+                      className="flex items-center justify-between w-full px-4 py-3 rounded-lg bg-electric-turquoise/10 border border-electric-turquoise/30 text-white hover:bg-electric-turquoise/20 transition-all"
+                    >
+                      <span>Reservation Requests</span>
+                      <span className="text-electric-turquoise">→</span>
+                    </button>
+                    <button
+                      onClick={() => setActiveSection('id-documents')}
+                      className="flex items-center justify-between w-full px-4 py-3 rounded-lg bg-electric-turquoise/10 border border-electric-turquoise/30 text-white hover:bg-electric-turquoise/20 transition-all"
+                    >
+                      <span>ID Document Review</span>
+                      <span className="text-electric-turquoise">→</span>
+                    </button>
                     <ActionButton label="View Analytics" href="/analytics" />
                     <ActionButton label="Manage Fleet" href="/fleet" />
                     <ActionButton label="User Settings" href="/settings" />
@@ -137,6 +161,8 @@ const AdminDashboard: React.FC = () => {
             </div>
           )}
 
+          {activeSection === 'reservations' && <AdminReservations />}
+          {activeSection === 'id-documents' && <AdminIDDocuments />}
           {activeSection === 'api-config' && <AdminAPIConfiguration />}
           {activeSection === 'marketing' && <LeadScraperAndMarketing />}
           {activeSection === 'analytics' && (
@@ -159,13 +185,13 @@ const StatCard: React.FC<{ title: string; value: string; trend: string }> = ({ t
 );
 
 const ActionButton: React.FC<{ label: string; href: string }> = ({ label, href }) => (
-  <a
+  <Link
     href={href}
     className="flex items-center justify-between w-full px-4 py-3 rounded-lg bg-electric-turquoise/10 border border-electric-turquoise/30 text-white hover:bg-electric-turquoise/20 transition-all"
   >
     <span>{label}</span>
     <span className="text-electric-turquoise">→</span>
-  </a>
+  </Link>
 );
 
 const StatusLine: React.FC<{ label: string; status: string; color: string }> = ({ label, status, color }) => (

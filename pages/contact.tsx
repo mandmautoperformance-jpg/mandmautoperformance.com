@@ -42,9 +42,12 @@ export default function ContactPage() {
           <div className="max-w-7xl mx-auto">
 
             <div className="text-center mb-14">
-              <h1 className="text-5xl font-bold text-white mb-4">Get in Touch</h1>
+              <p className="text-performance-turquoise text-[10px] font-bold tracking-[0.45em] uppercase mb-3">
+                We're Here For You
+              </p>
+              <h1 className="font-display text-5xl font-bold text-white mb-4">Get in Touch</h1>
               <p className="text-gray-400 text-lg max-w-xl mx-auto">
-                We're available 24/7 via MIA, or reach us directly below.
+                Available 24/7 via MIA, or reach our team directly below.
               </p>
             </div>
 
@@ -54,14 +57,14 @@ export default function ContactPage() {
               <div className="space-y-5">
                 {[
                   {
-                    icon: <Phone size={22} className="text-performance-turquoise" />,
-                    title: 'Phone',
-                    lines: ['Coming soon', 'Call or WhatsApp'],
-                  },
-                  {
                     icon: <Mail size={22} className="text-performance-turquoise" />,
                     title: 'Email',
-                    lines: ['hello@mandmautoperformance.com', 'Replies within 2 hours'],
+                    lines: ['mandmautoperformance@gmail.com', 'Replies within 2 hours'],
+                  },
+                  {
+                    icon: <Phone size={22} className="text-performance-turquoise" />,
+                    title: 'Instant chat',
+                    lines: ['Ask MIA, our AI concierge', 'Available 24/7, bottom-right'],
                   },
                   {
                     icon: <MapPin size={22} className="text-performance-turquoise" />,

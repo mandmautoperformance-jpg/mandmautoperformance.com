@@ -1,178 +1,118 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Head from 'next/head';
+import { useRouter } from 'next/router';
 import Navbar from '@/components/Navbar';
 import FleetCard from '@/components/FleetCard';
-import { Filter, Search, SlidersHorizontal } from 'lucide-react';
+import { Search, SlidersHorizontal } from 'lucide-react';
+import { VEHICLES as ALL_VEHICLES, MAKES, CATEGORY_LABELS, type VehicleCategory } from '@/lib/vehicles';
 
-interface Vehicle {
-  vehicleId: string;
-  model: string;
-  category: 'luxury' | 'sports' | 'supercar' | 'exotic';
-  image: string;
-  specs: { horsepower: number; acceleration: string; topSpeed: number; transmission: string };
-  pricing: { daily: number; hourly: number };
-  availability: boolean;
-  features: string[];
-  location?: string;
-  rating?: number;
-}
+const CATEGORIES: (VehicleCategory | 'all')[] = ['all', 'exotic', 'supercar', 'sports', 'luxury', 'suv', 'executive'];
+const PAGE_SIZE = 24;
 
-const ALL_VEHICLES: Vehicle[] = [
-  {
-    vehicleId: 'lambo-huracan',
-    model: 'Lamborghini Huracán',
-    category: 'supercar',
-    image: 'https://images.unsplash.com/photo-1552820728-8ac41f1ce891?w=600&h=400&fit=crop',
-    specs: { horsepower: 657, acceleration: '2.9s', topSpeed: 217, transmission: 'Automatic' },
-    pricing: { daily: 1500, hourly: 200 },
-    availability: true,
-    features: ['GPS Navigation', 'Premium Sound', 'Leather Seats', 'Climate Control'],
-    location: 'Mayfair, London',
-    rating: 4.9,
-  },
-  {
-    vehicleId: 'ferrari-f8',
-    model: 'Ferrari F8 Tributo',
-    category: 'supercar',
-    image: 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=600&h=400&fit=crop',
-    specs: { horsepower: 710, acceleration: '2.9s', topSpeed: 211, transmission: 'Automatic' },
-    pricing: { daily: 1800, hourly: 250 },
-    availability: true,
-    features: ['Carbon Fiber', 'Sport Package', 'Premium Audio', 'Daytona Seats'],
-    location: 'St Albans, Herts',
-    rating: 5.0,
-  },
-  {
-    vehicleId: 'porsche-911',
-    model: 'Porsche 911 Turbo S',
-    category: 'sports',
-    image: 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?w=600&h=400&fit=crop',
-    specs: { horsepower: 640, acceleration: '2.7s', topSpeed: 211, transmission: 'Automatic' },
-    pricing: { daily: 800, hourly: 120 },
-    availability: true,
-    features: ['Night Vision', 'Adaptive Suspension', 'Premium Interior', 'Paddle Shifters'],
-    location: 'Watford, Herts',
-    rating: 4.8,
-  },
-  {
-    vehicleId: 'bentley-continental',
-    model: 'Bentley Continental GT',
-    category: 'luxury',
-    image: 'https://images.unsplash.com/photo-1563720223185-11003d516935?w=600&h=400&fit=crop',
-    specs: { horsepower: 626, acceleration: '3.6s', topSpeed: 198, transmission: 'Automatic' },
-    pricing: { daily: 600, hourly: 100 },
-    availability: false,
-    features: ['Leather Interiors', 'Heated Seats', 'WiFi', 'Premium Bar'],
-    location: 'Mayfair, London',
-    rating: 4.7,
-  },
-  {
-    vehicleId: 'rolls-ghost',
-    model: 'Rolls-Royce Ghost',
-    category: 'luxury',
-    image: 'https://images.unsplash.com/photo-1631295868223-63265b40d9e4?w=600&h=400&fit=crop',
-    specs: { horsepower: 563, acceleration: '4.6s', topSpeed: 155, transmission: 'Automatic' },
-    pricing: { daily: 1200, hourly: 180 },
-    availability: true,
-    features: ['Starlight Headliner', 'Bespoke Audio', 'Champagne Cooler', 'Massage Seats'],
-    location: 'Mayfair, London',
-    rating: 5.0,
-  },
-  {
-    vehicleId: 'aston-db12',
-    model: 'Aston Martin DB12',
-    category: 'sports',
-    image: 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?w=600&h=400&fit=crop',
-    specs: { horsepower: 671, acceleration: '3.6s', topSpeed: 202, transmission: 'Automatic' },
-    pricing: { daily: 950, hourly: 140 },
-    availability: true,
-    features: ['Sport Plus', 'Bang & Olufsen Audio', 'Alcantara Interior', 'Launch Control'],
-    location: 'St Albans, Herts',
-    rating: 4.9,
-  },
-  {
-    vehicleId: 'lambo-revuelto',
-    model: 'Lamborghini Revuelto',
-    category: 'exotic',
-    image: 'https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=600&h=400&fit=crop',
-    specs: { horsepower: 1001, acceleration: '2.5s', topSpeed: 217, transmission: 'Automatic' },
-    pricing: { daily: 2200, hourly: 350 },
-    availability: true,
-    features: ['Hybrid V12', 'Carbon Chassis', 'ALA System', 'Track Mode'],
-    location: 'Mayfair, London',
-    rating: 5.0,
-  },
-  {
-    vehicleId: 'tesla-plaid',
-    model: 'Tesla Model S Plaid',
-    category: 'luxury',
-    image: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?w=600&h=400&fit=crop',
-    specs: { horsepower: 1020, acceleration: '1.99s', topSpeed: 200, transmission: 'Automatic' },
-    pricing: { daily: 350, hourly: 60 },
-    availability: true,
-    features: ['Autopilot', '17" Touchscreen', 'HEPA Filter', 'Gaming Mode'],
-    location: 'Watford, Herts',
-    rating: 4.6,
-  },
-  {
-    vehicleId: 'range-rover-sport',
-    model: 'Range Rover Sport',
-    category: 'luxury',
-    image: 'https://images.unsplash.com/photo-1606016159991-dfe4f2746ad5?w=600&h=400&fit=crop',
-    specs: { horsepower: 523, acceleration: '4.3s', topSpeed: 162, transmission: 'Automatic' },
-    pricing: { daily: 400, hourly: 70 },
-    availability: true,
-    features: ['Terrain Response', 'Meridian Audio', 'Air Suspension', 'Panoramic Roof'],
-    location: 'Hemel Hempstead',
-    rating: 4.7,
-  },
-  {
-    vehicleId: 'mercedes-amg',
-    model: 'Mercedes-AMG GT 63S',
-    category: 'sports',
-    image: 'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=600&h=400&fit=crop',
-    specs: { horsepower: 630, acceleration: '3.2s', topSpeed: 196, transmission: 'Automatic' },
-    pricing: { daily: 700, hourly: 110 },
-    availability: false,
-    features: ['AMG Track Pace', 'Burmester Audio', 'Carbon Package', 'Performance Exhaust'],
-    location: 'St Albans, Herts',
-    rating: 4.8,
-  },
-];
-
-const CATEGORIES = ['all', 'luxury', 'sports', 'supercar', 'exotic'] as const;
+// Branded gold-fleet hero, served locally from public/ — fetched directly by the
+// browser as a plain CSS background, so it always displays.
+const FLEET_HERO = '/gold-fleet-london.jpg';
 
 export default function FleetPage() {
+  const router = useRouter();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<string>('all');
-  const [maxPrice, setMaxPrice] = useState<number>(2500);
+  const [make, setMake] = useState<string>('all');
+  const [maxPrice, setMaxPrice] = useState<number>(5000);
   const [showAvailableOnly, setShowAvailableOnly] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [visible, setVisible] = useState(PAGE_SIZE);
 
-  const filtered = ALL_VEHICLES.filter((v) => {
-    if (search && !v.model.toLowerCase().includes(search.toLowerCase())) return false;
-    if (category !== 'all' && v.category !== category) return false;
-    if (v.pricing.daily > maxPrice) return false;
-    if (showAvailableOnly && !v.availability) return false;
-    return true;
-  });
+  const filtered = useMemo(
+    () =>
+      ALL_VEHICLES.filter((v) => {
+        if (search) {
+          const q = search.toLowerCase();
+          if (!v.model.toLowerCase().includes(q) && !v.color.toLowerCase().includes(q) && !v.make.toLowerCase().includes(q)) {
+            return false;
+          }
+        }
+        if (category !== 'all' && v.category !== category) return false;
+        if (make !== 'all' && v.make !== make) return false;
+        if (v.pricing.daily > maxPrice) return false;
+        if (showAvailableOnly && !v.availability) return false;
+        return true;
+      }),
+    [search, category, make, maxPrice, showAvailableOnly],
+  );
+
+  // Pre-select category from URL query param (e.g. /fleet?cat=exotic)
+  useEffect(() => {
+    const { cat } = router.query;
+    if (cat && CATEGORIES.includes(cat as VehicleCategory)) {
+      setCategory(cat as string);
+    }
+  }, [router.query]);
+
+  // Reset how many cards are shown whenever the filters change.
+  useEffect(() => {
+    setVisible(PAGE_SIZE);
+  }, [search, category, make, maxPrice, showAvailableOnly]);
+
+  const shown = filtered.slice(0, visible);
 
   return (
     <>
       <Head>
         <title>Our Fleet | M&M Auto Performance</title>
-        <meta name="description" content="Browse our full fleet of luxury supercars and performance vehicles available to hire across Hertfordshire and London." />
+        <meta name="description" content="Browse our full fleet of luxury, supercar, exotic, sports and executive vehicles available to hire across Hertfordshire and London." />
       </Head>
       <main className="min-h-screen bg-performance-grey text-white">
         <Navbar isLoggedIn={false} userRole="guest" currentPage="fleet" />
 
+        {/* ── Cinematic Gold Fleet Hero ── */}
+        <section
+          style={{
+            width: '100%',
+            height: '100vh',
+            backgroundImage: `url("${FLEET_HERO}")`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center center',
+            backgroundRepeat: 'no-repeat',
+            position: 'relative',
+          }}
+        >
+          {/* Dark overlay */}
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)' }} />
+          {/* Bottom fade into page background */}
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'linear-gradient(to top, #121316 0%, transparent 45%)',
+            }}
+          />
+          {/* Hero copy — anchored to the bottom, same pattern as the About hero */}
+          <div className="absolute inset-0 flex flex-col items-center justify-end text-center pb-12 px-6">
+            <p className="text-performance-turquoise text-[10px] font-bold tracking-[0.45em] uppercase mb-5">
+              London &amp; Hertfordshire
+            </p>
+            <h1 className="font-display text-5xl sm:text-6xl lg:text-[5.5rem] font-bold text-white mb-6 leading-[1.05] tracking-tight drop-shadow-[0_2px_20px_rgba(0,0,0,0.7)]">
+              The{' '}
+              <span className="bg-gradient-to-r from-performance-turquoise to-performance-babyblue bg-clip-text text-transparent">
+                Gold Standard
+              </span>{' '}
+              Fleet
+            </h1>
+            <p className="text-white/70 text-base sm:text-lg max-w-xl mx-auto leading-relaxed">
+              {ALL_VEHICLES.length} individually curated supercars, luxury saloons and prestige SUVs —
+              ready to drive across London &amp; Hertfordshire.
+            </p>
+          </div>
+        </section>
+
         {/* Header */}
-        <section className="px-4 sm:px-6 lg:px-8 pt-20 pb-12">
+        <section className="px-4 sm:px-6 lg:px-8 pt-20 pb-12 border-t border-performance-turquoise/10">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-10">
-              <h1 className="text-5xl font-bold text-white mb-4">Our Fleet</h1>
+              <h2 className="font-display text-4xl sm:text-5xl font-bold text-white mb-4">The Collection</h2>
               <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-                {ALL_VEHICLES.length} elite vehicles available across London & Hertfordshire
+                {ALL_VEHICLES.length} individually curated vehicles — supercars, luxury saloons, prestige SUVs &amp; more
               </p>
             </div>
 
@@ -182,7 +122,7 @@ export default function FleetPage() {
                 <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search vehicles..."
+                  placeholder="Search by model, make or colour…"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="w-full pl-11 pr-4 py-3 bg-performance-turquoise/10 border border-performance-turquoise/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-performance-turquoise"
@@ -199,7 +139,7 @@ export default function FleetPage() {
 
             {/* Filters Panel */}
             {showFilters && (
-              <div className="bg-performance-grey border border-performance-turquoise/20 rounded-xl p-6 mb-8 grid grid-cols-1 sm:grid-cols-3 gap-6">
+              <div className="bg-performance-grey border border-performance-turquoise/20 rounded-xl p-6 mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {/* Category */}
                 <div>
                   <p className="text-sm font-semibold text-gray-300 mb-3">Category</p>
@@ -214,10 +154,25 @@ export default function FleetPage() {
                             : 'border border-performance-turquoise/30 text-gray-400 hover:border-performance-turquoise'
                         }`}
                       >
-                        {cat}
+                        {cat === 'all' ? 'All' : CATEGORY_LABELS[cat as VehicleCategory]}
                       </button>
                     ))}
                   </div>
+                </div>
+
+                {/* Make */}
+                <div>
+                  <p className="text-sm font-semibold text-gray-300 mb-3">Make</p>
+                  <select
+                    value={make}
+                    onChange={(e) => setMake(e.target.value)}
+                    className="w-full px-3 py-2 bg-performance-turquoise/10 border border-performance-turquoise/30 rounded-lg text-white text-sm focus:outline-none focus:border-performance-turquoise"
+                  >
+                    <option value="all" className="bg-performance-grey">All makes</option>
+                    {MAKES.map((m) => (
+                      <option key={m} value={m} className="bg-performance-grey">{m}</option>
+                    ))}
+                  </select>
                 </div>
 
                 {/* Max Price */}
@@ -228,14 +183,14 @@ export default function FleetPage() {
                   <input
                     type="range"
                     min={100}
-                    max={2500}
+                    max={5000}
                     step={50}
                     value={maxPrice}
                     onChange={(e) => setMaxPrice(Number(e.target.value))}
                     className="w-full accent-performance-turquoise"
                   />
                   <div className="flex justify-between text-xs text-gray-500 mt-1">
-                    <span>£100</span><span>£2,500</span>
+                    <span>£100</span><span>£5,000</span>
                   </div>
                 </div>
 
@@ -269,30 +224,47 @@ export default function FleetPage() {
                       : 'border border-performance-turquoise/30 text-gray-400 hover:border-performance-turquoise hover:text-white'
                   }`}
                 >
-                  {cat === 'all' ? 'All Vehicles' : cat}
+                  {cat === 'all' ? 'All Vehicles' : CATEGORY_LABELS[cat as VehicleCategory]}
                 </button>
               ))}
             </div>
 
             {/* Results Count */}
             <p className="text-gray-400 text-sm mb-6">
-              Showing <span className="text-performance-turquoise font-bold">{filtered.length}</span> vehicles
+              Showing <span className="text-performance-turquoise font-bold">{Math.min(visible, filtered.length)}</span> of{' '}
+              <span className="text-performance-turquoise font-bold">{filtered.length}</span> vehicles
             </p>
 
             {/* Grid */}
             {filtered.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {filtered.map((vehicle) => (
-                  <FleetCard key={vehicle.vehicleId} {...vehicle} />
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {shown.map((vehicle) => (
+                    <FleetCard key={vehicle.vehicleId} {...vehicle} />
+                  ))}
+                </div>
+
+                {visible < filtered.length && (
+                  <div className="text-center mt-12">
+                    <button
+                      onClick={() => setVisible((v) => v + PAGE_SIZE)}
+                      className="px-8 py-3 bg-performance-turquoise text-performance-grey font-bold rounded-lg hover:bg-performance-turquoise/90 transition-all"
+                    >
+                      Load more vehicles
+                    </button>
+                    <p className="text-gray-500 text-xs mt-3">
+                      {filtered.length - visible} more to explore
+                    </p>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="text-center py-24">
                 <p className="text-5xl mb-4">🏎️</p>
                 <p className="text-white font-bold text-xl mb-2">No vehicles match your filters</p>
                 <p className="text-gray-400">Try adjusting your search or filters</p>
                 <button
-                  onClick={() => { setSearch(''); setCategory('all'); setMaxPrice(2500); setShowAvailableOnly(false); }}
+                  onClick={() => { setSearch(''); setCategory('all'); setMake('all'); setMaxPrice(5000); setShowAvailableOnly(false); }}
                   className="mt-6 px-6 py-3 bg-performance-turquoise text-performance-grey font-bold rounded-lg"
                 >
                   Reset Filters
