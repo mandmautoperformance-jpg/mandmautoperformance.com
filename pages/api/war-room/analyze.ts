@@ -7,7 +7,7 @@ import {
   type AssetClass,
 } from '@/lib/gemini-deal-engine';
 
-const VALID: AssetClass[] = ['land', 'car', 'car2', 'stock', 'gold'];
+const VALID: AssetClass[] = ['land', 'car', 'car2', 'land2', 'stock', 'gold'];
 
 /**
  * Owner-only: run the AI engine on a candidate.

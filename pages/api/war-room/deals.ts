@@ -25,8 +25,8 @@ const STAGES = [
   'exited',
 ];
 
-const VALID_CLASSES = ['land', 'car', 'car2', 'stock', 'gold'];
-const isFlip = (c: string) => c === 'land' || c === 'car' || c === 'car2';
+const VALID_CLASSES = ['land', 'car', 'car2', 'land2', 'stock', 'gold'];
+const isFlip = (c: string) => c === 'land' || c === 'car' || c === 'car2' || c === 'land2';
 
 const toPence = (gbp: unknown): number | null => {
   const n = typeof gbp === 'string' ? parseFloat(gbp.replace(/[^0-9.]/g, '')) : Number(gbp);

@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { timingSafeEqual } from 'crypto';
 import { verifyOwner } from '@/lib/auth-middleware';
 import { getSupabaseServer } from '@/lib/supabase-server';
-import { runScoutScan, getCronSecret } from '@/lib/car-scout';
+import { runScoutScan, getCronSecret, type ScoutKind } from '@/lib/car-scout';
 
 /**
  * Run a Car Auto-Scout web scan and store fresh finds.
@@ -39,9 +39,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!userId) return;
   }
 
+  // ?kind=car | land | all — cron callers send nothing and sweep both markets.
+  const kindParam = String(req.query.kind || (req.body as any)?.kind || 'all');
+  const kinds: ScoutKind[] =
+    kindParam === 'car' ? ['car'] : kindParam === 'land' ? ['land'] : ['car', 'land'];
+
   let finds;
   try {
-    finds = await runScoutScan();
+    // Both sweeps run concurrently to stay inside the function time limit;
+    // one market failing must not sink the other's finds.
+    const settled = await Promise.allSettled(kinds.map((k) => runScoutScan(k)));
+    finds = settled.flatMap((r) => (r.status === 'fulfilled' ? r.value : []));
+    const failures = settled.filter((r) => r.status === 'rejected');
+    failures.forEach((f) => console.error('Scout scan error:', (f as PromiseRejectedResult).reason));
+    if (failures.length === kinds.length) {
+      const first = failures[0] as PromiseRejectedResult;
+      throw first.reason instanceof Error ? first.reason : new Error('Scan failed');
+    }
   } catch (err: any) {
     console.error('Scout scan error:', err);
     return res.status(502).json({ error: err?.message || 'Scan failed' });
@@ -70,6 +84,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   return res.status(200).json({
     ok: true,
+    kinds,
     scanned: finds.length,
     newFinds: inserted,
     at: new Date().toISOString(),

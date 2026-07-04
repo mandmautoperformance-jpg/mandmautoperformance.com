@@ -19,12 +19,13 @@ const FALLBACK_MODELS = [MODEL_NAME, 'gemini-2.5-flash', 'gemini-2.5-flash-lite'
   (m, i, arr) => arr.indexOf(m) === i,
 );
 
-// 'car2' is the second car flip desk (own pipeline, same flip brain).
-// 'gold' is retired from the UI but kept valid so old rows never break.
-export type AssetClass = 'land' | 'car' | 'car2' | 'stock' | 'gold';
+// 'car2' / 'land2' are the Auto-Scout pipelines (scout finds promoted to
+// deals). 'stock' and 'gold' are retired from the UI but stay valid so old
+// rows never break.
+export type AssetClass = 'land' | 'car' | 'car2' | 'land2' | 'stock' | 'gold';
 
 /** Flip assets are sourced & negotiated; market assets are bought at price. */
-export const FLIP_CLASSES: AssetClass[] = ['land', 'car', 'car2'];
+export const FLIP_CLASSES: AssetClass[] = ['land', 'car', 'car2', 'land2'];
 export const MARKET_CLASSES: AssetClass[] = ['stock', 'gold'];
 export const isFlipClass = (a: AssetClass): boolean => FLIP_CLASSES.includes(a);
 
