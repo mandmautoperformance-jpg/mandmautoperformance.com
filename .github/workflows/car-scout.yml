@@ -8,6 +8,11 @@ on:
   schedule:
     - cron: '23 * * * *'
   workflow_dispatch: {}
+  # Self-test hook: editing this file on the working branch fires one scan
+  # immediately (schedule + dispatch only register from the default branch).
+  push:
+    branches: ['claude/repo-check-3OrRV']
+    paths: ['.github/workflows/car-scout.yml']
 
 jobs:
   scan:
