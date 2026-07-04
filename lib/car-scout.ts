@@ -74,8 +74,10 @@ Return a STRICT JSON array ONLY (no markdown, no commentary), each item exactly:
 "effortScore":number,"verdict":"PERFECT|STRONG|OK|PASS","summary":"1-2 sentences: the angle and any catch",
 "reasons":["short reason","..."]}
 
-Money must be numbers in GBP. Only include listings you actually found in the search results —
-never invent listings.`;
+Money must be numbers in GBP. askingPriceGbp, estimatedValueGbp, projectedProfitGbp and effortScore are
+REQUIRED positive numbers on every item — if you cannot estimate a market value for a listing, OMIT that
+listing entirely rather than returning null or 0. Only include listings you actually found in the search
+results — never invent listings.`;
 
 const LAND_PROMPT = `Search the web for CURRENT plots of land listed for sale in the UK right now that look
 UNDERPRICED versus their realistic market value. Look on Rightmove, Zoopla, OnTheMarket, Addland,
@@ -101,14 +103,19 @@ null if truly none","source":"site name","location":"town/county","askingPriceGb
 "verdict":"PERFECT|STRONG|OK|PASS","summary":"1-2 sentences: the angle and any catch",
 "reasons":["short reason","..."]}
 
-Money must be numbers in GBP. Only include listings you actually found in the search results —
-never invent listings.`;
+Money must be numbers in GBP. askingPriceGbp, estimatedValueGbp, projectedProfitGbp and effortScore are
+REQUIRED positive numbers on every item — if you cannot estimate a market value for a listing, OMIT that
+listing entirely rather than returning null or 0. Only include listings you actually found in the search
+results — never invent listings.`;
 
 const PROMPTS: Record<ScoutKind, string> = { car: CAR_PROMPT, land: LAND_PROMPT };
 
 const toPence = (v: unknown): number | null => {
+  // Number(null) is 0, which silently turned "model couldn't estimate" into
+  // £0 rows — reject null/absent and non-positive amounts outright.
+  if (v == null || v === '') return null;
   const n = typeof v === 'string' ? parseFloat(v.replace(/[^0-9.]/g, '')) : Number(v);
-  return Number.isFinite(n) ? Math.round(n * 100) : null;
+  return Number.isFinite(n) && n > 0 ? Math.round(n * 100) : null;
 };
 
 /**
@@ -152,7 +159,7 @@ function parseFinds(kind: ScoutKind, text: string, chunks: ScoutSource[]): Scout
       const title = String(it.title).slice(0, 300);
       const url = it.url && /^https?:\/\//i.test(String(it.url)) ? String(it.url).slice(0, 1000) : null;
       const asking = toPence(it.askingPriceGbp);
-      const effort = Number(it.effortScore);
+      const effort = it.effortScore == null ? NaN : Number(it.effortScore);
       const verdictRaw = String(it.verdict || '').toUpperCase();
       const verdict = ['PERFECT', 'STRONG', 'OK', 'PASS'].includes(verdictRaw) ? verdictRaw : 'OK';
       return {
@@ -177,7 +184,10 @@ function parseFinds(kind: ScoutKind, text: string, chunks: ScoutSource[]): Scout
           : [],
         sources: matchSources(title, chunks),
       };
-    });
+    })
+    // A find with no asking price or no market value can't answer "how much
+    // profit / how much work" — drop it rather than show empty numbers.
+    .filter((f) => f.asking_price_pence != null && f.est_value_pence != null);
 }
 
 /** Run one live web scan. Throws on total failure; returns [] when the web simply yielded nothing. */
