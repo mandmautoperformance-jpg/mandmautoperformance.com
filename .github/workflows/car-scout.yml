@@ -36,3 +36,4 @@ jobs:
           else
             echo "✗ Scan failed (HTTP ${CODE:-none})."; exit 1
           fi
+# Sweep note: scans cover BOTH markets (cars + land) as of the Land Scout build.
