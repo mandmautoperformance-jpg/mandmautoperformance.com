@@ -67,10 +67,41 @@ interface Deal {
   created_at: string;
 }
 
+interface Find {
+  id: string;
+  title: string;
+  url: string | null;
+  source: string | null;
+  location: string | null;
+  asking_price_pence: number | null;
+  est_value_pence: number | null;
+  projected_profit_pence: number | null;
+  effort_score: number | null;
+  verdict: string;
+  summary: string;
+  reasons: string[];
+  status: string;
+  found_at: string;
+}
+
+const VERDICT_STYLE: Record<string, { badge: string; cls: string }> = {
+  PERFECT: { badge: '💎 PERFECT', cls: 'text-green-400 bg-green-400/10 border-green-400/30' },
+  STRONG: { badge: '🔥 STRONG', cls: 'text-performance-turquoise bg-performance-turquoise/10 border-performance-turquoise/30' },
+  OK: { badge: '👍 OK', cls: 'text-yellow-400 bg-yellow-400/10 border-yellow-400/30' },
+  PASS: { badge: '🚫 PASS', cls: 'text-gray-400 bg-gray-400/10 border-gray-400/30' },
+};
+
+const effortLabel = (n: number | null): string => {
+  if (n == null) return 'Unknown';
+  if (n <= 3) return 'Easy flip';
+  if (n <= 6) return 'Some work';
+  return 'Heavy project';
+};
+
 const TABS: { key: AssetClass; icon: string; label: string }[] = [
   { key: 'land', icon: '🌍', label: 'Land Flip Engine' },
   { key: 'car', icon: '🏎️', label: 'Car Flip Desk' },
-  { key: 'car2', icon: '🏁', label: 'Car Flip Desk II' },
+  { key: 'car2', icon: '🛰️', label: 'Auto-Scout' },
   { key: 'stock', icon: '📈', label: 'Stocks Desk' },
 ];
 
@@ -123,6 +154,11 @@ const WarRoom: React.FC = () => {
   const [err, setErr] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // Auto-Scout state
+  const [finds, setFinds] = useState<Find[]>([]);
+  const [scanning, setScanning] = useState(false);
+  const [scanMsg, setScanMsg] = useState('');
+
   const loadDeals = useCallback(async (accessToken: string) => {
     try {
       const res = await fetch('/api/war-room/deals', {
@@ -131,6 +167,20 @@ const WarRoom: React.FC = () => {
       if (res.ok) {
         const data = await res.json();
         setDeals(data.deals || []);
+      }
+    } catch {
+      /* non-fatal */
+    }
+  }, []);
+
+  const loadFinds = useCallback(async (accessToken: string) => {
+    try {
+      const res = await fetch('/api/war-room/finds', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setFinds(data.finds || []);
       }
     } catch {
       /* non-fatal */
@@ -152,11 +202,11 @@ const WarRoom: React.FC = () => {
       }
       setToken(session.access_token);
       setOwnerEmail(session.user.email || '');
-      await loadDeals(session.access_token);
+      await Promise.all([loadDeals(session.access_token), loadFinds(session.access_token)]);
       setState('ready');
     }
     gate();
-  }, [router, loadDeals]);
+  }, [router, loadDeals, loadFinds]);
 
   const resetForm = () => {
     setTitle(''); setLocation(''); setAsking(''); setDetails('');
@@ -220,6 +270,68 @@ const WarRoom: React.FC = () => {
     });
   };
 
+  const scanNow = async () => {
+    setScanning(true);
+    setScanMsg('');
+    try {
+      const res = await fetch('/api/war-room/scan', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Scan failed');
+      setScanMsg(`Scan complete — ${data.scanned} listings reviewed, ${data.newFinds} new find${data.newFinds === 1 ? '' : 's'}.`);
+      await loadFinds(token);
+    } catch (e: any) {
+      setScanMsg(e?.message || 'Scan failed');
+    } finally {
+      setScanning(false);
+    }
+  };
+
+  const dismissFind = async (id: string) => {
+    setFinds((f) => f.filter((x) => x.id !== id));
+    await fetch('/api/war-room/finds', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ id, status: 'dismissed' }),
+    });
+  };
+
+  const promoteFind = async (find: Find) => {
+    // Mark promoted, then create a pipeline deal in the Auto-Scout lane.
+    setFinds((f) => f.map((x) => (x.id === find.id ? { ...x, status: 'promoted' } : x)));
+    await fetch('/api/war-room/finds', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ id: find.id, status: 'promoted' }),
+    });
+    const res = await fetch('/api/war-room/deals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        assetClass: 'car2',
+        title: find.title,
+        location: find.location,
+        askingPriceGbp: find.asking_price_pence != null ? find.asking_price_pence / 100 : undefined,
+        analysis: {
+          assetSummary: find.summary,
+          targetBuyPriceGbp: find.asking_price_pence != null ? find.asking_price_pence / 100 : 0,
+          projectedResalePriceGbp: find.est_value_pence != null ? find.est_value_pence / 100 : 0,
+          projectedProfitGbp: find.projected_profit_pence != null ? find.projected_profit_pence / 100 : 0,
+          riskFlags: find.reasons,
+          sourceUrl: find.url,
+          verdict: find.verdict,
+          effortScore: find.effort_score,
+        },
+      }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setDeals((d) => [data.deal, ...d]);
+    }
+  };
+
   if (state === 'checking') {
     return (
       <div className="min-h-screen bg-performance-grey flex items-center justify-center">
@@ -277,7 +389,20 @@ const WarRoom: React.FC = () => {
             ))}
           </div>
 
+          {/* Auto-Scout desk (Cars II) */}
+          {tab === 'car2' && (
+            <ScoutDesk
+              finds={finds}
+              scanning={scanning}
+              scanMsg={scanMsg}
+              onScan={scanNow}
+              onPromote={promoteFind}
+              onDismiss={dismissFind}
+            />
+          )}
+
           {/* Engine input */}
+          {tab !== 'car2' && (
           <div className="bg-performance-panel border border-performance-turquoise/20 rounded-2xl p-6 mb-6">
             <h2 className="text-lg font-bold text-white mb-1">
               {flipTab
@@ -335,6 +460,7 @@ const WarRoom: React.FC = () => {
               )}
             </button>
           </div>
+          )}
 
           {/* Analysis result */}
           {analysis && flipTab && <FlipResult a={analysis as FlipAnalysis} onSave={saveDeal} saving={saving} />}
@@ -422,6 +548,130 @@ const WarRoom: React.FC = () => {
     </>
   );
 };
+
+const ScoutDesk: React.FC<{
+  finds: Find[];
+  scanning: boolean;
+  scanMsg: string;
+  onScan: () => void;
+  onPromote: (f: Find) => void;
+  onDismiss: (id: string) => void;
+}> = ({ finds, scanning, scanMsg, onScan, onPromote, onDismiss }) => (
+  <div className="mb-6">
+    {/* Control bar */}
+    <div className="bg-performance-panel border border-performance-turquoise/20 rounded-2xl p-6 mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-bold text-white mb-1">🛰️ Auto-Scout — the market hunts itself</h2>
+          <p className="text-gray-500 text-xs max-w-lg">
+            Scans the live web for underpriced UK cars on a schedule (daily baseline + hourly sweeps),
+            scores every find on <span className="text-performance-babyblue">profit</span> vs{' '}
+            <span className="text-performance-babyblue">work required</span>, and flags the no-brainers 💎.
+          </p>
+        </div>
+        <button
+          onClick={onScan}
+          disabled={scanning}
+          className="px-6 py-3 bg-gradient-to-r from-performance-turquoise to-performance-babyblue text-performance-grey font-bold rounded-lg hover:shadow-lg hover:shadow-performance-turquoise/30 transition-all disabled:opacity-60 flex items-center gap-2"
+        >
+          {scanning ? (
+            <><span className="w-4 h-4 border-2 border-performance-grey/40 border-t-performance-grey rounded-full animate-spin" /> Scanning the web…</>
+          ) : (
+            <>📡 Scan now</>
+          )}
+        </button>
+      </div>
+      {scanMsg && <p className="text-performance-babyblue text-xs mt-4">{scanMsg}</p>}
+    </div>
+
+    {/* Finds feed */}
+    {finds.length === 0 ? (
+      <div className="bg-performance-panel border border-performance-turquoise/15 rounded-xl p-10 text-center text-gray-500 text-sm">
+        No finds yet — hit <span className="text-performance-babyblue">Scan now</span> to run the first sweep.
+        New finds also land here automatically on every scheduled scan.
+      </div>
+    ) : (
+      <div className="space-y-4">
+        {finds.map((f) => {
+          const v = VERDICT_STYLE[f.verdict] || VERDICT_STYLE.OK;
+          return (
+            <div key={f.id} className="bg-performance-panel border border-performance-turquoise/20 rounded-xl p-5">
+              <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`text-[11px] font-bold px-2 py-1 rounded border ${v.cls}`}>{v.badge}</span>
+                    {f.status === 'promoted' && (
+                      <span className="text-[11px] font-bold px-2 py-1 rounded border text-performance-babyblue bg-performance-babyblue/10 border-performance-babyblue/30">In pipeline</span>
+                    )}
+                  </div>
+                  <p className="font-semibold text-white text-sm mt-2">{f.title}</p>
+                  <p className="text-gray-500 text-xs mt-0.5">
+                    {f.source || 'web'}{f.location ? ` · ${f.location}` : ''} ·{' '}
+                    {new Date(f.found_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <p className="text-performance-turquoise font-bold text-xl">{gbp(f.projected_profit_pence)}</p>
+                  <p className="text-gray-600 text-[10px] uppercase tracking-wide">projected profit</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
+                <Metric label="Asking" value={gbp(f.asking_price_pence)} />
+                <Metric label="Est. market value" value={gbp(f.est_value_pence)} />
+                <div className="rounded-xl border p-4 bg-performance-panel border-performance-turquoise/20">
+                  <p className="text-lg font-bold text-white">{f.effort_score ?? '—'}/10</p>
+                  <p className="text-gray-500 text-[11px] mt-0.5">Work required · {effortLabel(f.effort_score)}</p>
+                </div>
+              </div>
+
+              {f.summary && <p className="text-gray-300 text-sm mb-3">{f.summary}</p>}
+              {f.reasons.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {f.reasons.map((r, i) => (
+                    <span key={i} className="text-xs px-2 py-1 rounded-full bg-performance-turquoise/10 border border-performance-turquoise/30 text-performance-babyblue">{r}</span>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex items-center gap-3">
+                {f.url && (
+                  <a
+                    href={f.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-performance-turquoise text-xs font-semibold hover:underline"
+                  >
+                    Open listing ↗
+                  </a>
+                )}
+                {f.status !== 'promoted' && (
+                  <button
+                    onClick={() => onPromote(f)}
+                    className="px-4 py-2 bg-performance-turquoise text-performance-grey text-xs font-bold rounded-lg hover:bg-performance-turquoise/90 transition-all"
+                  >
+                    ＋ Pursue this deal
+                  </button>
+                )}
+                <button
+                  onClick={() => onDismiss(f.id)}
+                  className="text-gray-600 hover:text-red-400 text-xs ml-auto transition-colors"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    )}
+
+    <p className="text-gray-600 text-[11px] leading-relaxed mt-4">
+      Finds come from live AI web search — prices and availability can change or be misread.
+      Always open the listing and verify before offering.
+    </p>
+  </div>
+);
 
 const FlipResult: React.FC<{ a: FlipAnalysis; onSave: () => void; saving: boolean }> = ({ a, onSave, saving }) => (
   <div className="bg-performance-panel border border-performance-turquoise/30 rounded-2xl p-6">

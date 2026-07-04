@@ -290,6 +290,42 @@ jobs:
             echo "$WR_RESP" | sed 's/HTTP_STATUS:[0-9]*//' | head -c 600; exit 1
           fi
 
+          # Car Auto-Scout finds feed. Idempotent — safe to run every deploy.
+          echo "→ Ensuring war_room_finds table + RLS exist…"
+          WF_SQL='create table if not exists public.war_room_finds (
+            id                     uuid primary key default gen_random_uuid(),
+            dedupe_key             text not null unique,
+            title                  text not null,
+            url                    text,
+            source                 text,
+            location               text,
+            asking_price_pence     bigint,
+            est_value_pence        bigint,
+            projected_profit_pence bigint,
+            effort_score           int,
+            verdict                text,
+            summary                text,
+            reasons                jsonb not null default '"'"'[]'"'"'::jsonb,
+            status                 text not null default '"'"'new'"'"' check (status in ('"'"'new'"'"', '"'"'dismissed'"'"', '"'"'promoted'"'"')),
+            found_at               timestamptz not null default now()
+          );
+          alter table public.war_room_finds enable row level security;
+          drop policy if exists "service role manages war room finds" on public.war_room_finds;
+          create policy "service role manages war room finds"
+            on public.war_room_finds for all using (auth.role() = '"'"'service_role'"'"');'
+          WF_PAYLOAD=$(jq -n --arg q "$WF_SQL" '{query: $q}')
+          WF_RESP=$(curl -sS -w "\nHTTP_STATUS:%{http_code}" -X POST \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" -d "$WF_PAYLOAD" \
+            "https://api.supabase.com/v1/projects/$SUPABASE_REF/database/query")
+          WF_CODE=$(echo "$WF_RESP" | grep -oE 'HTTP_STATUS:[0-9]+' | cut -d: -f2)
+          if [ "$WF_CODE" = "200" ] || [ "$WF_CODE" = "201" ]; then
+            echo "✓ war_room_finds table ready — the Auto-Scout can store finds."
+          else
+            echo "✗ war_room_finds ensure failed (HTTP $WF_CODE):"
+            echo "$WF_RESP" | sed 's/HTTP_STATUS:[0-9]*//' | head -c 600; exit 1
+          fi
+
       # Definitive proof: fire a REAL signup at the live Supabase auth API using a
       # non-owner test address. With the broken onboarding@resend.dev sender this
       # returns HTTP 500 "Error sending confirmation email"; once email delivers
@@ -661,6 +697,14 @@ jobs:
           add_env SUPABASE_SERVICE_ROLE_KEY "$SUPABASE_SERVICE_ROLE_KEY"
           add_env NEXT_PUBLIC_SITE_URL "$NEXT_PUBLIC_SITE_URL"
           add_env RESEND_API_KEY "$RESEND_API_KEY"
+          # Shared cron secret for the War Room Auto-Scout: derived from the
+          # Resend key so the scheduled workflows can compute the same value.
+          # Vercel cron automatically sends "Authorization: Bearer $CRON_SECRET"
+          # to cron-invoked routes when this env var exists on the project.
+          if [ -n "$RESEND_API_KEY" ]; then
+            CRON_SECRET=$(printf '%s' "$RESEND_API_KEY" | sha256sum | cut -d' ' -f1)
+            add_env CRON_SECRET "$CRON_SECRET"
+          fi
           add_env MAIL_FROM "$MAIL_FROM"
           add_env ADMIN_NOTIFY_EMAIL "$ADMIN_NOTIFY_EMAIL"
           add_env ADMIN_EMAILS "$ADMIN_EMAILS"

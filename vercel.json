@@ -4,6 +4,9 @@
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "regions": ["lhr1"],
+  "crons": [
+    { "path": "/api/war-room/scan", "schedule": "0 7 * * *" }
+  ],
   "headers": [
     {
       "source": "/(.*)",
