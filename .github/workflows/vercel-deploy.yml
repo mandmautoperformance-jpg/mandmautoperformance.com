@@ -205,6 +205,26 @@ jobs:
             echo "$SMTP_RESP" | sed 's/HTTP_STATUS:[0-9]*//' | head -c 600; exit 1
           fi
 
+          # Point auth redirects at the live site. With the default Site URL
+          # (http://localhost:3000) the "Confirm your mail" link verifies the
+          # account but then redirects to localhost — dead on any real device.
+          echo "→ Setting Site URL + redirect allow-list for confirmation links…"
+          SITE_PAYLOAD=$(jq -n '{
+            site_url: "https://mandmautoperformance.com",
+            uri_allow_list: "https://mandmautoperformance.com/**,https://www.mandmautoperformance.com/**"
+          }')
+          SITE_RESP=$(curl -sS -w "\nHTTP_STATUS:%{http_code}" -X PATCH \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" -d "$SITE_PAYLOAD" \
+            "https://api.supabase.com/v1/projects/$SUPABASE_REF/config/auth")
+          SITE_CODE=$(echo "$SITE_RESP" | grep -oE 'HTTP_STATUS:[0-9]+' | cut -d: -f2)
+          if [ "$SITE_CODE" = "200" ]; then
+            echo "✓ Site URL now $(echo "$SITE_RESP" | sed 's/HTTP_STATUS:[0-9]*//' | jq -r '.site_url') — confirm links land on the live site."
+          else
+            echo "✗ Site URL config failed (HTTP $SITE_CODE):"
+            echo "$SITE_RESP" | sed 's/HTTP_STATUS:[0-9]*//' | head -c 600; exit 1
+          fi
+
           echo "→ Applying migration 005 (user_id_uploads + storage bucket)…"
           MIG_PAYLOAD=$(jq -Rs '{query: .}' < supabase/migrations/005_account_id_verification.sql)
           MIG_RESP=$(curl -sS -w "\nHTTP_STATUS:%{http_code}" -X POST \
