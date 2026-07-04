@@ -25,8 +25,8 @@ const STAGES = [
   'exited',
 ];
 
-const VALID_CLASSES = ['land', 'car', 'stock', 'gold'];
-const isFlip = (c: string) => c === 'land' || c === 'car';
+const VALID_CLASSES = ['land', 'car', 'car2', 'stock', 'gold'];
+const isFlip = (c: string) => c === 'land' || c === 'car' || c === 'car2';
 
 const toPence = (gbp: unknown): number | null => {
   const n = typeof gbp === 'string' ? parseFloat(gbp.replace(/[^0-9.]/g, '')) : Number(gbp);
@@ -59,7 +59,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'POST') {
     const b = req.body as any;
     if (!VALID_CLASSES.includes(b.assetClass)) {
-      return res.status(400).json({ error: 'assetClass must be land, car, stock or gold' });
+      return res.status(400).json({ error: 'assetClass must be land, car, car2, stock or gold' });
     }
     if (!b.title || !`${b.title}`.trim()) {
       return res.status(400).json({ error: 'title is required' });

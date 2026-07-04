@@ -7,7 +7,7 @@ import {
   type AssetClass,
 } from '@/lib/gemini-deal-engine';
 
-const VALID: AssetClass[] = ['land', 'car', 'stock', 'gold'];
+const VALID: AssetClass[] = ['land', 'car', 'car2', 'stock', 'gold'];
 
 /**
  * Owner-only: run the AI engine on a candidate.
@@ -31,7 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   };
 
   if (!VALID.includes(assetClass as AssetClass)) {
-    return res.status(400).json({ error: 'assetClass must be land, car, stock or gold' });
+    return res.status(400).json({ error: 'assetClass must be land, car, car2, stock or gold' });
   }
   if (!title || !title.trim()) {
     return res.status(400).json({ error: 'A title / description is required' });

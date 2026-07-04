@@ -270,7 +270,7 @@ jobs:
             updated_at             timestamptz not null default now()
           );
           alter table public.war_room_deals drop constraint if exists war_room_deals_asset_class_check;
-          alter table public.war_room_deals add constraint war_room_deals_asset_class_check check (asset_class in ('"'"'land'"'"', '"'"'car'"'"', '"'"'stock'"'"', '"'"'gold'"'"'));
+          alter table public.war_room_deals add constraint war_room_deals_asset_class_check check (asset_class in ('"'"'land'"'"', '"'"'car'"'"', '"'"'car2'"'"', '"'"'stock'"'"', '"'"'gold'"'"'));
           alter table public.war_room_deals drop constraint if exists war_room_deals_stage_check;
           alter table public.war_room_deals add constraint war_room_deals_stage_check check (stage in ('"'"'sourced'"'"', '"'"'offer_sent'"'"', '"'"'negotiating'"'"', '"'"'buyer_matched'"'"', '"'"'closed'"'"', '"'"'passed'"'"', '"'"'watching'"'"', '"'"'entered'"'"', '"'"'holding'"'"', '"'"'exited'"'"'));
           alter table public.war_room_deals enable row level security;

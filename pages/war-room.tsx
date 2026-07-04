@@ -14,8 +14,8 @@ import { getSupabaseBrowser } from '@/lib/supabase-browser';
  * Flip + market analyses both persist to war_room_deals.
  */
 
-type AssetClass = 'land' | 'car' | 'stock' | 'gold';
-const isFlip = (a: AssetClass) => a === 'land' || a === 'car';
+type AssetClass = 'land' | 'car' | 'car2' | 'stock';
+const isFlip = (a: AssetClass) => a === 'land' || a === 'car' || a === 'car2';
 
 interface FlipAnalysis {
   assetSummary: string;
@@ -70,8 +70,8 @@ interface Deal {
 const TABS: { key: AssetClass; icon: string; label: string }[] = [
   { key: 'land', icon: '🌍', label: 'Land Flip Engine' },
   { key: 'car', icon: '🏎️', label: 'Car Flip Desk' },
+  { key: 'car2', icon: '🏁', label: 'Car Flip Desk II' },
   { key: 'stock', icon: '📈', label: 'Stocks Desk' },
-  { key: 'gold', icon: '🥇', label: 'Gold Desk' },
 ];
 
 const FLIP_STAGES = [
@@ -98,8 +98,8 @@ const STAGE_LABELS: Record<string, string> = {
 const PLACEHOLDERS: Record<AssetClass, { title: string; loc: string; price: string }> = {
   land: { title: '5 acres, residential development potential', loc: 'Location (e.g. St Albans, Herts)', price: 'Asking price (£)' },
   car: { title: '2019 Lamborghini Huracán, 12k miles', loc: 'Location / seller (e.g. dealer, Leeds)', price: 'Asking price (£)' },
+  car2: { title: '2021 BMW M4 Competition, 28k miles', loc: 'Location / seller (e.g. auction, private)', price: 'Asking price (£)' },
   stock: { title: 'Company / instrument (e.g. Rolls-Royce Holdings)', loc: 'Ticker / market (e.g. LSE: RR)', price: 'Current price (£)' },
-  gold: { title: 'Gold position (e.g. physical 1oz, or GLD ETF)', loc: 'Market / form (e.g. spot, ETF)', price: 'Current price (£ per unit)' },
 };
 
 const gbp = (pence: number | null | undefined): string =>
@@ -282,7 +282,7 @@ const WarRoom: React.FC = () => {
             <h2 className="text-lg font-bold text-white mb-1">
               {flipTab
                 ? (tab === 'land' ? 'Source & analyse a plot' : 'Source & analyse a car')
-                : (tab === 'stock' ? 'Analyse a stock' : 'Analyse a gold position')}
+                : 'Analyse a stock'}
             </h2>
             <p className="text-gray-500 text-xs mb-5">
               {flipTab
@@ -404,12 +404,12 @@ const WarRoom: React.FC = () => {
             <p className="text-performance-babyblue text-xs font-bold uppercase tracking-wider mb-2">How automated is this?</p>
             <p className="text-gray-400 text-xs leading-relaxed">
               Live today: the AI brain — for land &amp; cars, valuation, negotiation + ready-to-send offer,
-              profit projection and buyer profiling; for stocks &amp; gold, entry/target/stop levels, thesis,
+              profit projection and buyer profiling; for stocks, entry/target/stop levels, thesis,
               catalysts, risks and a clear call. Full hands-off mode (live listings/prices, auto-sending
               offers, auto-matching buyers) plugs data + messaging connectors on top of this engine — next build.
             </p>
             <p className="text-gray-600 text-[11px] leading-relaxed mt-3">
-              Stocks &amp; Gold are AI research for your own decision-making — <strong>not financial advice</strong>.
+              The Stocks Desk is AI research for your own decision-making — <strong>not financial advice</strong>.
               The model has no live price feed; enter the current price and always verify before acting.
             </p>
           </div>
