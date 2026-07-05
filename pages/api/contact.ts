@@ -1,13 +1,20 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createClient } from '@supabase/supabase-js';
 import { sendEmail, OWNER_EMAIL, contactOwnerEmail } from '@/lib/email';
+import { rateLimit } from '@/lib/rate-limit';
 
 const ALLOWED_SUBJECTS = ['booking', 'fleet', 'pricing', 'support', 'other'];
+
+// Public endpoint that triggers an email — cap per-IP to stop inbox spam
+// and email-quota burn.
+const limit = rateLimit('contact', 5, 60_000);
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  if (!limit(req, res)) return;
 
   const { name, email, subject, message } = req.body as {
     name?: string;
