@@ -98,10 +98,17 @@ export async function verifyAdmin(
     return null;
   }
 
-  const allowlist = (process.env.ADMIN_EMAILS || '')
-    .split(',')
-    .map((e) => e.trim().toLowerCase())
-    .filter(Boolean);
+  // The owner always counts as an admin, baked in via getOwnerEmail() so the
+  // back-office can never be locked to nobody (or silently unlocked if the
+  // ADMIN_EMAILS env var is ever dropped on a deploy). ADMIN_EMAILS can still
+  // ADD further admins on top.
+  const allowlist = [
+    ...(process.env.ADMIN_EMAILS || '')
+      .split(',')
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean),
+    getOwnerEmail(),
+  ];
 
   const email = (user.email || '').toLowerCase();
   const metaRole = (user.app_metadata as { role?: string } | undefined)?.role;
