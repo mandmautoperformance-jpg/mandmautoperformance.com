@@ -190,6 +190,75 @@ function parseFinds(kind: ScoutKind, text: string, chunks: ScoutSource[]): Scout
     .filter((f) => f.asking_price_pence != null && f.est_value_pence != null);
 }
 
+// ---------------------------------------------------------------------------
+// Link verification — the model sometimes writes a URL that doesn't match the
+// page it actually saw (dead advert, generic search page, wrong listing). We
+// live-check every direct URL BEFORE storing it, so "Open the advert" only
+// renders when the page is real and plausibly about this find.
+// ---------------------------------------------------------------------------
+
+const LINK_TIMEOUT_MS = 6500;
+const BROWSER_UA =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
+
+/**
+ * Verdict on a single URL:
+ *  - dead (drop): 404/410, DNS/connection failures, or a redirect that lands
+ *    on a bare homepage — the advert is not there.
+ *  - dead (drop): page loads but shares not a single distinctive title word —
+ *    it's a real page about something else.
+ *  - keep: 2xx with matching content; also 403/429/5xx and timeouts, where a
+ *    bot-blocker or slow site means we can't disprove the link.
+ */
+async function checkUrlAlive(url: string, title: string): Promise<boolean> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), LINK_TIMEOUT_MS);
+  try {
+    const resp = await fetch(url, {
+      redirect: 'follow',
+      signal: ctrl.signal,
+      headers: { 'User-Agent': BROWSER_UA, Accept: 'text/html,application/xhtml+xml,*/*' },
+    });
+    if (resp.status === 404 || resp.status === 410) return false;
+    if (!resp.ok) return true; // 403/429/5xx: blocked or wobbly, not proven dead
+    const finalPath = (() => {
+      try {
+        return new URL(resp.url || url).pathname;
+      } catch {
+        return '/x';
+      }
+    })();
+    if (finalPath === '/' || finalPath === '') return false; // bounced to homepage
+    const ct = resp.headers.get('content-type') || '';
+    if (!ct.includes('html')) return true;
+    const body = (await resp.text()).slice(0, 400_000).toLowerCase();
+    const tokens = title
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter((w) => w.length >= 4);
+    if (tokens.length === 0) return true;
+    // At least one distinctive word from the find's title must appear on the
+    // page, or the URL points at something other than what the card claims.
+    return tokens.some((w) => body.includes(w));
+  } catch (err) {
+    // Timeout → can't judge, keep. DNS / connection refused → dead.
+    return err instanceof Error && err.name === 'AbortError';
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** Live-check every direct URL concurrently; failed ones fall back to null. */
+export async function validateFindLinks(finds: ScoutFind[]): Promise<ScoutFind[]> {
+  return Promise.all(
+    finds.map(async (f) => {
+      if (!f.url) return f;
+      const ok = await checkUrlAlive(f.url, f.title);
+      return ok ? f : { ...f, url: null };
+    }),
+  );
+}
+
 /** Run one live web scan. Throws on total failure; returns [] when the web simply yielded nothing. */
 export async function runScoutScan(kind: ScoutKind = 'car'): Promise<ScoutFind[]> {
   const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
@@ -231,7 +300,8 @@ export async function runScoutScan(kind: ScoutKind = 'car'): Promise<ScoutFind[]
         }))
         .filter((s: ScoutSource) => /^https?:\/\//i.test(s.url))
         .slice(0, 20);
-      return parseFinds(kind, text, chunks);
+      // Verify every direct advert link is really live before it can be shown.
+      return await validateFindLinks(parseFinds(kind, text, chunks));
     } catch (err) {
       lastError = err;
     }

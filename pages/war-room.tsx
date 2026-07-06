@@ -672,8 +672,10 @@ const ScoutDesk: React.FC<{
     )}
 
     <p className="text-gray-600 text-[11px] leading-relaxed mt-4">
-      Finds come from live AI web search — prices and availability can change or be misread.
-      Always open the listing and verify before offering.
+      Every &ldquo;Open the advert&rdquo; link is live-checked before it&apos;s shown, and stored links are
+      re-audited on every deploy — but sellers can still pull an advert at any time. If a direct link is
+      missing, the source chips and 🔎 search will find it. Always verify price and availability on the
+      listing before offering.
     </p>
   </div>
 );

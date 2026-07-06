@@ -1,6 +1,11 @@
 name: Deploy to Vercel
 
 on:
+  # Auto-deploy every push to the working branch — inputs.* are empty on push
+  # events, so the optional configuration steps below simply skip and only the
+  # build/deploy (+ always-on audits) run.
+  push:
+    branches: ['claude/repo-check-3OrRV']
   workflow_dispatch:
     inputs:
       gemini_api_key:
@@ -744,6 +749,62 @@ jobs:
           echo "LIVE URL: ${URL:-see output above}"
           echo "Aliased:  https://mandmautoperformance.com"
           echo "========================================="
+
+      # Always-on data hygiene: live-check every stored Auto-Scout advert link
+      # and null out the provably dead ones (404/410, DNS failure, homepage
+      # bounce) so the War Room never shows a link that goes nowhere. Then fire
+      # a fresh both-market scan against the just-deployed code, which now
+      # verifies links at scan time too.
+      - name: War Room link audit + fresh scan
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_REF: ${{ secrets.SUPABASE_REF || 'ratyazffxlppzurfokxp' }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        run: |
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
+            echo "skip: no SUPABASE_ACCESS_TOKEN"; exit 0
+          fi
+          echo "::add-mask::$SUPABASE_ACCESS_TOKEN"
+          UA='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36'
+          api() { curl -sS -X POST -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+                    -H "Content-Type: application/json" -d "$1" \
+                    "https://api.supabase.com/v1/projects/$SUPABASE_REF/database/query"; }
+
+          echo "→ Auditing stored advert links…"
+          Q='select id, url from war_room_finds where url is not null order by found_at desc limit 40;'
+          ROWS=$(api "$(jq -n --arg q "$Q" '{query: $q}')" || echo '[]')
+          echo "$ROWS" | jq -r '.[]? | [.id, .url] | @tsv' > /tmp/links.tsv || true
+          : > /tmp/dead_ids
+          # Runner shells use `bash -e`: guard every curl so one unreachable
+          # URL can't abort the whole audit loop.
+          while IFS=$'\t' read -r id url; do
+            [ -z "$url" ] && continue
+            rc=0
+            code=$(curl -s -o /dev/null -w '%{http_code}' -L -m 10 -A "$UA" "$url") || rc=$?
+            dead=no
+            # Proven dead only: page gone, or DNS/connection-level failure.
+            if [ "$code" = "404" ] || [ "$code" = "410" ]; then dead=yes; fi
+            if [ "$rc" = "6" ] || [ "$rc" = "7" ] || [ "$rc" = "35" ]; then dead=yes; fi
+            echo "LINK http=$code curl_rc=$rc dead=$dead $url"
+            [ "$dead" = "yes" ] && echo "$id" >> /tmp/dead_ids
+          done < /tmp/links.tsv
+          DEAD_N=$(wc -l < /tmp/dead_ids | tr -d ' ')
+          if [ "$DEAD_N" -gt 0 ]; then
+            IDS=$(awk '{printf "%s'"'"'%s'"'"'", (NR>1?",":""), $1}' /tmp/dead_ids)
+            UPD="update war_room_finds set url = null where id in ($IDS);"
+            api "$(jq -n --arg q "$UPD" '{query: $q}')" > /dev/null || echo "⚠ dead-link UPDATE failed (non-fatal)"
+            echo "✓ Cleared $DEAD_N dead advert link(s) — cards fall back to sources + search."
+          else
+            echo "✓ No dead links found in stored finds."
+          fi
+
+          if [ -n "$RESEND_API_KEY" ]; then
+            echo "→ Post-deploy fresh scan (both markets, link-verified)…"
+            KEY=$(printf '%s' "$RESEND_API_KEY" | sha256sum | cut -d' ' -f1)
+            SCAN=$(curl -sS -m 150 -X POST -H "x-cron-key: $KEY" \
+              "https://mandmautoperformance.com/api/war-room/scan" || true)
+            echo "SCAN_RESULT: $SCAN"
+          fi
 
       # After deploy, prove the email pipeline end-to-end by calling the
       # self-test endpoint on the live site. Sends one branded test email to the
