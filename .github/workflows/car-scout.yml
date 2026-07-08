@@ -1,18 +1,13 @@
 name: War Room Car Scout
 
-# Hourly web scan for underpriced cars. Note: GitHub only fires `schedule`
-# from the DEFAULT branch, so the hourly cadence starts once this file lands
-# on master. Until then it can be run manually (workflow_dispatch), and the
-# daily Vercel cron covers the baseline.
+# Scheduled web scan for underpriced cars/land. GitHub only fires `schedule`
+# from the DEFAULT branch, so this cadence starts once this file lands on
+# master. Runs every 3 hours (8×/day) to keep API + Actions cost sensible while
+# staying fresh — dial the cron up/down to taste. Also runnable on demand.
 on:
   schedule:
-    - cron: '23 * * * *'
+    - cron: '23 */3 * * *'
   workflow_dispatch: {}
-  # Self-test hook: editing this file on the working branch fires one scan
-  # immediately (schedule + dispatch only register from the default branch).
-  push:
-    branches: ['claude/repo-check-3OrRV']
-    paths: ['.github/workflows/car-scout.yml']
 
 jobs:
   scan:

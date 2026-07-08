@@ -1,9 +1,22 @@
+import { useEffect, useState } from 'react';
 import type { AppProps } from 'next/app';
 import Head from 'next/head';
 import Script from 'next/script';
 import '@/styles/globals.css';
+import CookieConsent, { getStoredConsent, type ConsentChoice } from '@/components/CookieConsent';
+
+const GA_ID = 'G-4DYY4B72L1';
 
 export default function App({ Component, pageProps }: AppProps) {
+  // Analytics stays OFF until the visitor actively consents (UK PECR / GDPR).
+  // No Google Analytics script is loaded — and therefore no analytics cookies
+  // are set — unless and until `consent === 'accepted'`.
+  const [consent, setConsent] = useState<ConsentChoice | null>(null);
+
+  useEffect(() => {
+    setConsent(getStoredConsent());
+  }, []);
+
   return (
     <>
       <Head>
@@ -15,21 +28,27 @@ export default function App({ Component, pageProps }: AppProps) {
         <link rel="mask-icon" href="/logo.svg" color="#000000" />
       </Head>
 
-      {/* Google Analytics */}
-      <Script
-        src="https://www.googletagmanager.com/gtag/js?id=G-4DYY4B72L1"
-        strategy="afterInteractive"
-      />
-      <Script id="google-analytics" strategy="afterInteractive">
-        {`
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-          gtag('config', 'G-4DYY4B72L1');
-        `}
-      </Script>
+      {/* Google Analytics — only mounted after explicit consent. */}
+      {consent === 'accepted' && (
+        <>
+          <Script
+            src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+            strategy="afterInteractive"
+          />
+          <Script id="google-analytics" strategy="afterInteractive">
+            {`
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', '${GA_ID}');
+            `}
+          </Script>
+        </>
+      )}
 
       <Component {...pageProps} />
+
+      <CookieConsent onChange={setConsent} />
     </>
   );
 }

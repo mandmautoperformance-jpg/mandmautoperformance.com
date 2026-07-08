@@ -1,11 +1,9 @@
 name: Deploy to Vercel
 
 on:
-  # Auto-deploy every push to the working branch — inputs.* are empty on push
-  # events, so the optional configuration steps below simply skip and only the
-  # build/deploy (+ always-on audits) run.
-  push:
-    branches: ['claude/repo-check-3OrRV']
+  # Deploys are explicit (manual dispatch) to avoid burning Actions minutes on
+  # every commit and to keep production releases controlled — enterprise-style.
+  # Trigger a deploy from the Actions tab, or the CLI, when you want one.
   workflow_dispatch:
     inputs:
       gemini_api_key:
