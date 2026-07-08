@@ -109,6 +109,13 @@ on:
         required: false
         type: string
 
+# Serialize production deploys so two quick pushes can't race and leave an
+# older commit live over a newer one. Queue rather than cancel, so an
+# in-flight deploy + its data audit always finishes.
+concurrency:
+  group: vercel-prod-deploy
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -799,8 +806,10 @@ jobs:
           fi
 
           if [ -n "$RESEND_API_KEY" ]; then
+            echo "::add-mask::$RESEND_API_KEY"
             echo "→ Post-deploy fresh scan (both markets, link-verified)…"
             KEY=$(printf '%s' "$RESEND_API_KEY" | sha256sum | cut -d' ' -f1)
+            echo "::add-mask::$KEY"
             SCAN=$(curl -sS -m 150 -X POST -H "x-cron-key: $KEY" \
               "https://mandmautoperformance.com/api/war-room/scan" || true)
             echo "SCAN_RESULT: $SCAN"

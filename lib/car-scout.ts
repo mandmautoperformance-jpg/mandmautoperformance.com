@@ -198,17 +198,69 @@ function parseFinds(kind: ScoutKind, text: string, chunks: ScoutSource[]): Scout
 // ---------------------------------------------------------------------------
 
 const LINK_TIMEOUT_MS = 6500;
+const LINK_BODY_CAP = 300_000;
 const BROWSER_UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
 
+// Words too generic to prove a page is the RIGHT advert — nearly every UK car
+// or land listing page contains these, so matching on them is meaningless.
+const GENERIC_TOKENS = new Set([
+  'miles', 'mile', 'acre', 'acres', 'land', 'road', 'plot', 'with', 'near',
+  'building', 'development', 'opportunity', 'freehold', 'leasehold', 'residential',
+  'agricultural', 'auction', 'detached', 'dwelling', 'dwellings', 'planning',
+  'permission', 'saloon', 'convertible', 'cabriolet', 'coupe', 'estate',
+  'hatchback', 'unknown', 'mileage', 'super', 'sized', 'prime', 'location',
+]);
+
+/** Distinctive title words: >=4 chars, not a bare 4-digit year, not generic. */
+function distinctiveTokens(title: string): string[] {
+  return Array.from(
+    new Set(
+      title
+        .toLowerCase()
+        .split(/[^a-z0-9]+/)
+        .filter((w) => w.length >= 4 && !/^\d{4}$/.test(w) && !GENERIC_TOKENS.has(w)),
+    ),
+  );
+}
+
+/** Read at most `cap` bytes of the body, then cancel — never buffers a whole page. */
+async function readCapped(resp: Response, cap: number): Promise<string> {
+  const reader = resp.body?.getReader();
+  if (!reader) return '';
+  const dec = new TextDecoder();
+  let out = '';
+  let total = 0;
+  try {
+    while (total < cap) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      out += dec.decode(value, { stream: true });
+    }
+  } finally {
+    try {
+      await reader.cancel();
+    } catch {
+      /* ignore */
+    }
+  }
+  return out;
+}
+
+const DEAD_CAUSE_CODES = new Set(['ENOTFOUND', 'EAI_AGAIN', 'ECONNREFUSED']);
+
 /**
- * Verdict on a single URL:
- *  - dead (drop): 404/410, DNS/connection failures, or a redirect that lands
- *    on a bare homepage — the advert is not there.
- *  - dead (drop): page loads but shares not a single distinctive title word —
- *    it's a real page about something else.
- *  - keep: 2xx with matching content; also 403/429/5xx and timeouts, where a
- *    bot-blocker or slow site means we can't disprove the link.
+ * Verdict on a single URL. Bias is KEEP unless the page is PROVABLY not there —
+ * a wrongly-nulled live link is worse than an occasional stale one, and UK
+ * listing sites routinely reset/timeout bot connections (which must NOT count
+ * as dead).
+ *  - drop: 404/410, DNS-not-found / connection-refused, or a redirect that
+ *    bounces to a bare homepage, or a 2xx HTML page containing NONE of the
+ *    find's distinctive title words (wrong listing).
+ *  - keep: everything else — 403/429/5xx (bot-blocked), timeouts, connection
+ *    resets, body-read failures on an already-200 page, non-HTML, or a page
+ *    that matches.
  */
 async function checkUrlAlive(url: string, title: string): Promise<boolean> {
   const ctrl = new AbortController();
@@ -221,35 +273,54 @@ async function checkUrlAlive(url: string, title: string): Promise<boolean> {
     });
     if (resp.status === 404 || resp.status === 410) return false;
     if (!resp.ok) return true; // 403/429/5xx: blocked or wobbly, not proven dead
-    const finalPath = (() => {
-      try {
-        return new URL(resp.url || url).pathname;
-      } catch {
-        return '/x';
+
+    // Homepage bounce: only when the site actively redirected us to a bare
+    // root with no identifying query string (so /?p=123 dealer CMSs survive).
+    try {
+      const fin = new URL(resp.url || url);
+      if (resp.redirected && (fin.pathname === '/' || fin.pathname === '') && !fin.search) {
+        return false;
       }
-    })();
-    if (finalPath === '/' || finalPath === '') return false; // bounced to homepage
+    } catch {
+      /* unparseable final URL — fall through */
+    }
+
     const ct = resp.headers.get('content-type') || '';
     if (!ct.includes('html')) return true;
-    const body = (await resp.text()).slice(0, 400_000).toLowerCase();
-    const tokens = title
-      .toLowerCase()
-      .split(/[^a-z0-9]+/)
-      .filter((w) => w.length >= 4);
-    if (tokens.length === 0) return true;
-    // At least one distinctive word from the find's title must appear on the
-    // page, or the URL points at something other than what the card claims.
+
+    const tokens = distinctiveTokens(title);
+    if (tokens.length === 0) return true; // nothing distinctive to match on → keep
+
+    let body: string;
+    try {
+      body = (await readCapped(resp, LINK_BODY_CAP)).toLowerCase();
+    } catch {
+      return true; // the 2xx already proved the page exists
+    }
+    // The URL is only kept if the page actually mentions this specific find.
     return tokens.some((w) => body.includes(w));
   } catch (err) {
-    // Timeout → can't judge, keep. DNS / connection refused → dead.
-    return err instanceof Error && err.name === 'AbortError';
+    // Only DNS-not-found / connection-refused prove the page is gone. Timeouts
+    // (AbortError) and resets/TLS errors from anti-bot systems → keep.
+    const code = (err as { cause?: { code?: string } })?.cause?.code || '';
+    return !DEAD_CAUSE_CODES.has(code) ? true : false;
   } finally {
     clearTimeout(timer);
   }
 }
 
-/** Live-check every direct URL concurrently; failed ones fall back to null. */
-export async function validateFindLinks(finds: ScoutFind[]): Promise<ScoutFind[]> {
+/**
+ * Live-check every direct URL concurrently; provably-dead ones fall back to
+ * null. Skips entirely when `deadlineMs` (epoch ms) is already close, so a slow
+ * Gemini call can never let link-checking push the request past its time limit.
+ */
+export async function validateFindLinks(
+  finds: ScoutFind[],
+  deadlineMs?: number,
+): Promise<ScoutFind[]> {
+  if (deadlineMs && Date.now() > deadlineMs - LINK_TIMEOUT_MS - 1500) {
+    return finds; // no time budget left — keep links as-is rather than risk a total loss
+  }
   return Promise.all(
     finds.map(async (f) => {
       if (!f.url) return f;
@@ -259,11 +330,18 @@ export async function validateFindLinks(finds: ScoutFind[]): Promise<ScoutFind[]
   );
 }
 
+// Wall-clock budget for a whole scan (Gemini + link-checks + return), kept
+// under the endpoint's maxDuration=60 so a slow generation can't get the
+// function killed mid-flight and lose every find.
+const SCAN_DEADLINE_MS = 52_000;
+const GEMINI_TIMEOUT_MS = 42_000;
+
 /** Run one live web scan. Throws on total failure; returns [] when the web simply yielded nothing. */
 export async function runScoutScan(kind: ScoutKind = 'car'): Promise<ScoutFind[]> {
   const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
   if (!apiKey) throw new Error('Auto-Scout is not configured: missing GEMINI_API_KEY.');
 
+  const deadline = Date.now() + SCAN_DEADLINE_MS;
   let lastError: unknown;
   for (const model of FALLBACK_MODELS) {
     try {
@@ -277,6 +355,8 @@ export async function runScoutScan(kind: ScoutKind = 'car'): Promise<ScoutFind[]
             tools: [{ google_search: {} }],
             generationConfig: { temperature: 0.7 },
           }),
+          // Hard cap the generation so the link-check tail always fits in 60s.
+          signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
         },
       );
       if (!resp.ok) {
@@ -300,8 +380,10 @@ export async function runScoutScan(kind: ScoutKind = 'car'): Promise<ScoutFind[]
         }))
         .filter((s: ScoutSource) => /^https?:\/\//i.test(s.url))
         .slice(0, 20);
-      // Verify every direct advert link is really live before it can be shown.
-      return await validateFindLinks(parseFinds(kind, text, chunks));
+      // Verify every direct advert link is really live before it can be shown,
+      // but respect the scan deadline so a slow generation never causes a total
+      // loss of finds.
+      return await validateFindLinks(parseFinds(kind, text, chunks), deadline);
     } catch (err) {
       lastError = err;
     }
