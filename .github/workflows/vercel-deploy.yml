@@ -220,10 +220,15 @@ jobs:
           # Point auth redirects at the live site. With the default Site URL
           # (http://localhost:3000) the "Confirm your mail" link verifies the
           # account but then redirects to localhost — dead on any real device.
-          echo "→ Setting Site URL + redirect allow-list for confirmation links…"
+          echo "→ Setting Site URL + redirect allow-list + password hardening…"
+          # Also hardens Auth: block breached passwords (HaveIBeenPwned),
+          # require a minimum length, and demand mixed character classes.
           SITE_PAYLOAD=$(jq -n '{
             site_url: "https://mandmautoperformance.com",
-            uri_allow_list: "https://mandmautoperformance.com/**,https://www.mandmautoperformance.com/**"
+            uri_allow_list: "https://mandmautoperformance.com/**,https://www.mandmautoperformance.com/**",
+            password_hibp_enabled: true,
+            password_min_length: 10,
+            password_required_characters: "abcdefghijklmnopqrstuvwxyz:ABCDEFGHIJKLMNOPQRSTUVWXYZ:0123456789"
           }')
           SITE_RESP=$(curl -sS -w "\nHTTP_STATUS:%{http_code}" -X PATCH \
             -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
