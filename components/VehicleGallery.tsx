@@ -1,0 +1,125 @@
+import React, { useMemo, useState } from 'react';
+import Image from 'next/image';
+import { Car } from 'lucide-react';
+import { galleryFor, type Photo } from '@/lib/vehicle-photos';
+
+interface VehicleGalleryProps {
+  model: string;
+  category: 'luxury' | 'sports' | 'supercar' | 'exotic' | 'suv' | 'executive';
+  color?: string;
+  colorHex?: string;
+  /** Fleet-unique pinned hero photo; shown first so the detail page leads with
+   *  the same image (and colour) as the card. */
+  heroPhoto?: string;
+}
+
+const CATEGORY_GRADIENT: Record<string, string> = {
+  luxury: 'from-blue-600/30 via-performance-grey to-performance-grey',
+  sports: 'from-red-600/25 via-performance-grey to-performance-grey',
+  supercar: 'from-purple-600/30 via-performance-grey to-performance-grey',
+  exotic: 'from-performance-turquoise/30 via-performance-grey to-performance-grey',
+  suv: 'from-emerald-700/25 via-performance-grey to-performance-grey',
+  executive: 'from-slate-500/25 via-performance-grey to-performance-grey',
+};
+
+/**
+ * Detail-page gallery: one large hero photo plus a thumbnail strip of every
+ * other shot of the car — exterior AND interior together, in the same strip.
+ * Photos that fail to load are removed automatically, so a broken thumbnail
+ * never appears. If no photo loads at all we show the branded fallback.
+ */
+export const VehicleGallery: React.FC<VehicleGalleryProps> = ({ model, category, color, colorHex, heroPhoto }) => {
+  const photos = useMemo<Photo[]>(() => {
+    const all = galleryFor(model);
+    const interiors = all.filter((p) => p.kind === 'interior');
+    const exteriors = all.filter((p) => p.kind === 'exterior');
+    // Lead with the pinned hero (an exterior), then surface an interior shot
+    // right after it so it's visible without scrolling, then the remaining
+    // exteriors and any other interiors.
+    const orderedExt =
+      heroPhoto && exteriors.some((p) => p.url === heroPhoto)
+        ? [exteriors.find((p) => p.url === heroPhoto)!, ...exteriors.filter((p) => p.url !== heroPhoto)]
+        : exteriors;
+    if (!orderedExt.length) return all;
+    if (!interiors.length) return orderedExt;
+    const [hero, ...restExt] = orderedExt;
+    const [firstInt, ...restInt] = interiors;
+    return [hero, firstInt, ...restExt, ...restInt];
+  }, [model, heroPhoto]);
+  const [active, setActive] = useState(0);
+  const [failed, setFailed] = useState<Record<number, boolean>>({});
+
+  const livePhotos = photos.filter((_, i) => !failed[i]);
+  const activePhoto = !failed[active] ? photos[active] : livePhotos[0];
+
+  const fallback = (
+    <div
+      className={`absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br ${
+        CATEGORY_GRADIENT[category] ?? CATEGORY_GRADIENT.luxury
+      }`}
+    >
+      {colorHex && (
+        <div
+          aria-hidden
+          className="absolute inset-0 opacity-40"
+          style={{ background: `radial-gradient(circle at 50% 35%, ${colorHex}66, transparent 70%)` }}
+        />
+      )}
+      <Car size={72} strokeWidth={1} className="relative text-performance-turquoise/70 mb-3" />
+      <span className="relative text-white/90 font-bold text-xl tracking-wide text-center px-6">{model}</span>
+      {color && (
+        <span className="relative mt-2 text-sm text-gray-300">{color}</span>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
+      {/* Hero */}
+      <div className="group relative rounded-xl overflow-hidden h-96 bg-gradient-to-br from-performance-grey to-performance-turquoise/10">
+        {activePhoto ? (
+          <Image
+            key={activePhoto.url}
+            src={activePhoto.url}
+            alt={`${model}${color ? ` — ${color}` : ''}`}
+            fill
+            onError={() => setFailed((f) => ({ ...f, [photos.indexOf(activePhoto)]: true }))}
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            sizes="(max-width: 1024px) 100vw, 66vw"
+            priority
+          />
+        ) : (
+          fallback
+        )}
+      </div>
+
+      {/* Thumbnails — every surviving photo of the car, exterior + interior together */}
+      {livePhotos.length > 1 && (
+        <div className="flex gap-3 overflow-x-auto pb-1">
+          {photos.map((photo, i) =>
+            failed[i] ? null : (
+              <button
+                key={photo.url}
+                onClick={() => setActive(i)}
+                className={`relative flex-shrink-0 h-20 w-28 rounded-lg overflow-hidden border-2 transition-all ${
+                  active === i ? 'border-performance-turquoise' : 'border-transparent opacity-70 hover:opacity-100'
+                }`}
+              >
+                <Image
+                  src={photo.url}
+                  alt={`${model} ${i + 1}`}
+                  fill
+                  onError={() => setFailed((f) => ({ ...f, [i]: true }))}
+                  className="object-cover"
+                  sizes="112px"
+                />
+              </button>
+            ),
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default VehicleGallery;

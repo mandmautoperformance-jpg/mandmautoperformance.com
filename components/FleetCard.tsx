@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { Heart, MapPin, Zap, Gauge } from 'lucide-react';
+import { Heart, MapPin, Zap, Gauge, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import VehicleImage from '@/components/VehicleImage';
 
 interface FleetCardProps {
   vehicleId: string;
   model: string;
-  category: 'luxury' | 'sports' | 'supercar' | 'exotic';
-  image: string;
+  category: 'luxury' | 'sports' | 'supercar' | 'exotic' | 'suv' | 'executive';
+  image?: string;
+  color?: string;
+  colorHex?: string;
   specs: {
     horsepower: number;
     acceleration: string; // 0-60 time
@@ -22,33 +24,43 @@ interface FleetCardProps {
   features: string[];
   location?: string;
   rating?: number;
+  minAge?: number;
+  minLicenceYears?: number;
+  heroPhoto?: string;
 }
 
 export const FleetCard: React.FC<FleetCardProps> = ({
   vehicleId,
   model,
   category,
+  color,
+  colorHex,
   specs,
   pricing,
   availability,
   features,
   location = 'London, UK',
   rating = 4.9,
+  minAge,
+  minLicenceYears,
+  heroPhoto,
 }) => {
   const [isFavorited, setIsFavorited] = useState(false);
 
   const categoryColors = {
-    luxury: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-    sports: 'bg-red-500/20 text-red-400 border-red-500/30',
-    supercar: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-    exotic: 'bg-performance-turquoise/20 text-performance-turquoise border-performance-turquoise/30',
+    luxury: 'bg-performance-turquoise/15 text-performance-gold-light border-performance-turquoise/40',
+    sports: 'bg-performance-turquoise/15 text-performance-gold-light border-performance-turquoise/40',
+    supercar: 'bg-performance-turquoise/20 text-performance-gold-light border-performance-turquoise/50',
+    exotic: 'bg-performance-turquoise/25 text-performance-gold-light border-performance-turquoise/60',
+    suv: 'bg-performance-turquoise/20 text-performance-gold-light border-performance-turquoise/50',
+    executive: 'bg-white/5 text-gray-200 border-white/20',
   };
 
   return (
-    <div className="group relative h-full bg-performance-grey border border-performance-turquoise/20 rounded-xl overflow-hidden hover:border-performance-turquoise/50 transition-all duration-300 hover:shadow-2xl hover:shadow-performance-turquoise/20">
+    <div className="group relative h-full bg-performance-panel border border-performance-turquoise/15 rounded-xl overflow-hidden hover:border-performance-turquoise/60 transition-all duration-300 hover:shadow-gold">
       {/* Image Container */}
       <div className="relative h-64 sm:h-72 overflow-hidden bg-gradient-to-br from-performance-grey to-performance-turquoise/10">
-        <VehicleImage vehicleId={vehicleId} model={model} category={category} />
+        <VehicleImage vehicleId={vehicleId} model={model} category={category} colorHex={colorHex} color={color} heroPhoto={heroPhoto} />
 
         {/* Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-performance-grey via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -86,17 +98,42 @@ export const FleetCard: React.FC<FleetCardProps> = ({
         <div className="absolute bottom-4 left-4 bg-performance-grey/80 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-bold text-performance-babyblue">
           ⭐ {rating}
         </div>
+
+        {/* Branded floating label */}
+        <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-20 px-3 py-0.5 bg-performance-grey/90 backdrop-blur-sm rounded-sm border border-performance-turquoise/30">
+          <span className="block text-performance-turquoise font-bold tracking-[0.22em] text-[8px] whitespace-nowrap">
+            M&amp;M AUTO PERFORMANCE
+          </span>
+        </div>
       </div>
 
       {/* Content */}
       <div className="p-6">
         {/* Title & Location */}
         <div className="mb-4">
-          <h3 className="text-xl font-bold text-white mb-2">{model}</h3>
+          <h3 className="font-display text-xl font-bold text-white mb-2 tracking-tight">{model}</h3>
+          {color && (
+            <div className="flex items-center gap-2 text-gray-300 text-sm mb-1">
+              {colorHex && (
+                <span
+                  className="inline-block w-3.5 h-3.5 rounded-full border border-white/30 flex-shrink-0"
+                  style={{ backgroundColor: colorHex }}
+                  aria-hidden
+                />
+              )}
+              {color}
+            </div>
+          )}
           <div className="flex items-center gap-2 text-gray-400 text-sm">
             <MapPin size={16} className="text-performance-turquoise" />
             {location}
           </div>
+          {minAge && (
+            <div className="flex items-center gap-2 text-gray-400 text-xs mt-1">
+              <ShieldCheck size={14} className="text-performance-turquoise" />
+              Drivers {minAge}+ · licence {minLicenceYears}+ {minLicenceYears === 1 ? 'yr' : 'yrs'}
+            </div>
+          )}
         </div>
 
         {/* Specs Grid */}

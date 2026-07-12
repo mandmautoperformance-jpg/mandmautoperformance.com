@@ -1,0 +1,43 @@
+name: Resend domain check
+
+# Lightweight, no-deploy probe: asks Resend to (re)verify the sending domain
+# and prints the overall status plus a per-record verdict (DKIM / SPF / MX).
+# Used to watch DNS propagation without running a full Vercel deploy.
+
+on:
+  workflow_dispatch:
+    inputs:
+      resend_domain:
+        description: 'Sending domain to check (e.g. mandmautoperformance.com)'
+        required: true
+        default: 'mandmautoperformance.com'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Query Resend domain status
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          DOMAIN: ${{ inputs.resend_domain }}
+        run: |
+          if [ -z "$RESEND_API_KEY" ]; then
+            echo "ERROR: RESEND_API_KEY secret is not set."; exit 1
+          fi
+          echo "::add-mask::$RESEND_API_KEY"
+          api() { curl -sS -H "Authorization: Bearer $RESEND_API_KEY" -H "Content-Type: application/json" "$@"; }
+
+          LIST=$(api "https://api.resend.com/domains")
+          DOMAIN_ID=$(echo "$LIST" | jq -r --arg d "$DOMAIN" '.data[]? | select(.name==$d) | .id' | head -1)
+          if [ -z "$DOMAIN_ID" ] || [ "$DOMAIN_ID" = "null" ]; then
+            echo "RESEND_DOMAIN_STATUS=not_registered"; exit 0
+          fi
+
+          api -X POST "https://api.resend.com/domains/$DOMAIN_ID/verify" >/dev/null || true
+          DETAIL=$(api "https://api.resend.com/domains/$DOMAIN_ID")
+          STATUS=$(echo "$DETAIL" | jq -r '.status')
+
+          echo "========================================="
+          echo "RESEND_DOMAIN_STATUS=$STATUS"
+          echo "$DETAIL" | jq -r '.records[] | "RESEND_RECORD \(.type) \(.name) -> \(.status // "?")"'
+          echo "========================================="

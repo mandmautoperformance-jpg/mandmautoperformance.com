@@ -1,6 +1,7 @@
 import React from 'react';
 import { ChevronRight, Zap } from 'lucide-react';
 import Link from 'next/link';
+import { FLEET_SIZE } from '@/lib/vehicles';
 
 interface HeroProps {
   title?: string;
@@ -30,12 +31,12 @@ export const Hero: React.FC<HeroProps> = ({
             Powered by MIA — Motor Intelligence Assistant
           </span>
         </div>
-        <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight">
-          <span className="bg-gradient-to-r from-performance-turquoise via-performance-babyblue to-performance-turquoise bg-clip-text text-transparent">
+        <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight tracking-tight">
+          <span className="bg-gradient-to-r from-performance-babyblue via-performance-turquoise to-performance-babyblue bg-clip-text text-transparent">
             {title}
           </span>
         </h1>
-        <p className="text-lg sm:text-xl text-gray-300 mb-10 max-w-2xl mx-auto">{subtitle}</p>
+        <p className="text-lg sm:text-xl text-gray-300/90 mb-10 max-w-2xl mx-auto font-light">{subtitle}</p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
           <Link href={primaryCTA.href} className="group relative px-8 py-4 bg-gradient-to-r from-performance-turquoise to-performance-babyblue text-performance-grey font-bold rounded-lg overflow-hidden transition-all duration-300 transform hover:scale-105 hover:shadow-2xl">
             <div className="absolute inset-0 bg-gradient-to-r from-performance-babyblue to-performance-turquoise opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -50,16 +51,16 @@ export const Hero: React.FC<HeroProps> = ({
         </div>
         <div className="grid grid-cols-3 gap-6 mt-20 pt-12 border-t border-performance-turquoise/20">
           <div className="text-center">
-            <div className="text-3xl sm:text-4xl font-bold text-performance-turquoise">10+</div>
-            <p className="text-gray-400 text-sm mt-2">Elite Vehicles</p>
+            <div className="font-display text-3xl sm:text-4xl font-bold text-performance-turquoise">{FLEET_SIZE}</div>
+            <p className="text-gray-400 text-sm mt-2 tracking-wide">Elite Vehicles</p>
           </div>
           <div className="text-center">
-            <div className="text-3xl sm:text-4xl font-bold text-performance-babyblue">24/7</div>
-            <p className="text-gray-400 text-sm mt-2">AI Concierge</p>
+            <div className="font-display text-3xl sm:text-4xl font-bold text-performance-babyblue">24/7</div>
+            <p className="text-gray-400 text-sm mt-2 tracking-wide">AI Concierge</p>
           </div>
           <div className="text-center">
-            <div className="text-3xl sm:text-4xl font-bold text-performance-turquoise">10+</div>
-            <p className="text-gray-400 text-sm mt-2">UK Locations</p>
+            <div className="font-display text-3xl sm:text-4xl font-bold text-performance-turquoise">8+</div>
+            <p className="text-gray-400 text-sm mt-2 tracking-wide">UK Locations</p>
           </div>
         </div>
       </div>

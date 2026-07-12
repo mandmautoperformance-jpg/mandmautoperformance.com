@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { verifyAuth } from '@/lib/auth-middleware';
+import { verifyAdmin } from '@/lib/auth-middleware';
 import { createClient } from '@supabase/supabase-js';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -7,7 +7,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const userId = await verifyAuth(req as any, res, true);
+  const userId = await verifyAdmin(req as any, res);
   if (!userId) return;
 
   const { personality, aggressiveness, responseTime, autoApproveDocuments, enableCrypto } = req.body;

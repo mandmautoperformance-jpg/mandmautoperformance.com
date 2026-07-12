@@ -25,6 +25,14 @@ STRIPE_SECRET_KEY
 STRIPE_WEBHOOK_SECRET
 GEMINI_API_KEY
 NEXT_PUBLIC_SITE_URL
+ADMIN_EMAILS   # comma-separated allowlist of admin login emails (gates /admin-dashboard + /api/admin/*)
+```
+
+Optional (transactional email — lead & contact notifications):
+```
+RESEND_API_KEY      # https://resend.com API key; without it emails are skipped (flows still work)
+MAIL_FROM           # verified sender, e.g. "M&M Auto Performance <bookings@mandmautoperformance.com>"
+ADMIN_NOTIFY_EMAIL  # where new-lead/contact notifications go (defaults to mandmautoperformance@gmail.com)
 ```
 
 ## Code Rules

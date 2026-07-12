@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { Eye, EyeOff, Zap, AlertCircle, CheckCircle } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseBrowser } from '@/lib/supabase-browser';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -24,14 +25,17 @@ export default function SignupPage() {
     setError(null);
 
     try {
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      );
+      const supabase = getSupabaseBrowser();
+      const siteUrl = typeof window !== 'undefined'
+        ? window.location.origin
+        : (process.env.NEXT_PUBLIC_SITE_URL || 'https://mandmautoperformance.com');
       const { error: authError } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { first_name: firstName, last_name: lastName } },
+        options: {
+          emailRedirectTo: `${siteUrl}/auth/callback`,
+          data: { first_name: firstName, last_name: lastName },
+        },
       });
       if (authError) throw authError;
       setSuccess(true);
@@ -61,12 +65,10 @@ export default function SignupPage() {
         <div className="relative w-full max-w-md">
           <div className="text-center mb-8">
             <Link href="/" className="inline-flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-gradient-to-br from-performance-turquoise to-performance-babyblue rounded-xl flex items-center justify-center">
-                <span className="text-performance-grey font-bold text-xl">M</span>
-              </div>
-              <span className="text-white font-bold text-xl">M&M Auto Performance</span>
+              <Image src="/logo.svg" alt="M&M Auto Performance" width={44} height={44} unoptimized className="rounded-full" />
+              <span className="text-white font-bold text-xl">M&amp;M Auto Performance</span>
             </Link>
-            <h1 className="text-3xl font-bold text-white">Create your account</h1>
+            <h1 className="font-display text-3xl font-bold text-white">Create your account</h1>
             <p className="text-gray-400 mt-2">Join thousands of elite drivers</p>
           </div>
 
@@ -74,7 +76,8 @@ export default function SignupPage() {
             <div className="bg-performance-grey border border-green-500/30 rounded-2xl p-8 text-center">
               <CheckCircle size={48} className="text-green-400 mx-auto mb-4" />
               <h2 className="text-xl font-bold text-white mb-2">Check your email!</h2>
-              <p className="text-gray-400 mb-6">We've sent a confirmation link to <span className="text-performance-turquoise">{email}</span></p>
+              <p className="text-gray-400 mb-2">We've sent a confirmation link to <span className="text-performance-turquoise">{email}</span></p>
+              <p className="text-gray-500 text-sm mb-6">After confirming, you'll be asked to upload your driving licence and photo ID to unlock bookings.</p>
               <Link href="/login" className="inline-block px-6 py-3 bg-performance-turquoise text-performance-grey font-bold rounded-lg">
                 Go to Sign In
               </Link>

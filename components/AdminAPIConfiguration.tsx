@@ -270,7 +270,7 @@ const AdminAPIConfiguration: React.FC = () => {
           }
         : a
     );
-    setApis(newApis);
+    setApis(newApis as APIConfig[]);
     localStorage.setItem('mia_api_config', JSON.stringify(newApis));
     setSelectedApi(null);
     setEditMode(false);

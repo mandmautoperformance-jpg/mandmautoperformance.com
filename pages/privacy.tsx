@@ -60,7 +60,19 @@ export default function Privacy() {
               </div>
 
               <div>
-                <h2 className="text-2xl font-bold text-white mb-4">5. Your Rights (UK GDPR)</h2>
+                <h2 className="text-2xl font-bold text-white mb-4">5. Driving Licence &amp; DVLA Verification</h2>
+                <p className="mb-4">
+                  Because certain vehicles are age- and experience-restricted, we verify your eligibility before hire:
+                </p>
+                <ul className="list-disc pl-6 space-y-2">
+                  <li>We use your <strong className="text-white">date of birth</strong> and <strong className="text-white">test-pass date</strong> to confirm you meet the minimum age and licence-tenure for the vehicle.</li>
+                  <li>Where provided, your <strong className="text-white">driving licence number</strong> is checked against your date of birth and (where enabled) verified with DVLA. <strong className="text-white">We do not store the full licence number</strong> — only a masked reference and the pass/fail outcome are retained.</li>
+                  <li>This processing is necessary for the performance of your hire contract and to meet our insurers&apos; underwriting requirements (UK GDPR Art. 6(1)(b) and (f)).</li>
+                </ul>
+              </div>
+
+              <div>
+                <h2 className="text-2xl font-bold text-white mb-4">6. Your Rights (UK GDPR)</h2>
                 <ul className="list-disc pl-6 space-y-2 mb-4">
                   <li>Access your personal data</li>
                   <li>Correct inaccurate data</li>
@@ -73,21 +85,22 @@ export default function Privacy() {
               </div>
 
               <div>
-                <h2 className="text-2xl font-bold text-white mb-4">6. Cookies</h2>
+                <h2 className="text-2xl font-bold text-white mb-4">7. Cookies</h2>
                 <p>We use cookies for authentication, preferences, and analytics. See our <Link href="/cookie-policy" className="text-performance-turquoise hover:underline">Cookie Policy</Link> for details.</p>
               </div>
 
               <div>
-                <h2 className="text-2xl font-bold text-white mb-4">7. Third Parties</h2>
+                <h2 className="text-2xl font-bold text-white mb-4">8. Third Parties</h2>
                 <ul className="list-disc pl-6 space-y-2">
                   <li><strong className="text-white">Stripe:</strong> Payment processing</li>
                   <li><strong className="text-white">Supabase:</strong> Data hosting (EU region)</li>
                   <li><strong className="text-white">Google Gemini:</strong> AI concierge (anonymised prompts)</li>
+                  <li><strong className="text-white">DVLA:</strong> Driving licence verification (where enabled)</li>
                 </ul>
               </div>
 
               <div>
-                <h2 className="text-2xl font-bold text-white mb-4">8. Contact</h2>
+                <h2 className="text-2xl font-bold text-white mb-4">9. Contact</h2>
                 <p>
                   Data Protection Officer: <strong className="text-performance-turquoise">dpo@mandmautoperformance.com</strong><br />
                   General Inquiries: <strong className="text-performance-turquoise">privacy@mandmautoperformance.com</strong><br />

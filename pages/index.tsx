@@ -1,143 +1,55 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
+import CinematicHero from '@/components/CinematicHero';
 import BookingWidget from '@/components/BookingWidget';
 import FleetCard from '@/components/FleetCard';
 import AIConcierge from '@/components/AIConcierge';
-import { Star, MapPin, Zap } from 'lucide-react';
+import CategoryShowcase from '@/components/CategoryShowcase';
+import { VEHICLES, FLEET_SIZE } from '@/lib/vehicles';
+import { Bot, Zap, Trophy, Star } from 'lucide-react';
 
-interface Vehicle {
-  vehicleId: string;
-  model: string;
-  category: 'luxury' | 'sports' | 'supercar' | 'exotic';
-  image: string;
-  specs: {
-    horsepower: number;
-    acceleration: string;
-    topSpeed: number;
-    transmission: string;
-  };
-  pricing: {
-    daily: number;
-    hourly: number;
-  };
-  availability: boolean;
-  features: string[];
-  location?: string;
-  rating?: number;
-}
+// Four marquee models for the Featured Fleet strip (first listing of each).
+const FEATURED_MODELS = [
+  'Lamborghini Huracán',
+  'Ferrari F8 Tributo',
+  'Porsche 911 Turbo S',
+  'Rolls-Royce Ghost',
+];
 
 export default function HomePage() {
   const [conciergeOpen, setConciergeOpen] = useState(false);
 
-  const featuredVehicles: Vehicle[] = [
-    {
-      vehicleId: '1',
-      model: 'Lamborghini Huracán',
-      category: 'supercar',
-      image:
-        'https://images.unsplash.com/photo-1552820728-8ac41f1ce891?w=500&h=400&fit=crop',
-      specs: {
-        horsepower: 657,
-        acceleration: '2.9s',
-        topSpeed: 217,
-        transmission: 'Automatic',
-      },
-      pricing: { daily: 1500, hourly: 200 },
-      availability: true,
-      features: [
-        'GPS Navigation',
-        'Premium Sound',
-        'Leather Seats',
-        'Climate Control',
-      ],
-      location: 'Mayfair, London',
-      rating: 4.9,
-    },
-    {
-      vehicleId: '2',
-      model: 'Ferrari F8 Tributo',
-      category: 'supercar',
-      image:
-        'https://images.unsplash.com/photo-1567818735868-e71b99932e29?w=500&h=400&fit=crop',
-      specs: {
-        horsepower: 710,
-        acceleration: '2.9s',
-        topSpeed: 211,
-        transmission: 'Automatic',
-      },
-      pricing: { daily: 1800, hourly: 250 },
-      availability: true,
-      features: [
-        'Carbon Fiber',
-        'Sport Package',
-        'Premium Audio',
-        'Daytona Seats',
-      ],
-      location: 'St Albans, Herts',
-      rating: 5.0,
-    },
-    {
-      vehicleId: '3',
-      model: 'Porsche 911 Turbo S',
-      category: 'sports',
-      image:
-        'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=500&h=400&fit=crop',
-      specs: {
-        horsepower: 640,
-        acceleration: '2.7s',
-        topSpeed: 211,
-        transmission: 'Automatic',
-      },
-      pricing: { daily: 800, hourly: 120 },
-      availability: true,
-      features: [
-        'Night Vision',
-        'Adaptive Suspension',
-        'Premium Interior',
-        'Paddle Shifters',
-      ],
-      location: 'Watford, Herts',
-      rating: 4.8,
-    },
-    {
-      vehicleId: '4',
-      model: 'Bentley Continental',
-      category: 'luxury',
-      image:
-        'https://images.unsplash.com/photo-1566023967268-de0b93b10c73?w=500&h=400&fit=crop',
-      specs: {
-        horsepower: 626,
-        acceleration: '3.6s',
-        topSpeed: 198,
-        transmission: 'Automatic',
-      },
-      pricing: { daily: 600, hourly: 100 },
-      availability: false,
-      features: ['Leather Interiors', 'Heated Seats', 'WiFi', 'Premium Bar'],
-      location: 'Mayfair, London',
-      rating: 4.7,
-    },
-  ];
+  const featuredVehicles = FEATURED_MODELS
+    .map((m) => VEHICLES.find((v) => v.model === m))
+    .filter((v): v is (typeof VEHICLES)[number] => Boolean(v));
 
   return (
-    <main className="min-h-screen bg-performance-grey text-white">
+    <main className="min-h-screen bg-performance-grey text-white relative">
       <Navbar isLoggedIn={false} userRole="guest" currentPage="home" />
 
-      {/* Hero Section */}
-      <Hero />
+      {/* Cinematic hero */}
+      <CinematicHero />
+
+      {/* Page content */}
+      <div>
+      {/* Category Showcase */}
+      <CategoryShowcase />
 
       {/* Booking Widget Section */}
       <section className="px-4 sm:px-6 lg:px-8 py-20 bg-performance-grey/50">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-white mb-4">
-              Booking Made Simple
+            <p className="text-performance-turquoise text-[10px] font-bold tracking-[0.45em] uppercase mb-3">
+              Reserve Your Drive
+            </p>
+            <h2 className="font-display text-4xl font-bold text-white mb-4">
+              Your next chapter starts here
             </h2>
-            <p className="text-gray-300">
-              Our AI Sky Concierge handles everything. Instant document
-              verification, real-time availability, and 24/7 support.
+            <p className="text-gray-300 max-w-xl mx-auto">
+              MIA handles everything — from document verification to real-time availability. Instant confirmation, zero hassle, 24 hours a day.
             </p>
           </div>
           <BookingWidget mode="quick" />
@@ -148,7 +60,7 @@ export default function HomePage() {
       <section className="px-4 sm:px-6 lg:px-8 py-20">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-white mb-4">
+            <h2 className="font-display text-4xl font-bold text-white mb-4">
               Featured Fleet
             </h2>
             <p className="text-gray-300 max-w-2xl mx-auto">
@@ -177,40 +89,44 @@ export default function HomePage() {
       {/* Why M&M Section */}
       <section className="px-4 sm:px-6 lg:px-8 py-20 bg-performance-turquoise/5 border-t border-performance-turquoise/20">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-4xl font-bold text-white mb-12 text-center">
-            Why Choose M&M Auto Performance
-          </h2>
+          <div className="text-center mb-12">
+            <p className="text-performance-turquoise text-[10px] font-bold tracking-[0.45em] uppercase mb-3">
+              The M&amp;M Difference
+            </p>
+            <h2 className="font-display text-4xl font-bold text-white">
+              What sets us apart
+            </h2>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               {
-                icon: '🤖',
-                title: 'AI Sky Concierge',
-                description:
-                  '24/7 automated booking and document verification. Instant confirmations with zero hassle.',
+                icon: <Bot size={28} className="text-performance-turquoise" />,
+                title: 'MIA — AI Concierge',
+                description: '24/7 automated booking and instant document verification. Confirm your reservation in minutes, not days.',
               },
               {
-                icon: '⚡',
-                title: 'Lightning Fast Booking',
-                description:
-                  'Real-time availability, instant document processing, and immediate confirmation.',
+                icon: <Zap size={28} className="text-performance-turquoise" />,
+                title: 'Lightning Booking',
+                description: 'Real-time availability, AI document processing, and immediate confirmation — all in under 3 minutes.',
               },
               {
-                icon: '🏆',
-                title: 'Habit Score Rewards',
-                description:
-                  'Earn rewards with every booking. Disciplined driving = exclusive benefits.',
+                icon: <Trophy size={28} className="text-performance-turquoise" />,
+                title: "Driver's Passport",
+                description: 'Earn points with every booking. Climb through Bronze, Silver, Platinum, and Elite tiers for exclusive rewards.',
               },
             ].map((feature, idx) => (
               <div
                 key={idx}
-                className="p-8 bg-performance-grey border border-performance-turquoise/20 rounded-xl hover:border-performance-turquoise/50 transition-all duration-300"
+                className="p-8 bg-performance-panel border border-performance-turquoise/20 rounded-xl hover:border-performance-turquoise/50 hover:shadow-gold transition-all duration-300 group"
               >
-                <div className="text-5xl mb-4">{feature.icon}</div>
+                <div className="w-12 h-12 bg-performance-turquoise/10 rounded-xl flex items-center justify-center mb-6 group-hover:bg-performance-turquoise/20 transition-colors duration-300">
+                  {feature.icon}
+                </div>
                 <h3 className="text-xl font-bold text-white mb-3">
                   {feature.title}
                 </h3>
-                <p className="text-gray-400">{feature.description}</p>
+                <p className="text-gray-400 leading-relaxed">{feature.description}</p>
               </div>
             ))}
           </div>
@@ -218,44 +134,63 @@ export default function HomePage() {
       </section>
 
       {/* Stats Section */}
-      <section className="px-4 sm:px-6 lg:px-8 py-20">
+      <section className="px-4 sm:px-6 lg:px-8 py-16">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="gold-hairline mb-16" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {[
-              { label: 'Premium Vehicles', value: '500+' },
-              { label: 'Active Users', value: '15K+' },
+              { label: 'Vehicles in Fleet', value: `${FLEET_SIZE}` },
+              { label: 'Drivers Trust Us', value: '15K+' },
               { label: 'Bookings This Year', value: '5K+' },
-              { label: 'Service Uptime', value: '99.9%' },
+              { label: 'Platform Uptime', value: '99.9%' },
             ].map((stat, idx) => (
-              <div key={idx} className="text-center">
-                <div className="text-4xl font-bold text-performance-turquoise mb-2">
+              <div key={idx} className="text-center group">
+                <div className="font-display text-5xl font-bold text-performance-turquoise mb-2 group-hover:text-performance-babyblue transition-colors duration-300">
                   {stat.value}
                 </div>
-                <p className="text-gray-400">{stat.label}</p>
+                <p className="text-gray-400 text-sm tracking-wide uppercase">{stat.label}</p>
               </div>
             ))}
           </div>
+          <div className="gold-hairline mt-16" />
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="px-4 sm:px-6 lg:px-8 py-20 bg-gradient-to-r from-performance-turquoise/10 to-performance-babyblue/10 border-t border-performance-turquoise/20">
+      <section className="px-4 sm:px-6 lg:px-8 py-24 bg-gradient-to-r from-performance-turquoise/10 to-performance-babyblue/10 border-t border-performance-turquoise/20">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl font-bold text-white mb-6">
-            Ready to Experience Elite Performance?
+          <div className="flex items-center justify-center gap-2 mb-6">
+            <Star size={14} className="text-performance-turquoise fill-performance-turquoise" />
+            <Star size={14} className="text-performance-turquoise fill-performance-turquoise" />
+            <Star size={14} className="text-performance-turquoise fill-performance-turquoise" />
+            <Star size={14} className="text-performance-turquoise fill-performance-turquoise" />
+            <Star size={14} className="text-performance-turquoise fill-performance-turquoise" />
+            <span className="text-performance-turquoise text-xs font-bold ml-2 tracking-wider">TRUSTED BY 15,000+ DRIVERS</span>
+          </div>
+          <h2 className="font-display text-4xl sm:text-5xl font-bold text-white mb-6">
+            Begin your elite drive
           </h2>
-          <p className="text-gray-300 mb-8 max-w-2xl mx-auto">
-            Join thousands of discerning drivers who trust M&M Auto Performance
-            for their high-performance automotive needs.
+          <p className="text-gray-300 mb-10 max-w-2xl mx-auto text-lg leading-relaxed">
+            Thousands of discerning drivers across London and Hertfordshire choose M&amp;M Auto Performance. Your next extraordinary journey starts here.
           </p>
-          <Link
-            href="/booking"
-            className="inline-block px-8 py-4 bg-performance-turquoise hover:bg-performance-turquoise/90 text-performance-grey font-bold rounded-lg transition-all transform hover:scale-105"
-          >
-            Book Your Experience Now
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              href="/booking"
+              className="inline-block px-10 py-4 bg-performance-turquoise hover:bg-performance-turquoise/90 text-performance-grey font-bold rounded-full tracking-wider uppercase text-sm transition-all transform hover:scale-105 shadow-gold"
+            >
+              Book Your Experience
+            </Link>
+            <Link
+              href="/fleet"
+              className="inline-block px-10 py-4 border border-performance-turquoise/50 hover:border-performance-turquoise text-performance-turquoise font-bold rounded-full tracking-wider uppercase text-sm transition-all hover:bg-performance-turquoise/10"
+            >
+              Browse the Fleet
+            </Link>
+          </div>
         </div>
       </section>
+
+      </div>{/* end scroll-over wrapper */}
 
       {/* AI Concierge */}
       <AIConcierge
@@ -283,27 +218,27 @@ export default function HomePage() {
                 title: 'Company',
                 links: [
                   { label: 'About Us', href: '/about' },
-                  { label: 'Contact', href: '/contact' },
+                  { label: 'Contact Us', href: '/contact' },
                   { label: 'Privacy Policy', href: '/privacy' },
                   { label: 'Terms & Conditions', href: '/terms' },
                 ],
               },
               {
-                title: 'Fleet',
+                title: 'Our Fleet',
                 links: [
                   { label: 'All Vehicles', href: '/fleet' },
-                  { label: 'Book Now', href: '/booking' },
-                  { label: 'Cookie Policy', href: '/cookie-policy' },
-                  { label: 'Dashboard', href: '/dashboard' },
+                  { label: 'Exotic Collection', href: '/fleet?cat=exotic' },
+                  { label: 'Luxury Cars', href: '/fleet?cat=luxury' },
+                  { label: 'Sports Cars', href: '/fleet?cat=sports' },
                 ],
               },
               {
-                title: 'Support',
+                title: 'Booking',
                 links: [
-                  { label: 'Contact Us', href: '/contact' },
-                  { label: 'Terms & Conditions', href: '/terms' },
-                  { label: 'Privacy Policy', href: '/privacy' },
+                  { label: 'Book a Vehicle', href: '/booking' },
+                  { label: 'Chat with MIA', href: '/' },
                   { label: 'Cookie Policy', href: '/cookie-policy' },
+                  { label: 'Payment Help', href: '/contact' },
                 ],
               },
               {
@@ -311,7 +246,7 @@ export default function HomePage() {
                 links: [
                   { label: 'Sign In', href: '/login' },
                   { label: 'Create Account', href: '/signup' },
-                  { label: 'Dashboard', href: '/dashboard' },
+                  { label: 'My Dashboard', href: '/dashboard' },
                   { label: 'Settings', href: '/settings' },
                 ],
               },
@@ -334,10 +269,9 @@ export default function HomePage() {
             ))}
           </div>
 
-          <div className="border-t border-performance-turquoise/20 pt-8 text-center text-gray-400">
-            <p>
-              © 2026 M&M Auto Performance. Part of the RichHabits Ecosystem.
-            </p>
+          <div className="border-t border-performance-turquoise/20 pt-8 flex flex-col items-center gap-3 text-gray-400 text-center">
+            <Image src="/logo.svg" alt="M&M Auto Performance UK" width={56} height={56} className="opacity-80" unoptimized />
+            <p>© 2026 M&amp;M Auto Performance. Part of the RichHabits Ecosystem.</p>
           </div>
         </div>
       </footer>

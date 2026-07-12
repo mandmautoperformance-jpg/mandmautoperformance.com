@@ -1,8 +1,10 @@
 name: CI
 
 on:
+  # Only validate master + open PRs. Feature-branch pushes stay free — you
+  # test locally (npm run build) and CI runs when you open/update the PR.
   push:
-    branches: [master, "claude/**"]
+    branches: [master]
   pull_request:
     branches: [master]
 
